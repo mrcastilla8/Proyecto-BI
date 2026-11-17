@@ -1,0 +1,4 @@
+customer_id,customer_unique_id,customer_zip_code_prefix,customer_city,customer_state
+C-01,UC-01,01001,sao paulo,SP
+C-02,UC-02,20040,rio de janeiro,RJ
+C-03,UC-01,01001,sao paulo,SP

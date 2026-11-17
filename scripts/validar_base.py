@@ -6,6 +6,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from datetime import date
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED_DOCS = [
@@ -17,7 +18,35 @@ EXPECTED_FILES = {
     "order_items.csv": ["order_id", "order_item_id", "product_id", "seller_id", "price", "freight_value"],
     "order_payments.csv": ["order_id", "payment_sequential", "payment_type", "payment_value"],
     "order_reviews.csv": ["review_id", "order_id", "review_score"],
+    "customers.csv": ["customer_id", "customer_unique_id", "customer_zip_code_prefix", "customer_city", "customer_state"],
+    "sellers.csv": ["seller_id", "seller_zip_code_prefix", "seller_city", "seller_state"],
+    "products.csv": ["product_id", "product_category_name", "product_weight_g", "product_length_cm", "product_height_cm", "product_width_cm"],
+    "geolocation.csv": ["geolocation_zip_code_prefix", "geolocation_lat", "geolocation_lng", "geolocation_city", "geolocation_state"],
+    "product_category_name_translation.csv": ["product_category_name", "product_category_name_english"],
 }
+CONTRACT_STATES = {"PROPUESTA_PENDIENTE_VALIDACION", "APROBADO"}
+
+
+def validate_contract_statuses(model, metrics):
+    """Valida estados permitidos y evidencia mínima para aprobar versiones."""
+    for name, contract in (("modelo dimensional", model), ("métricas", metrics)):
+        state = contract.get("status")
+        require(state in CONTRACT_STATES, f"Estado contractual desconocido en {name}: {state!r}")
+    require(model["status"] == metrics["status"], "Estado contractual incoherente")
+    for name, contract in (("modelo dimensional", model), ("métricas", metrics)):
+        state = contract["status"]
+        if state == "APROBADO":
+            approval = contract.get("approval")
+            require(isinstance(approval, dict), f"Falta evidencia de aprobación en {name}")
+            require(approval.get("issue") and approval.get("pull_request"), f"Falta issue/PR de aprobación en {name}")
+            try:
+                date.fromisoformat(approval.get("approved_at", ""))
+            except (ValueError, TypeError):
+                require(False, f"Fecha de aprobación inválida en {name}")
+            reviewers = approval.get("reviewers", [])
+            require(isinstance(reviewers, list) and all(isinstance(x, str) for x in reviewers)
+                    and len(set(reviewers)) >= 2,
+                    f"Se requieren dos revisores afectados en {name}")
 
 
 def require(condition, message):
@@ -33,7 +62,7 @@ def main():
 
     model = json.loads((ROOT / "contracts/modelo-dimensional.v1.json").read_text(encoding="utf-8"))
     metrics = json.loads((ROOT / "contracts/metricas.v1.json").read_text(encoding="utf-8"))
-    require(model["status"] == metrics["status"] == "PROPUESTA_PENDIENTE_VALIDACION", "Estado contractual incoherente")
+    validate_contract_statuses(model, metrics)
     require(model["database"] == "BI_OLIST" and model["schemas"] == ["stg", "dw", "audit"], "Base/esquemas inesperados")
     facts = {f["name"]: f for f in model["facts"]}
     require(facts["dw.FactPedidos"]["grain"] == "una fila por order_id", "Grano FactPedidos incorrecto")
@@ -59,16 +88,36 @@ def main():
         require(records, f"Fixture vacía: {filename}")
         require(all(all(v is not None for v in row.values()) for row in records), f"Fila mal formada en {filename}")
         rows[filename] = records
+    invalid_path = ROOT / "data/fixtures/invalid_references.csv"
+    with invalid_path.open(encoding="utf-8-sig", newline="") as f:
+        invalid_reader = csv.DictReader(f)
+        require(invalid_reader.fieldnames == ["order_id", "order_item_id", "product_id", "seller_id", "reason"],
+                "Cabecera inesperada en invalid_references.csv")
+        invalid_rows = list(invalid_reader)
+    require(len(invalid_rows) == 1 and invalid_rows[0]["order_id"] not in {r["order_id"] for r in rows["orders.csv"]},
+            "Caso negativo de referencia inválida debe apuntar a pedido inexistente")
     orders = {r["order_id"]: r for r in rows["orders.csv"]}
     require(len(orders) == len(rows["orders.csv"]), "order_id duplicado en fixture de pedidos")
     line_keys = [(r["order_id"], r["order_item_id"]) for r in rows["order_items.csv"]]
     require(len(line_keys) == len(set(line_keys)), "Clave de línea duplicada")
-    require(all(r["order_id"] in orders for group in rows.values() for r in group), "Fixture huérfana")
+    for filename in ("order_items.csv", "order_payments.csv", "order_reviews.csv"):
+        require(all(r["order_id"] in orders for r in rows[filename]), f"Fixture huérfana: {filename}")
+    customer_ids = {r["customer_id"] for r in rows["customers.csv"]}
+    require(all(r["customer_id"] in customer_ids for r in orders.values()), "Pedido con customer_id desconocido")
+    product_ids = {r["product_id"] for r in rows["products.csv"]}
+    seller_ids = {r["seller_id"] for r in rows["sellers.csv"]}
+    require(all(r["product_id"] in product_ids and r["seller_id"] in seller_ids for r in rows["order_items.csv"]),
+            "Línea con producto/vendedor desconocido")
     require(any(sum(x["order_id"] == oid for x in rows["order_items.csv"]) > 1 for oid in orders), "Falta pedido con varias líneas")
     require(any(sum(x["order_id"] == oid for x in rows["order_payments.csv"]) > 1 for oid in orders), "Falta pedido con varios pagos")
     require(any(sum(x["order_id"] == oid for x in rows["order_reviews.csv"]) > 1 for oid in orders), "Falta pedido con varias reseñas")
     require(any(r["order_status"] == "delivered" and r["order_delivered_customer_date"] > r["order_estimated_delivery_date"] for r in orders.values()), "Falta entrega tardía")
     require(any(not r["order_delivered_customer_date"] for r in orders.values()), "Falta fecha real de entrega nula")
+    require(any(not any(x["order_id"] == oid for x in rows["order_items.csv"]) for oid in orders), "Falta pedido sin líneas")
+    require(len({r["customer_unique_id"] for r in rows["customers.csv"]}) < len(rows["customers.csv"]),
+            "Falta cliente recurrente customer_unique_id")
+    require(len([r for r in rows["geolocation.csv"] if r["geolocation_zip_code_prefix"] == "01001"]) > 1,
+            "Falta multiplicidad geográfica para deduplicar")
     fixture_note = (ROOT / "data/fixtures/README.md").read_text(encoding="utf-8").lower()
     require("sintéticas" in fixture_note and "no proceden" in fixture_note, "Fixtures no identificadas claramente como sintéticas")
 

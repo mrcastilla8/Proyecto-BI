@@ -1,0 +1,4 @@
+product_id,product_category_name,product_weight_g,product_length_cm,product_height_cm,product_width_cm
+P-01,beleza_saude,500,20,10,15
+P-02,utilidades_domesticas,900,25,15,20
+P-03,,250,10,5,8

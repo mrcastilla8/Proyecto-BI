@@ -1,0 +1,2 @@
+order_id,order_item_id,product_id,seller_id,reason
+SYN-NOT-FOUND,1,P-NOT-FOUND,V-NOT-FOUND,referencias deliberadamente inválidas para probar rechazo
