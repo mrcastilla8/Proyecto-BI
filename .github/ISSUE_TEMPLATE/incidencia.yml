@@ -1,0 +1,29 @@
+name: Incidencia o bloqueo
+description: Fallo reproducible o decisión pendiente
+title: "[Bloqueo] "
+labels: ["incidencia"]
+body:
+  - type: input
+    id: responsable
+    attributes:
+      label: Responsable GitHub
+    validations:
+      required: true
+  - type: textarea
+    id: contexto
+    attributes:
+      label: Contexto, rama y componente
+    validations:
+      required: true
+  - type: textarea
+    id: reproducir
+    attributes:
+      label: Pasos, comando y resultado real/esperado
+    validations:
+      required: true
+  - type: textarea
+    id: entorno
+    attributes:
+      label: Entorno, evidencia y limitaciones
+    validations:
+      required: true

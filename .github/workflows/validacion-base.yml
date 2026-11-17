@@ -1,0 +1,19 @@
+name: Validación base
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+permissions:
+  contents: read
+jobs:
+  validar-base:
+    name: validar-base
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Validar contratos, documentación y fixtures
+        run: python3 scripts/validar_base.py

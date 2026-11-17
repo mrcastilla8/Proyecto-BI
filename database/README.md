@@ -1,0 +1,2 @@
+# SQL Server y Data Mart
+Base local BI_OLIST, esquemas stg/dw/audit. Castilla implementará DDL repetible después; aún no existe. Staging conserva fuente y auditoría/rechazos. DW usa claves y restricciones del contrato, DECIMAL para dinero, DATETIME2/DATE para fechas y miembro desconocido. Pagos/reviews se agregan al grano pedido. Conexiones locales parametrizadas. SQL Server Developer es académico/no productivo cuando se requiere SSAS; Express no lo incluye, SSAS se instala aparte.

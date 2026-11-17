@@ -1,0 +1,14 @@
+{
+  "contract":"BI-OLIST métricas","version":"1.0.0","status":"PROPUESTA_PENDIENTE_VALIDACION","currency":"BRL",
+  "interpretation":"Valores observados no equivalen a rentabilidad, utilidad, margen ni facturación neta.",
+  "metrics":[
+    {"id":"ventas_productos_entregados","grain":"línea de FactDetallePedido","aggregation":"SUM(price)","filter":"order_status = delivered","excludes":["freight_value"],"meaning":"Precio de productos entregados"},
+    {"id":"pedidos_entregados_con_items","grain":"order_id de FactDetallePedido","aggregation":"DISTINCTCOUNT(order_id)","filter":"order_status = delivered","meaning":"Pedidos con al menos una línea entregada"},
+    {"id":"pedidos_totales","grain":"FactPedidos","aggregation":"DISTINCTCOUNT(order_id)","filter":null,"meaning":"Todos los pedidos, incluidos sin líneas y estados distintos"},
+    {"id":"ticket_promedio_productos_entregados","grain":"pedido con ítems entregados","aggregation":"DIVIDE(ventas_productos_entregados, pedidos_entregados_con_items)","filter":"order_status = delivered","meaning":"Precio medio por pedido entregado con líneas"},
+    {"id":"flete_pedidos_entregados","grain":"línea de FactDetallePedido","aggregation":"SUM(freight_value)","filter":"order_status = delivered","meaning":"Flete de líneas entregadas"},
+    {"id":"porcentaje_entregas_a_tiempo","grain":"pedido FactPedidos","numerator":"DISTINCTCOUNT(order_id) delivered con fechas real y estimada válidas y real <= estimada","denominator":"DISTINCTCOUNT(order_id) delivered con fechas real y estimada válidas","excludes":["cancelados","no entregados","fechas nulas o inválidas"],"aggregation":"DIVIDE(numerador, denominador)"},
+    {"id":"dias_promedio_entrega","grain":"pedido FactPedidos","aggregation":"AVERAGE(fecha_entrega_real - fecha_compra)","filter":"delivered con fechas válidas"},
+    {"id":"calificacion_promedio","grain":"pedido FactPedidos","aggregation":"AVERAGE(review_score agregado válido una vez por order_id)","filter":"pedido con review válida","meaning":"No ponderar por número de líneas"}
+  ]
+}

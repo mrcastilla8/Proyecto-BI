@@ -1,0 +1,41 @@
+name: Implementación de componente
+description: Trabajo Nivel 1 con aceptación y prueba reproducible
+title: "[Componente] "
+labels: ["nivel-1"]
+body:
+  - type: input
+    id: responsable
+    attributes:
+      label: Responsable GitHub
+    validations:
+      required: true
+  - type: input
+    id: rama
+    attributes:
+      label: Rama exacta
+    validations:
+      required: true
+  - type: textarea
+    id: dependencias
+    attributes:
+      label: Contratos y ADR consultados
+    validations:
+      required: true
+  - type: textarea
+    id: rutas
+    attributes:
+      label: Rutas permitidas y cambios exactos
+    validations:
+      required: true
+  - type: textarea
+    id: aceptacion
+    attributes:
+      label: Aceptación, evidencia y prueba Windows
+    validations:
+      required: true
+  - type: textarea
+    id: resultados
+    attributes:
+      label: Comandos/resultados reales, límites, revisión e integración
+    validations:
+      required: true

@@ -1,0 +1,2 @@
+# Datos
+Descarga manual del Brazilian E-Commerce Public Dataset by Olist: https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce. Revisa/acepta términos y licencia vigentes; registra versión y fecha. Sin automatizar credenciales. No versionar originales, extractos reales, ZIP ni derivados sensibles. Los nueve nombres fuente se listan en README. Copia CSV a data/raw/ ignorado. Codificación, separadores, decimales y fechas se confirman al inspeccionar los archivos reales.

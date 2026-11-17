@@ -1,0 +1,2 @@
+# SSIS: staging a Data Mart
+Responsable Cueva (`@AXL031`), rama `cueva/ssis-transformaciones`. Proyecto VS separado, aún no creado. Orden propuesto: validar staging/llaves; registrar rechazos; materializar dimensiones; agregar pagos y reviews por order_id; cargar hechos; auditar conteos/FK. FactPedidos es una fila por pedido y FactDetallePedido por `(order_id, order_item_id)`. Upsert/carga completa requiere decisión documentada si se aparta del contrato. Demostrar segunda ejecución sin duplicados y conciliación SQL en Windows.

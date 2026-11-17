@@ -1,0 +1,4 @@
+* text=auto eol=crlf
+*.pbix binary
+*.zip binary
+*.bak binary
