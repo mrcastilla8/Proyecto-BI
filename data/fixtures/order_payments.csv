@@ -1,4 +1,4 @@
-order_id,payment_sequential,payment_type,payment_value
-SYN-001,1,credit_card,6.00
-SYN-001,2,voucher,6.00
-SYN-002,1,debit_card,6.00
+order_id,payment_sequential,payment_type,payment_installments,payment_value
+SYN-001,1,credit_card,1,6.00
+SYN-001,2,voucher,1,6.00
+SYN-002,1,debit_card,2,6.00

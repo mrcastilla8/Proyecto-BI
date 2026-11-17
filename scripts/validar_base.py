@@ -6,47 +6,61 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from datetime import date
+from datetime import date, datetime
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED_DOCS = [
     "AGENTS.md", "database/AGENTS.md", "ssis/AGENTS.md", "ssis/ingesta/AGENTS.md",
     "ssis/transformaciones/AGENTS.md", "ssas/AGENTS.md", "powerbi/AGENTS.md", "docs/AGENTS.md",
 ]
-EXPECTED_FILES = {
-    "orders.csv": ["order_id", "customer_id", "order_status", "order_purchase_timestamp", "order_delivered_customer_date", "order_estimated_delivery_date"],
-    "order_items.csv": ["order_id", "order_item_id", "product_id", "seller_id", "price", "freight_value"],
-    "order_payments.csv": ["order_id", "payment_sequential", "payment_type", "payment_value"],
-    "order_reviews.csv": ["review_id", "order_id", "review_score"],
-    "customers.csv": ["customer_id", "customer_unique_id", "customer_zip_code_prefix", "customer_city", "customer_state"],
-    "sellers.csv": ["seller_id", "seller_zip_code_prefix", "seller_city", "seller_state"],
-    "products.csv": ["product_id", "product_category_name", "product_weight_g", "product_length_cm", "product_height_cm", "product_width_cm"],
-    "geolocation.csv": ["geolocation_zip_code_prefix", "geolocation_lat", "geolocation_lng", "geolocation_city", "geolocation_state"],
-    "product_category_name_translation.csv": ["product_category_name", "product_category_name_english"],
-}
 CONTRACT_STATES = {"PROPUESTA_PENDIENTE_VALIDACION", "APROBADO"}
 
 
 def validate_contract_statuses(model, metrics):
-    """Valida estados permitidos y evidencia mínima para aprobar versiones."""
+    """Valida coherencia estructural; no certifica aprobaciones de GitHub."""
     for name, contract in (("modelo dimensional", model), ("métricas", metrics)):
         state = contract.get("status")
         require(state in CONTRACT_STATES, f"Estado contractual desconocido en {name}: {state!r}")
     require(model["status"] == metrics["status"], "Estado contractual incoherente")
+    require(model.get("source_contract_status") in CONTRACT_STATES,
+            "Estado de fuentes desconocido en contrato dimensional")
+    require(model["source_contract_status"] == model["status"],
+            "Estado global y estado de fuentes incoherentes")
+    sources = model.get("staging_sources")
+    require(isinstance(sources, list) and len(sources) == 9,
+            "El contrato dimensional debe enumerar las nueve fuentes")
+    for source in sources:
+        state = source.get("status")
+        require(state in CONTRACT_STATES, f"Estado de fuente desconocido: {source.get('file')}")
+        require(state == model["source_contract_status"],
+                f"Estado global y estado de fuente incoherentes: {source.get('file')}")
     for name, contract in (("modelo dimensional", model), ("métricas", metrics)):
         state = contract["status"]
         if state == "APROBADO":
             approval = contract.get("approval")
             require(isinstance(approval, dict), f"Falta evidencia de aprobación en {name}")
-            require(approval.get("issue") and approval.get("pull_request"), f"Falta issue/PR de aprobación en {name}")
+            require(isinstance(approval.get("issue"), str) and approval["issue"].strip()
+                    and isinstance(approval.get("pull_request"), str) and approval["pull_request"].strip(),
+                    f"Falta referencia issue/PR de aprobación en {name}")
             try:
                 date.fromisoformat(approval.get("approved_at", ""))
             except (ValueError, TypeError):
                 require(False, f"Fecha de aprobación inválida en {name}")
             reviewers = approval.get("reviewers", [])
-            require(isinstance(reviewers, list) and all(isinstance(x, str) for x in reviewers)
+            require(isinstance(reviewers, list) and all(isinstance(x, str) and x.strip() for x in reviewers)
                     and len(set(reviewers)) >= 2,
                     f"Se requieren dos revisores afectados en {name}")
+
+
+def is_on_time_calendar_day(actual, estimated):
+    """Compara días inclusivos, ignorando hora; ambas fechas deben existir."""
+    require(actual and estimated, "Se requieren ambas fechas para evaluar puntualidad")
+    try:
+        actual_date = datetime.fromisoformat(actual).date()
+        estimated_date = datetime.fromisoformat(estimated).date()
+    except ValueError as exc:
+        raise ValueError("Fecha sintética inválida") from exc
+    return actual_date <= estimated_date
 
 
 def require(condition, message):
@@ -73,51 +87,83 @@ def main():
     require(len(ids) == len(set(ids)) and len(ids) >= 8, "IDs de métricas duplicados o incompletos")
     required_metrics = {"ventas_productos_entregados", "pedidos_entregados_con_items", "pedidos_totales", "ticket_promedio_productos_entregados", "flete_pedidos_entregados", "porcentaje_entregas_a_tiempo", "dias_promedio_entrega", "calificacion_promedio"}
     require(required_metrics.issubset(ids), "Faltan métricas obligatorias")
-    require(set(model["source_files"]) == {
-        "olist_orders_dataset.csv", "olist_order_items_dataset.csv", "olist_order_payments_dataset.csv", "olist_order_reviews_dataset.csv", "olist_customers_dataset.csv", "olist_sellers_dataset.csv", "olist_products_dataset.csv", "olist_geolocation_dataset.csv", "product_category_name_translation.csv"}, "Lista de fuentes inesperada")
+    sources = model["staging_sources"]
+    require(len(model["source_files"]) == 9 and len(set(model["source_files"])) == 9,
+            "El contrato debe listar nueve archivos de origen distintos")
+    require([s["file"] for s in sources] == model["source_files"],
+            "Las fuentes de staging deben corresponder, en orden, al contrato de archivos")
+    require(len({s["fixture"] for s in sources}) == len(sources), "Fixtures de fuente duplicadas")
     for rel in ("docs/contrato-datos.md", "docs/contrato-metricas.md"):
         require((ROOT / rel).is_file() and len((ROOT / rel).read_text(encoding="utf-8")) > 100, f"Documentación contractual insuficiente: {rel}")
 
-    rows = {}
-    for filename, columns in EXPECTED_FILES.items():
-        path = ROOT / "data/fixtures" / filename
+    source_rows = {}
+    for source in sources:
+        column_specs = source.get("columns", [])
+        require(bool(column_specs) and all(isinstance(c, str) and len(c.split(maxsplit=1)) == 2
+                                           for c in column_specs),
+                f"Columnas/tipos incompletos en contrato: {source['file']}")
+        columns = [spec.split(maxsplit=1)[0] for spec in column_specs]
+        require(len(set(columns)) == len(columns), f"Columna repetida en contrato: {source['file']}")
+        fixture_name = source["fixture"]
+        require(Path(fixture_name).name == fixture_name, f"Ruta de fixture no permitida: {fixture_name}")
+        path = ROOT / "data/fixtures" / fixture_name
         with path.open(encoding="utf-8-sig", newline="") as f:
             reader = csv.DictReader(f)
-            require(reader.fieldnames == columns, f"Cabecera inesperada en {filename}")
+            require(reader.fieldnames == columns, f"Cabecera inesperada en {fixture_name} para {source['file']}")
             records = list(reader)
-        require(records, f"Fixture vacía: {filename}")
-        require(all(all(v is not None for v in row.values()) for row in records), f"Fila mal formada en {filename}")
-        rows[filename] = records
+        require(records, f"Fixture vacía: {fixture_name}")
+        require(all(all(v is not None for v in row.values()) for row in records), f"Fila mal formada en {fixture_name}")
+        source_rows[source["file"]] = records
     invalid_path = ROOT / "data/fixtures/invalid_references.csv"
     with invalid_path.open(encoding="utf-8-sig", newline="") as f:
         invalid_reader = csv.DictReader(f)
         require(invalid_reader.fieldnames == ["order_id", "order_item_id", "product_id", "seller_id", "reason"],
                 "Cabecera inesperada en invalid_references.csv")
         invalid_rows = list(invalid_reader)
-    require(len(invalid_rows) == 1 and invalid_rows[0]["order_id"] not in {r["order_id"] for r in rows["orders.csv"]},
+    orders_rows = source_rows["olist_orders_dataset.csv"]
+    items_rows = source_rows["olist_order_items_dataset.csv"]
+    payments_rows = source_rows["olist_order_payments_dataset.csv"]
+    reviews_rows = source_rows["olist_order_reviews_dataset.csv"]
+    customers_rows = source_rows["olist_customers_dataset.csv"]
+    sellers_rows = source_rows["olist_sellers_dataset.csv"]
+    products_rows = source_rows["olist_products_dataset.csv"]
+    geo_rows = source_rows["olist_geolocation_dataset.csv"]
+    require(len(invalid_rows) == 1 and invalid_rows[0]["order_id"] not in {r["order_id"] for r in orders_rows},
             "Caso negativo de referencia inválida debe apuntar a pedido inexistente")
-    orders = {r["order_id"]: r for r in rows["orders.csv"]}
-    require(len(orders) == len(rows["orders.csv"]), "order_id duplicado en fixture de pedidos")
-    line_keys = [(r["order_id"], r["order_item_id"]) for r in rows["order_items.csv"]]
+    orders = {r["order_id"]: r for r in orders_rows}
+    require(len(orders) == len(orders_rows), "order_id duplicado en fixture de pedidos")
+    line_keys = [(r["order_id"], r["order_item_id"]) for r in items_rows]
     require(len(line_keys) == len(set(line_keys)), "Clave de línea duplicada")
-    for filename in ("order_items.csv", "order_payments.csv", "order_reviews.csv"):
-        require(all(r["order_id"] in orders for r in rows[filename]), f"Fixture huérfana: {filename}")
-    customer_ids = {r["customer_id"] for r in rows["customers.csv"]}
+    for source_name, records in (("order_items", items_rows), ("order_payments", payments_rows),
+                                 ("order_reviews", reviews_rows)):
+        require(all(r["order_id"] in orders for r in records), f"Fixture huérfana: {source_name}")
+    customer_ids = {r["customer_id"] for r in customers_rows}
     require(all(r["customer_id"] in customer_ids for r in orders.values()), "Pedido con customer_id desconocido")
-    product_ids = {r["product_id"] for r in rows["products.csv"]}
-    seller_ids = {r["seller_id"] for r in rows["sellers.csv"]}
-    require(all(r["product_id"] in product_ids and r["seller_id"] in seller_ids for r in rows["order_items.csv"]),
+    product_ids = {r["product_id"] for r in products_rows}
+    seller_ids = {r["seller_id"] for r in sellers_rows}
+    require(all(r["product_id"] in product_ids and r["seller_id"] in seller_ids for r in items_rows),
             "Línea con producto/vendedor desconocido")
-    require(any(sum(x["order_id"] == oid for x in rows["order_items.csv"]) > 1 for oid in orders), "Falta pedido con varias líneas")
-    require(any(sum(x["order_id"] == oid for x in rows["order_payments.csv"]) > 1 for oid in orders), "Falta pedido con varios pagos")
-    require(any(sum(x["order_id"] == oid for x in rows["order_reviews.csv"]) > 1 for oid in orders), "Falta pedido con varias reseñas")
-    require(any(r["order_status"] == "delivered" and r["order_delivered_customer_date"] > r["order_estimated_delivery_date"] for r in orders.values()), "Falta entrega tardía")
+    require(any(sum(x["order_id"] == oid for x in items_rows) > 1 for oid in orders), "Falta pedido con varias líneas")
+    require(any(sum(x["order_id"] == oid for x in payments_rows) > 1 for oid in orders), "Falta pedido con varios pagos")
+    require(any(sum(x["order_id"] == oid for x in reviews_rows) > 1 for oid in orders), "Falta pedido con varias reseñas")
+    require(any(r["order_status"] == "delivered" and r["order_delivered_customer_date"]
+                and r["order_estimated_delivery_date"]
+                and not is_on_time_calendar_day(r["order_delivered_customer_date"], r["order_estimated_delivery_date"])
+                for r in orders.values()), "Falta entrega tardía (día calendario posterior)")
     require(any(not r["order_delivered_customer_date"] for r in orders.values()), "Falta fecha real de entrega nula")
-    require(any(not any(x["order_id"] == oid for x in rows["order_items.csv"]) for oid in orders), "Falta pedido sin líneas")
-    require(len({r["customer_unique_id"] for r in rows["customers.csv"]}) < len(rows["customers.csv"]),
+    require(any(not any(x["order_id"] == oid for x in items_rows) for oid in orders), "Falta pedido sin líneas")
+    require(len({r["customer_unique_id"] for r in customers_rows}) < len(customers_rows),
             "Falta cliente recurrente customer_unique_id")
-    require(len([r for r in rows["geolocation.csv"] if r["geolocation_zip_code_prefix"] == "01001"]) > 1,
+    require(len([r for r in geo_rows if r["geolocation_zip_code_prefix"] == "01001"]) > 1,
             "Falta multiplicidad geográfica para deduplicar")
+    require(any(r["order_status"] == "delivered" and r["order_delivered_customer_date"].startswith("2018-05-05 ")
+                and r["order_estimated_delivery_date"] == "2018-05-05 00:00:00"
+                and is_on_time_calendar_day(r["order_delivered_customer_date"], r["order_estimated_delivery_date"])
+                for r in orders.values()), "Falta entrega durante el día prometido")
+    require(any(r["order_status"] == "delivered" and r["order_delivered_customer_date"].startswith("2018-05-06 ")
+                and r["order_estimated_delivery_date"].startswith("2018-05-05 ")
+                and not is_on_time_calendar_day(r["order_delivered_customer_date"], r["order_estimated_delivery_date"])
+                for r in orders.values()), "Falta entrega al día siguiente del prometido")
     fixture_note = (ROOT / "data/fixtures/README.md").read_text(encoding="utf-8").lower()
     require("sintéticas" in fixture_note and "no proceden" in fixture_note, "Fixtures no identificadas claramente como sintéticas")
 
