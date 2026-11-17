@@ -10,6 +10,7 @@
 *.user
 *.suo
 *.cache
+__pycache__/
 *.log
 *.ispac
 *.asdatabase

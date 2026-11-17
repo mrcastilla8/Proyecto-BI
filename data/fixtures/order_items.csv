@@ -1,4 +1,4 @@
-order_id,order_item_id,product_id,seller_id,price,freight_value
-SYN-001,1,P-01,V-01,10.00,2.00
-SYN-001,2,P-02,V-02,20.00,3.00
-SYN-002,1,P-03,V-01,5.00,1.00
+order_id,order_item_id,product_id,seller_id,shipping_limit_date,price,freight_value
+SYN-001,1,P-01,V-01,2018-01-03 00:00:00,10.00,2.00
+SYN-001,2,P-02,V-02,2018-01-03 00:00:00,20.00,3.00
+SYN-002,1,P-03,V-01,2018-02-03 00:00:00,5.00,1.00

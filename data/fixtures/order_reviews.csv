@@ -1,4 +1,4 @@
-review_id,order_id,review_score
-R-01,SYN-001,5
-R-02,SYN-001,3
-R-03,SYN-002,4
+review_id,order_id,review_score,review_comment_title,review_comment_message,review_creation_date,review_answer_timestamp
+R-01,SYN-001,5,Ótimo,Entrega sintética,2018-01-07 00:00:00,2018-01-08 00:00:00
+R-02,SYN-001,3,,,2018-01-09 00:00:00,
+R-03,SYN-002,4,,,2018-02-09 00:00:00,2018-02-10 00:00:00

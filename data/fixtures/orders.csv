@@ -1,3 +1,7 @@
-order_id,customer_id,order_status,order_purchase_timestamp,order_delivered_customer_date,order_estimated_delivery_date
-SYN-001,C-01,delivered,2018-01-01 10:00:00,2018-01-06 10:00:00,2018-01-05 10:00:00
-SYN-002,C-02,shipped,2018-02-01 10:00:00,,2018-02-08 10:00:00
+order_id,customer_id,order_status,order_purchase_timestamp,order_approved_at,order_delivered_carrier_date,order_delivered_customer_date,order_estimated_delivery_date
+SYN-001,C-01,delivered,2018-01-01 10:00:00,2018-01-01 10:05:00,2018-01-02 09:00:00,2018-01-06 10:00:00,2018-01-05 10:00:00
+SYN-002,C-02,shipped,2018-02-01 10:00:00,2018-02-01 10:05:00,2018-02-02 09:00:00,,2018-02-08 10:00:00
+SYN-003,C-03,canceled,2018-03-01 10:00:00,,,,2018-03-07 10:00:00
+SYN-004,C-03,synthetic_unknown_status,2018-04-01 10:00:00,,,,2018-04-08 10:00:00
+SYN-005,C-01,delivered,2018-05-04 08:00:00,2018-05-04 08:05:00,2018-05-04 10:00:00,2018-05-05 14:00:00,2018-05-05 00:00:00
+SYN-006,C-02,delivered,2018-05-04 08:00:00,2018-05-04 08:05:00,2018-05-05 10:00:00,2018-05-06 00:00:00,2018-05-05 23:59:00

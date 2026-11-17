@@ -25,7 +25,7 @@ Nivel 1 comprende dataset real, staging, ETL SSIS, Data Mart dimensional, SSAS, 
 4. Trabaja en tu rama estable desde `master`, crea PR con evidencia.
 5. Valida con `python scripts/validar_base.py`.
 
-Fixtures en `data/fixtures/` son sintéticas, no perfilan Olist. CI valida solo contratos, docs, fixtures y privacidad; no ejecuta SSIS/SSAS/Power BI. Capturas y resultados reales pendientes.
+Fixtures en `data/fixtures/` cubren estructuralmente nueve fuentes y son sintéticas, no perfilan Olist ni prueban ETL. Los tipos/campos siguen pendientes de cotejo con CSV auténticos. CI valida contratos, docs, fixtures y privacidad; no ejecuta SSIS/SQL Server/SSAS/Power BI. Capturas y resultados reales pendientes.
 
 ## Guías
 [Contexto](docs/contexto-y-alcance.md) · [plan de integración](docs/plan-integracion.md) · [pruebas/evidencias](docs/pruebas-y-evidencias.md) · [informe](docs/informe-academico.md) · [roadmap](docs/roadmap.md) · [ADR-0001](docs/decisiones/ADR-0001-arquitectura-local.md)
