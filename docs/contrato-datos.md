@@ -1,8 +1,8 @@
 # Contrato de datos v1
 
-`contracts/modelo-dimensional.v1.json` es un **contrato preliminar**; el estado de ambos contratos sigue `PROPUESTA_PENDIENTE_VALIDACION`. Los CSV auténticos se mantienen fuera del repositorio y fueron perfilados localmente; el resumen agregado aparece en `docs/pruebas-y-evidencias.md`. Los encabezados y patrones observados se reflejan aquí, pero decisiones de tipos/longitudes, rechazo y reglas analíticas requieren aprobación técnica con evidencia. Fixtures sintéticas prueban solo la estructura del contrato.
+`contracts/modelo-dimensional.v1.json` es el contrato de diseño e interfaz v1, con estado `APROBADO`. La validación local de compatibilidad y su evidencia agregada aparecen en `docs/pruebas-y-evidencias.md`. La aprobación cubre tipos, longitudes, reglas de staging y granos definidos aquí; no afirma que los archivos se hayan cargado a staging o al DW. Fixtures sintéticas prueban solo la estructura del contrato.
 
-## Fuentes, staging y tipos propuestos
+## Fuentes, staging y tipos aprobados
 
 | Archivo | Tabla propuesta | Columnas y tipos SQL propuestos |
 |---|---|---|
@@ -18,7 +18,7 @@
 
 La lista también está en `staging_sources` del JSON. Se cotejaron los encabezados y no hubo registros CSV mal formados; escala y longitudes se eligieron para almacenar valores observados, con margen documentado, y permanecen propuestas. CSV de reseñas contiene texto libre: conservarlo solo si privacidad, codificación y alcance académico lo justifican; nunca truncarlo silenciosamente.
 
-## Claves y granos propuestos
+## Claves y granos aprobados
 
 - Staging preserva todas las filas de origen, añade identificador/fecha de lote y metadatos de auditoría fuera del contenido fuente. La identidad física de cada fila es `(batch_id, source_row_number)`; no se impone unicidad a claves fuente para no descartar repeticiones. Claves candidatas analíticas: `order_id`; `(order_id, order_item_id)`; `(order_id, payment_sequential)`; `customer_id`; `seller_id`; `product_id`; traducción por `product_category_name`. `review_id` no es único globalmente: el perfil documentado observó 814 filas excedentes y multiplicidad máxima 3. La geolocalización no tiene clave natural confirmada en este borrador.
 - `dw.FactPedidos`: una fila por `order_id`, incluidos pedidos sin líneas. `order_id` es clave de negocio/degenarada; las dimensiones referenciadas usan claves sustitutas. `payment_value` y reviews se reducen primero a una fila por pedido; no unir detalles crudos al hecho.
@@ -49,4 +49,4 @@ Interfaz mínima: Poma entrega las nueve tablas `stg` tipadas, con claves candid
 
 ## Congelación y aprobación
 
-El perfil local verificable de los nueve CSV está resumido en `docs/pruebas-y-evidencias.md`; el script `scripts/perfilar_dataset.py` permite repetirlo sin mostrar filas. La evidencia existente cubre encabezados, codificación, delimitador/comillas, formatos, vacíos, longitudes, rangos y multiplicidades observadas. La instancia SQL local confirmó los objetos y pruebas que se describen en esa evidencia. En esta sesión, la carpeta local de CSV perfilados no estuvo disponible para revalidar compatibilidad física campo a campo; por ello ambos contratos permanecen `PROPUESTA_PENDIENTE_VALIDACION` hasta completar esa comprobación y registrar una aprobación técnica trazable. Para declararlos `APROBADO` se requieren metadatos `approval`: responsable, fecha real, issue, PR, evidencia de validación del dataset y versión contractual. No se requiere número ni identidad de revisores externos para el merge. Python verifica la estructura, no la veracidad externa de la evidencia. Los valores unitarios ilustrativos no son evidencia real.
+Los nueve CSV se validaron localmente contra encabezados, codificación, formato, longitudes SQL, tipos numéricos, fechas, nulos permitidos, multiplicidades y rango de puntuación; el resumen sin filas originales está en `docs/pruebas-y-evidencias.md`. La instancia SQL local confirmó los objetos y pruebas registrados allí. Ambos contratos v1 están `APROBADO` como diseño e interfaz del Nivel 1, mediante metadatos `approval` con responsable, fecha, issue, PR, evidencia y versión. La aprobación técnica quedó registrada por el responsable en un comentario autenticado del PR #9. Esta aprobación no certifica cargas SSIS/DW ni ejecución de SSAS o Power BI. No se requiere número ni identidad de revisores externos para el merge. Python verifica la estructura, no la veracidad externa de la evidencia. Los valores unitarios ilustrativos no son evidencia real.
