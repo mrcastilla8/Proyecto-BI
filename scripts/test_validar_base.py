@@ -7,6 +7,11 @@ SPEC = importlib.util.spec_from_file_location("validar_base", Path(__file__).wit
 validator = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(validator)
 
+PROFILE_SPEC = importlib.util.spec_from_file_location(
+    "perfilar_dataset", Path(__file__).with_name("perfilar_dataset.py"))
+profiler = importlib.util.module_from_spec(PROFILE_SPEC)
+PROFILE_SPEC.loader.exec_module(profiler)
+
 
 def contract(status="PROPUESTA_PENDIENTE_VALIDACION", **extra):
     return {"status": status, "version": "1.0.0", **extra}
@@ -88,6 +93,17 @@ class CalendarDayTests(unittest.TestCase):
 
     def test_delivery_on_following_day_is_late(self):
         self.assertFalse(validator.is_on_time_calendar_day("2018-05-06 00:00:00", "2018-05-05 23:59:00"))
+
+
+class ReviewKeyTests(unittest.TestCase):
+    def test_review_id_is_reported_for_multiplicity_not_as_candidate_key(self):
+        filename = "olist_order_reviews_dataset.csv"
+        self.assertEqual(profiler.FILES[filename], [])
+        self.assertEqual(profiler.DUPLICATE_FIELDS[filename], ["review_id"])
+
+    def test_text_length_uses_sql_server_nvarchar_utf16_units(self):
+        self.assertEqual(profiler.sql_character_length("á"), 1)
+        self.assertEqual(profiler.sql_character_length("😀"), 2)
 
 
 if __name__ == "__main__":

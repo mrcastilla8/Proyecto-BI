@@ -14,13 +14,14 @@ FILES = {
     "olist_orders_dataset.csv": ["order_id"],
     "olist_order_items_dataset.csv": ["order_id", "order_item_id"],
     "olist_order_payments_dataset.csv": ["order_id", "payment_sequential"],
-    "olist_order_reviews_dataset.csv": ["review_id"],
+    "olist_order_reviews_dataset.csv": [],
     "olist_customers_dataset.csv": ["customer_id"],
     "olist_sellers_dataset.csv": ["seller_id"],
     "olist_products_dataset.csv": ["product_id"],
     "olist_geolocation_dataset.csv": [],
     "product_category_name_translation.csv": ["product_category_name"],
 }
+DUPLICATE_FIELDS = {**FILES, "olist_order_reviews_dataset.csv": ["review_id"]}
 NUMERIC_FIELDS = {"price", "freight_value", "payment_value", "geolocation_lat", "geolocation_lng",
                   "product_weight_g", "product_length_cm", "product_height_cm", "product_width_cm",
                   "order_item_id", "payment_sequential", "payment_installments", "review_score",
@@ -61,6 +62,11 @@ class HashingReader(io.RawIOBase):
         return count
 
 
+def sql_character_length(value):
+    """Cuenta unidades UTF-16 para comparar longitudes NVARCHAR de SQL Server."""
+    return len(value.encode("utf-16-le")) // 2
+
+
 def profile(path):
     dialect = csv.excel
     rows = 0
@@ -86,7 +92,7 @@ def profile(path):
                     if value is None or value == "":
                         nulls[name] += 1
                     elif value is not None:
-                        max_lengths[name] = max(max_lengths[name], len(value))
+                        max_lengths[name] = max(max_lengths[name], sql_character_length(value))
                         if name in NUMERIC_FIELDS:
                             numeric_values[name].add(value)
                         if name.endswith(("timestamp", "_date")):
@@ -94,7 +100,7 @@ def profile(path):
                             datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
                         if name in {"order_status", "payment_type", "review_score"}:
                             categorical_values[name][value] += 1
-                keys = FILES[path.name]
+                keys = DUPLICATE_FIELDS[path.name]
                 if keys:
                     duplicate_counts[tuple(row.get(k) for k in keys)] += 1
         digest = hashing_reader.digest.hexdigest()
@@ -121,6 +127,7 @@ def profile(path):
         "small_categorical_domains": {name: dict(counts) for name, counts in categorical_values.items()},
         "candidate_key": FILES[path.name] or None,
         "duplicate_candidate_key_rows": duplicates if FILES[path.name] else None,
+        "duplicate_review_id_rows": duplicates if path.name == "olist_order_reviews_dataset.csv" else None,
     }
 
 

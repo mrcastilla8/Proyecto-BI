@@ -1,14 +1,85 @@
 {
-  "contract":"BI-OLIST métricas","version":"1.0.0","status":"PROPUESTA_PENDIENTE_VALIDACION","currency":"BRL",
-  "interpretation":"Valores observados no equivalen a rentabilidad, utilidad, margen ni facturación neta.",
-  "metrics":[
-    {"id":"ventas_productos_entregados","grain":"línea de FactDetallePedido","aggregation":"SUM(price)","filter":"order_status = delivered","excludes":["freight_value"],"meaning":"Precio de productos entregados"},
-    {"id":"pedidos_entregados_con_items","grain":"order_id de FactDetallePedido","aggregation":"DISTINCTCOUNT(order_id)","filter":"order_status = delivered","meaning":"Pedidos con al menos una línea entregada"},
-    {"id":"pedidos_totales","grain":"FactPedidos","aggregation":"DISTINCTCOUNT(order_id)","filter":null,"meaning":"Todos los pedidos, incluidos sin líneas y estados distintos"},
-    {"id":"ticket_promedio_productos_entregados","grain":"pedido con ítems entregados","aggregation":"DIVIDE(ventas_productos_entregados, pedidos_entregados_con_items)","filter":"order_status = delivered","meaning":"Precio medio por pedido entregado con líneas"},
-    {"id":"flete_pedidos_entregados","grain":"línea de FactDetallePedido","aggregation":"SUM(freight_value)","filter":"order_status = delivered","meaning":"Flete de líneas entregadas"},
-    {"id":"porcentaje_entregas_a_tiempo","grain":"pedido FactPedidos","numerator":"DISTINCTCOUNT(order_id) delivered con fechas real y estimada válidas y día calendario real <= día calendario estimado (ambos días inclusivos)","denominator":"DISTINCTCOUNT(order_id) delivered con fechas real y estimada válidas","date_comparison":{"sql":"CAST(order_delivered_customer_date AS date) <= CAST(order_estimated_delivery_date AS date)","dax_criteria":"Excluir fecha_entrega_real_key=-1 o fecha_entrega_estimada_key=-1 y comparar fecha_entrega_real_key <= fecha_entrega_estimada_key; ambas son enteros YYYYMMDD sin componente hora"},"interpretation":"Propuesta pendiente de confirmar con los CSV auténticos; order_estimated_delivery_date representa el día prometido, no un instante límite.","excludes":["cancelados","no entregados","fechas nulas o inválidas"],"aggregation":"DIVIDE(numerador, denominador)"},
-    {"id":"dias_promedio_entrega","grain":"pedido FactPedidos","aggregation":"AVERAGE(fecha_entrega_real - fecha_compra)","filter":"delivered con fechas válidas"},
-    {"id":"calificacion_promedio","grain":"pedido FactPedidos","aggregation":"AVERAGE(review_score agregado válido una vez por order_id)","filter":"pedido con review válida","meaning":"No ponderar por número de líneas"}
-  ]
+  "contract": "BI-OLIST métricas",
+  "version": "1.0.0",
+  "status": "APROBADO",
+  "currency": "BRL",
+  "interpretation": "Valores observados no equivalen a rentabilidad, utilidad, margen ni facturación neta.",
+  "metrics": [
+    {
+      "id": "ventas_productos_entregados",
+      "grain": "línea de FactDetallePedido",
+      "aggregation": "SUM(price)",
+      "filter": "order_status = delivered",
+      "excludes": [
+        "freight_value"
+      ],
+      "meaning": "Precio de productos entregados"
+    },
+    {
+      "id": "pedidos_entregados_con_items",
+      "grain": "order_id de FactDetallePedido",
+      "aggregation": "DISTINCTCOUNT(order_id)",
+      "filter": "order_status = delivered",
+      "meaning": "Pedidos con al menos una línea entregada"
+    },
+    {
+      "id": "pedidos_totales",
+      "grain": "FactPedidos",
+      "aggregation": "DISTINCTCOUNT(order_id)",
+      "filter": null,
+      "meaning": "Todos los pedidos, incluidos sin líneas y estados distintos"
+    },
+    {
+      "id": "ticket_promedio_productos_entregados",
+      "grain": "pedido con ítems entregados",
+      "aggregation": "DIVIDE(ventas_productos_entregados, pedidos_entregados_con_items)",
+      "filter": "order_status = delivered",
+      "meaning": "Precio medio por pedido entregado con líneas"
+    },
+    {
+      "id": "flete_pedidos_entregados",
+      "grain": "línea de FactDetallePedido",
+      "aggregation": "SUM(freight_value)",
+      "filter": "order_status = delivered",
+      "meaning": "Flete de líneas entregadas"
+    },
+    {
+      "id": "porcentaje_entregas_a_tiempo",
+      "grain": "pedido FactPedidos",
+      "numerator": "DISTINCTCOUNT(order_id) delivered con fechas real y estimada válidas y día calendario real <= día calendario estimado (ambos días inclusivos)",
+      "denominator": "DISTINCTCOUNT(order_id) delivered con fechas real y estimada válidas",
+      "date_comparison": {
+        "sql": "CAST(order_delivered_customer_date AS date) <= CAST(order_estimated_delivery_date AS date)",
+        "dax_criteria": "Excluir fecha_entrega_real_key=-1 o fecha_entrega_estimada_key=-1 y comparar fecha_entrega_real_key <= fecha_entrega_estimada_key; ambas son enteros YYYYMMDD sin componente hora"
+      },
+      "interpretation": "El contrato interpreta order_estimated_delivery_date como el día prometido, no como un instante límite.",
+      "excludes": [
+        "cancelados",
+        "no entregados",
+        "fechas nulas o inválidas"
+      ],
+      "aggregation": "DIVIDE(numerador, denominador)"
+    },
+    {
+      "id": "dias_promedio_entrega",
+      "grain": "pedido FactPedidos",
+      "aggregation": "AVERAGE(fecha_entrega_real - fecha_compra)",
+      "filter": "delivered con fechas válidas"
+    },
+    {
+      "id": "calificacion_promedio",
+      "grain": "pedido FactPedidos",
+      "aggregation": "AVERAGE(review_score agregado válido una vez por order_id)",
+      "filter": "pedido con review válida",
+      "meaning": "No ponderar por número de líneas"
+    }
+  ],
+  "approval": {
+    "owner": "mrcastilla8",
+    "approved_at": "2026-11-18",
+    "issue": "https://github.com/mrcastilla8/Proyecto-BI/issues/3",
+    "pull_request": "https://github.com/mrcastilla8/Proyecto-BI/pull/9",
+    "dataset_validation_evidence": "Perfil local 2026-11-18 con scripts/perfilar_dataset.py y control automatizado de compatibilidad: nueve CSV, longitudes SQL Server UTF-16, DECIMAL, enteros, fechas, nulos permitidos, multiplicidades de claves y review_score 1–5. PASS. SHA-256 del informe agregado: de17ac37d50c66bdce38f119045c6fc717f0b9ff11fe02bea7e59b9936deebf3. Aprobación de diseño/interfaz; no acredita carga a staging/DW ni ejecución de SSIS, SSAS o Power BI.",
+    "contract_version": "1.0.0"
+  }
 }
