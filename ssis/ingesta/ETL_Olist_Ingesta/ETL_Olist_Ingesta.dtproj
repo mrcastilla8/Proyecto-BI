@@ -22,21 +22,21 @@
           <SSIS:Property SSIS:Name="VersionComments">
           </SSIS:Property>
           <SSIS:Property SSIS:Name="CreationDate">2026-11-19T15:55:21.651425-05:00</SSIS:Property>
-          <SSIS:Property SSIS:Name="CreatorName">LAPTOP-7IF4U5AR\Gabriel</SSIS:Property>
-          <SSIS:Property SSIS:Name="CreatorComputerName">LAPTOP-7IF4U5AR</SSIS:Property>
+          <SSIS:Property SSIS:Name="CreatorName">SSIS Project</SSIS:Property>
+          <SSIS:Property SSIS:Name="CreatorComputerName">LOCAL</SSIS:Property>
           <SSIS:Property SSIS:Name="Description">
           </SSIS:Property>
           <SSIS:Property SSIS:Name="PasswordVerifier" SSIS:Sensitive="1">AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAA8L/EPfZ6HE2MLA8QUyA8/QAAAAACAAAAAAAQZgAAAAEAACAAAAAjs4BirPU/SnfXjyx8r165WMMXIJbChwdvxuiYGnaejAAAAAAOgAAAAAIAACAAAAD1z3kVXU3JbrxogrE6bVqMeJjgNpO/7gZ5jnErhjbIqpAAAABQfY+fIyc5gQfLnp4KSvQe3fAMr4YWpFRW19/JKgPhqVaURW8oESb0oEdX/Cza5fM3HQ74NMOD3HUmdknvBgfgbROKwLlxBJ62NMtc+4aKE96yWlV3k9fi+WRVTewYOX15NAbxRySrdFzW+xxF0lli88hiURZOS08uemqxzy6gb9eGld2c5B1Df+WY0qkjXwZAAAAA9D68zF8CS5j9Y/3/56E287ZZT3cq6QQEw0kmRouC3Rx3ZnJRJ6s9/qirOaGdoIp68Rzw1IjHLoEqpLXvgg7J/A==</SSIS:Property>
           <SSIS:Property SSIS:Name="FormatVersion">1</SSIS:Property>
         </SSIS:Properties>
         <SSIS:Packages>
-          <SSIS:Package SSIS:Name="Package.dtsx" SSIS:EntryPoint="1" />
+          <SSIS:Package SSIS:Name="ETL_Orders.dtsx" SSIS:EntryPoint="1" />
         </SSIS:Packages>
         <SSIS:ConnectionManagers />
         <SSIS:DeploymentInfo>
           <SSIS:ProjectConnectionParameters />
           <SSIS:PackageInfo>
-            <SSIS:PackageMetaData SSIS:Name="Package.dtsx">
+            <SSIS:PackageMetaData SSIS:Name="ETL_Orders.dtsx">
               <SSIS:Properties>
                 <SSIS:Property SSIS:Name="ID">{AB9A94EE-493B-418D-823F-CD58D879586C}</SSIS:Property>
                 <SSIS:Property SSIS:Name="Name">Package</SSIS:Property>

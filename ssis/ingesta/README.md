@@ -4,11 +4,11 @@ Responsable: Gabriel Poma (`@GabrielPGu`). Rama: `poma/ssis-ingesta`. Alcance: c
 
 ## Estado actual
 
-La configuración SQL local está preparada y se verificó que las nueve tablas `stg`, `audit.Batch`, `audit.Reject`, `audit.trg_Batch_Transition` y `audit.vw_BatchStatus` existen. Gabriel creó un proyecto inicial auténtico en `ETL_Olist_Ingesta/`: solución `ETL_Olist_Ingesta.slnx`, proyecto `ETL_Olist_Ingesta.dtproj` y paquete `Package.dtsx`. El paquete está vacío (no contiene tareas ni variables); `Project.params` no define parámetros y el proyecto no tiene administradores de conexión ni flujos de datos. Su destino es SQL Server 2025 y el paquete usa formato 8. Se preservó el proyecto existente; no se afirma que haya cargas de datos.
+La configuración SQL local está preparada y se verificó que las nueve tablas `stg`, `audit.Batch`, `audit.Reject`, `audit.trg_Batch_Transition` y `audit.vw_BatchStatus` existen. El proyecto real está en `ETL_Olist_Ingesta/`: solución `ETL_Olist_Ingesta.slnx`, proyecto `ETL_Olist_Ingesta.dtproj` y paquete `ETL_Orders.dtsx`. Gabriel configuró los parámetros de proyecto `CSV_ROOT`, `SQL_SERVER` y `SQL_DATABASE`. Al 19-11-2026 el paquete no contiene tareas ni variables; no hay administradores de conexión ni flujos de datos. Las nueve ingestas, auditoría operativa e idempotencia siguen pendientes. No se afirma que haya cargas de datos.
 
 Visual Studio Community 2026 (18.10.3) y la extensión Microsoft **SQL Server Integration Services Projects 2022+** (2.2) están instalados; se localizaron su manifiesto y plantilla de proyecto. También están disponibles MSBuild 18.10.1.42706 y `DTExec` 17.0. SQL Server local es 17.0.1000.7, Developer Edition de 64 bits; SSMS 22.10.2 y SQLCMD con controlador ODBC 17 están instalados. La autenticación integrada a `localhost` funciona.
 
-La compilación de la solución no está verificada. Compilar directamente el `.dtproj` con MSBuild devuelve `MSB4067` (`<DeploymentModel>` no reconocido); compilar con `devenv.com` devuelve `Datos de licencia no válidos. Repare Visual Studio desde el Panel de control.` La invocación MSBuild a `.slnx` terminó sin error, pero no generó `.ispac` ni artefactos; no se considera prueba de compilación. Debe repararse la licencia de Visual Studio desde el Panel de control y volver a compilar este proyecto. No se necesita instalar la extensión SSIS.
+Visual Studio Community 2026 y SSIS Projects 2022+ están disponibles. La compilación se confirmó desde la interfaz de Visual Studio después de guardar el proyecto: 1 proyecto, 0 errores, 0 advertencias; se generó `bin/Development/ETL_Olist_Ingesta.ispac`. Esta compilación solo verifica el paquete vacío y no es una prueba de ejecución ni de carga. La compilación de `devenv.com` desde terminal había devuelto un error de licencia; no reproduce el resultado de la interfaz y no es motivo para reparar Visual Studio.
 
 ## Requisitos y configuración portable
 
@@ -17,7 +17,7 @@ La compilación de la solución no está verificada. Compilar directamente el `.
 - Los nueve CSV auténticos, obtenidos y autorizados por el usuario, disponibles bajo una carpeta local parametrizada como `CSV_ROOT`.
 - Autenticación integrada de Windows recomendada. No guardar contraseñas, rutas personales ni nombre del equipo en Git.
 
-El proyecto deberá parametrizar `CSV_ROOT`, servidor/instancia SQL y base (`BI_OLIST`). Debe poder cambiarse la carpeta de fixtures a la carpeta de originales desde parámetros de proyecto/entorno, sin editar cada paquete. No se ha creado todavía esa configuración dentro del proyecto.
+Los tres parámetros existentes son String, opcionales y no confidenciales. `SQL_SERVER=localhost` y `SQL_DATABASE=BI_OLIST` son valores portables para este entorno local. El valor personal de `CSV_ROOT` no debe guardarse como predeterminado en Git; el valor publicado se dejó vacío para exigir una configuración local al ejecutar. Aún no existe una conexión de archivo plano ni una expresión que consuma `CSV_ROOT`; tampoco están declaradas conexiones SQL vinculadas a los parámetros.
 
 ## Fuentes y destino
 
