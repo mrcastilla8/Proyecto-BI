@@ -60,9 +60,13 @@ Se detectó la instancia predeterminada `localhost`; no se usó `SQLEXPRESS`. La
 sqlcmd -S localhost -E -C -b -i database\00_crear_base.sql
 sqlcmd -S localhost -E -C -b -i database\01_auditoria.sql
 sqlcmd -S localhost -E -C -b -i database\02_staging.sql
+sqlcmd -S localhost -E -C -b -i database\03_dimensiones.sql
+sqlcmd -S localhost -E -C -b -i database\04_hechos.sql
+sqlcmd -S localhost -E -C -b -i database\05_controles.sql
+sqlcmd -S localhost -E -C -b -i database\06_pruebas.sql
 ```
 
-Resultado observado: base `BI_OLIST`, 9 tablas `stg` y `audit.Batch`/`audit.Reject`, inicialmente vacías. No se ejecutó DDL de `dw`, que está fuera de este componente.
+Resultado observado: base `BI_OLIST`, nueve tablas `stg`, las tablas `audit.Batch`/`audit.Reject`, el trigger `audit.trg_Batch_Transition` y la vista `audit.vw_BatchStatus`. Las tablas de ingesta y auditoría quedaron vacías. El script 06 devolvió `PASS` y revirtió sus filas `TEST-*`; no es una prueba de los paquetes SSIS.
 
 Consulta de comprobación:
 
@@ -82,6 +86,7 @@ Ejecutado en Windows:
 
 - `python scripts/validar_base.py` — PASS.
 - `python -m unittest discover -s scripts -p "test_*.py" -v` — PASS, 14 pruebas.
+- `sqlcmd -S localhost -E -C -b -i database\06_pruebas.sql` — PASS; pruebas SQL positivas/negativas y datos sintéticos revertidos.
 - SQLCMD integrado a `localhost/BI_OLIST` — PASS para lectura de metadatos; se confirmaron 9 tablas `stg` y las tablas `audit.Batch` y `audit.Reject`, todas sin filas.
 
 Pendiente: crear y compilar el proyecto SSIS; pruebas SSIS con fixtures (nulos, inválidos, duplicados, reintento y recuperación); localizar/verificar los nueve CSV originales; ejecutar cargas e idempotencia; conciliar filas/rechazos con auditoría. No hay capturas auténticas de ejecución SSIS todavía. Los resultados de metadatos SQL no son evidencia de ETL.
