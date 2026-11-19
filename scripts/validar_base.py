@@ -14,10 +14,13 @@ REQUIRED_DOCS = [
     "ssis/transformaciones/AGENTS.md", "ssas/AGENTS.md", "powerbi/AGENTS.md", "docs/AGENTS.md",
 ]
 CONTRACT_STATES = {"PROPUESTA_PENDIENTE_VALIDACION", "APROBADO"}
+REQUIRED_SQL = [f"database/{name}" for name in (
+    "00_crear_base.sql", "01_auditoria.sql", "02_staging.sql", "03_dimensiones.sql",
+    "04_hechos.sql", "05_controles.sql", "06_pruebas.sql")]
 
 
 def validate_contract_statuses(model, metrics):
-    """Valida coherencia estructural; no certifica aprobaciones de GitHub."""
+    """Valida evidencia técnica contractual; no certifica aprobaciones de GitHub."""
     for name, contract in (("modelo dimensional", model), ("métricas", metrics)):
         state = contract.get("status")
         require(state in CONTRACT_STATES, f"Estado contractual desconocido en {name}: {state!r}")
@@ -46,10 +49,13 @@ def validate_contract_statuses(model, metrics):
                 date.fromisoformat(approval.get("approved_at", ""))
             except (ValueError, TypeError):
                 require(False, f"Fecha de aprobación inválida en {name}")
-            reviewers = approval.get("reviewers", [])
-            require(isinstance(reviewers, list) and all(isinstance(x, str) and x.strip() for x in reviewers)
-                    and len(set(reviewers)) >= 2,
-                    f"Se requieren dos revisores afectados en {name}")
+            require(isinstance(approval.get("owner"), str) and approval["owner"].strip(),
+                    f"Falta responsable de aprobación técnica en {name}")
+            require(isinstance(approval.get("dataset_validation_evidence"), str)
+                    and approval["dataset_validation_evidence"].strip(),
+                    f"Falta evidencia de validación del dataset en {name}")
+            require(approval.get("contract_version") == contract.get("version"),
+                    f"Versión aprobada no coincide en {name}")
 
 
 def is_on_time_calendar_day(actual, estimated):
@@ -77,6 +83,9 @@ def main():
     model = json.loads((ROOT / "contracts/modelo-dimensional.v1.json").read_text(encoding="utf-8"))
     metrics = json.loads((ROOT / "contracts/metricas.v1.json").read_text(encoding="utf-8"))
     validate_contract_statuses(model, metrics)
+    for rel in REQUIRED_SQL:
+        require((ROOT / rel).is_file() and (ROOT / rel).stat().st_size > 100,
+                f"Script SQL obligatorio ausente o vacío: {rel}")
     require(model["database"] == "BI_OLIST" and model["schemas"] == ["stg", "dw", "audit"], "Base/esquemas inesperados")
     facts = {f["name"]: f for f in model["facts"]}
     require(facts["dw.FactPedidos"]["grain"] == "una fila por order_id", "Grano FactPedidos incorrecto")
@@ -95,6 +104,13 @@ def main():
     require(len({s["fixture"] for s in sources}) == len(sources), "Fixtures de fuente duplicadas")
     for rel in ("docs/contrato-datos.md", "docs/contrato-metricas.md"):
         require((ROOT / rel).is_file() and len((ROOT / rel).read_text(encoding="utf-8")) > 100, f"Documentación contractual insuficiente: {rel}")
+    collaboration_text = "\n".join((ROOT / rel).read_text(encoding="utf-8").lower() for rel in
+        ("AGENTS.md", "docs/colaboracion.md", "docs/contrato-datos.md", "docs/plan-integracion.md",
+         "docs/pruebas-y-evidencias.md", ".github/PULL_REQUEST_TEMPLATE.md"))
+    require("aprobación externa obligatoria" not in collaboration_text
+            and "revisor ajeno" not in collaboration_text
+            and "dos revisores afectados" not in collaboration_text,
+            "La documentación aún exige aprobación/revisor externo para merge")
 
     source_rows = {}
     for source in sources:

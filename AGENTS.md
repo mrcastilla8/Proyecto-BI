@@ -12,7 +12,7 @@ CSV Olist → SSIS → SQL Server BI_OLIST (stg/dw/audit) → SSAS Tabular → P
 - Ángel @luisdem01: Power BI; angel/powerbi-reportes.
 
 ## Git, seguridad y ejecución
-Ramas apellido/implementación, ASCII minúsculas kebab-case; master única excepción. No crear main, feat/*, fix/* ni codex/*. Commits/PR en español. Todo cambio va por PR a master, una aprobación humana ajena al autor, conversaciones resueltas y CI verde. CODEOWNERS sugiere revisores, no concede permisos por carpeta. No force-push ni reescritura.
+Ramas apellido/implementación, ASCII minúsculas kebab-case; master única excepción. No crear main, feat/*, fix/* ni codex/*. Commits/PR en español. Todo cambio va por PR a master y requiere checks obligatorios verdes y conversaciones resueltas; no exige aprobación humana externa. Las revisiones son voluntarias. CODEOWNERS sugiere revisores, no concede permisos por carpeta. No force-push ni reescritura.
 
 No subir CSV/ZIP real, backups, datos sensibles o secretos. No descargar con credenciales ajenas. No fijar rutas personales, host, puerto o credenciales en fuentes; parametrizar localmente. Nunca exponer SQL/SSAS a internet. Fixtures identificadas como sintéticas.
 
