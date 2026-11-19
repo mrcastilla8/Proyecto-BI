@@ -4,34 +4,40 @@ Responsable: Gabriel Poma (`@GabrielPGu`). Rama: `poma/ssis-ingesta`. Alcance: c
 
 ## Estado actual
 
-La configuración SQL local está preparada y se verificó que las nueve tablas `stg` y las tablas `audit.Batch` y `audit.Reject` existen. Aún no existe un proyecto SSIS en esta carpeta: no hay `.sln`, `.dtproj` ni `.dtsx`. No se afirma que haya cargas de datos ni una compilación SSIS.
+La configuración SQL local está preparada y se verificó que las nueve tablas `stg`, `audit.Batch`, `audit.Reject`, `audit.trg_Batch_Transition` y `audit.vw_BatchStatus` existen. Gabriel creó un proyecto inicial auténtico en `ETL_Olist_Ingesta/`: solución `ETL_Olist_Ingesta.slnx`, proyecto `ETL_Olist_Ingesta.dtproj` y paquete `Package.dtsx`. El paquete está vacío (no contiene tareas ni variables); `Project.params` no define parámetros y el proyecto no tiene administradores de conexión ni flujos de datos. Su destino es SQL Server 2025 y el paquete usa formato 8. Se preservó el proyecto existente; no se afirma que haya cargas de datos.
 
 Visual Studio Community 2026 (18.10.3) y la extensión Microsoft **SQL Server Integration Services Projects 2022+** (2.2) están instalados; se localizaron su manifiesto y plantilla de proyecto. También están disponibles MSBuild 18.10.1.42706 y `DTExec` 17.0. SQL Server local es 17.0.1000.7, Developer Edition de 64 bits; SSMS 22.10.2 y SQLCMD con controlador ODBC 17 están instalados. La autenticación integrada a `localhost` funciona.
 
-En esta sesión, el lanzamiento/inspección automatizada de la interfaz de Visual Studio falló con `unknown or expired node_repl continuation`. Por ese motivo no se creó un proyecto vacío ni se fabricaron paquetes XML. El siguiente paso mínimo es abrir Visual Studio y crear **Integration Services Project** en `ssis/ingesta`; después guardar la solución y el proyecto en esta carpeta. No se necesita instalar la extensión SSIS.
+La compilación de la solución no está verificada. Compilar directamente el `.dtproj` con MSBuild devuelve `MSB4067` (`<DeploymentModel>` no reconocido); compilar con `devenv.com` devuelve `Datos de licencia no válidos. Repare Visual Studio desde el Panel de control.` La invocación MSBuild a `.slnx` terminó sin error, pero no generó `.ispac` ni artefactos; no se considera prueba de compilación. Debe repararse la licencia de Visual Studio desde el Panel de control y volver a compilar este proyecto. No se necesita instalar la extensión SSIS.
 
 ## Requisitos y configuración portable
 
 - Windows, Visual Studio Community y la extensión SSIS Projects.
 - SQL Server con `BI_OLIST` creada mediante los scripts aprobados de `database/`.
-- Los nueve CSV auténticos, obtenidos y autorizados por el usuario, disponibles bajo una carpeta local `CSV_ROOT`.
+- Los nueve CSV auténticos, obtenidos y autorizados por el usuario, disponibles bajo una carpeta local parametrizada como `CSV_ROOT`.
 - Autenticación integrada de Windows recomendada. No guardar contraseñas, rutas personales ni nombre del equipo en Git.
 
 El proyecto deberá parametrizar `CSV_ROOT`, servidor/instancia SQL y base (`BI_OLIST`). Debe poder cambiarse la carpeta de fixtures a la carpeta de originales desde parámetros de proyecto/entorno, sin editar cada paquete. No se ha creado todavía esa configuración dentro del proyecto.
 
 ## Fuentes y destino
 
-| Archivo | Tabla |
-|---|---|
-| `olist_orders_dataset.csv` | `stg.Orders` |
-| `olist_order_items_dataset.csv` | `stg.OrderItems` |
-| `olist_order_payments_dataset.csv` | `stg.OrderPayments` |
-| `olist_order_reviews_dataset.csv` | `stg.OrderReviews` |
-| `olist_customers_dataset.csv` | `stg.Customers` |
-| `olist_sellers_dataset.csv` | `stg.Sellers` |
-| `olist_products_dataset.csv` | `stg.Products` |
-| `olist_geolocation_dataset.csv` | `stg.Geolocation` |
-| `product_category_name_translation.csv` | `stg.ProductCategoryTranslation` |
+| Archivo | Tabla | Filas de origen verificadas |
+|---|---|---:|
+| `olist_orders_dataset.csv` | `stg.Orders` | 99 441 |
+| `olist_order_items_dataset.csv` | `stg.OrderItems` | 112 650 |
+| `olist_order_payments_dataset.csv` | `stg.OrderPayments` | 103 886 |
+| `olist_order_reviews_dataset.csv` | `stg.OrderReviews` | 99 224 |
+| `olist_customers_dataset.csv` | `stg.Customers` | 99 441 |
+| `olist_sellers_dataset.csv` | `stg.Sellers` | 3 095 |
+| `olist_products_dataset.csv` | `stg.Products` | 32 951 |
+| `olist_geolocation_dataset.csv` | `stg.Geolocation` | 1 000 163 |
+| `product_category_name_translation.csv` | `stg.ProductCategoryTranslation` | 71 |
+
+La suma observada es 1 550 922 registros sin cabeceras. La validación se realizó con el perfilador estándar ya existente `scripts/perfilar_dataset.py`; lee y resume datos, no carga ni transforma filas. Los nueve encabezados coincidieron con el contrato, el parser CSV estricto no detectó filas irregulares y las fechas y números reconocidos por el perfilador se pudieron interpretar. No se encontraron valores vacíos en campos contractualmente requeridos ni longitudes de texto por encima de la columna de destino. Hay campos opcionales vacíos: Orders (approved 160, carrier 1 783, delivered customer 2 965), Reviews (comment title 87 656, comment message 58 247) y Products (category/name-length/description-length/photos 610 cada uno, cuatro dimensiones 2 cada una). Deben conservarse como nulos.
+
+Las reviews contienen saltos de línea dentro de comentarios en 3 852 registros, comas en 14 501 y comillas en 174; además, 23 646 filas de comentario incluyen caracteres no ASCII. El componente Flat File debe procesar el calificador `"` y los campos multilínea. La fuente contiene 261 831 filas exactas duplicadas adicionales en Geolocation y 814 repeticiones de `review_id`; se preservan mediante ordinal físico y no se deduplican.
+
+Escalas máximas observadas: `price`, `freight_value` y `payment_value` 2; dimensiones/peso de Products 0; latitud 20 y longitud 16. Las fechas observadas tienen 19 caracteres (`YYYY-MM-DD HH:MM:SS`). La ejecución de perfil reproduce la inspección con `python scripts/perfilar_dataset.py "$env:CSV_ROOT"` después de asignar la carpeta local a `CSV_ROOT`.
 
 Las tablas conservan columnas de origen y agregan `batch_id`, `source_row_number` y `loaded_at`. La clave técnica única es `(batch_id, source_row_number)`; las claves de negocio no se hacen únicas en staging, porque se preservan duplicados válidos de origen. Deben respetarse los nombres contractuales, incluidos `product_name_lenght` y `product_description_lenght`, los códigos postales como texto, `DECIMAL` para importes/medidas y `DATETIME2(0)` para fechas.
 
@@ -39,7 +45,7 @@ Se debe usar Flat File Connection Manager/Source, conversiones y salidas de erro
 
 ## Formato de archivo
 
-La documentación del perfil anterior describe UTF-8 con BOM opcional, coma, comillas dobles, fechas `YYYY-MM-DD HH:MM:SS` y punto decimal. **Eso todavía no se ha confirmado contra los CSV auténticos de esta máquina.** En las ubicaciones habituales inspeccionadas (raíz del workspace, nivel superior de Desktop y Downloads) no se encontraron los nueve originales; en el repositorio solo están las fixtures sintéticas de `data/fixtures/`. Antes de fijar metadatos de Flat File se debe verificar codificación/BOM, quoting, campos multilínea, encabezados, fechas y números en los archivos reales autorizados.
+Los nueve CSV se encontraron en la carpeta local indicada por Gabriel; la subcarpeta `csv` mencionada inicialmente no existe. Los encabezados reales coinciden en nombre y orden con los nueve mapeos anteriores. Son UTF-8; ocho no llevan BOM y `product_category_name_translation.csv` sí lleva BOM UTF-8. Un parser CSV de Windows que respeta comillas procesó todos los registros y encontró cero filas con anchura distinta de su encabezado. Recuentos observados (sin cabecera): orders 99 441; order items 112 650; payments 103 886; reviews 99 224; customers 99 441; sellers 3 095; products 32 951; geolocation 1 000 163; traducciones 71; total 1 550 922. Esto confirma delimitación y anchura, pero todavía no constituye validación de conversiones SSIS, longitudes de destino o carga SQL.
 
 ## Auditoría, reejecución y recuperación
 
@@ -89,7 +95,7 @@ Ejecutado en Windows:
 - `sqlcmd -S localhost -E -C -b -i database\06_pruebas.sql` — PASS; pruebas SQL positivas/negativas y datos sintéticos revertidos.
 - SQLCMD integrado a `localhost/BI_OLIST` — PASS para lectura de metadatos; se confirmaron 9 tablas `stg` y las tablas `audit.Batch` y `audit.Reject`, todas sin filas.
 
-Pendiente: crear y compilar el proyecto SSIS; pruebas SSIS con fixtures (nulos, inválidos, duplicados, reintento y recuperación); localizar/verificar los nueve CSV originales; ejecutar cargas e idempotencia; conciliar filas/rechazos con auditoría. No hay capturas auténticas de ejecución SSIS todavía. Los resultados de metadatos SQL no son evidencia de ETL.
+Pendiente: reparar la licencia de Visual Studio; implementar y compilar los nueve flujos SSIS; pruebas SSIS con fixtures (nulos, inválidos, duplicados, reintento y recuperación); verificar conversiones, longitudes y formatos; ejecutar cargas e idempotencia con originales; conciliar filas/rechazos con auditoría. No hay capturas auténticas de ejecución SSIS todavía. Los resultados de metadatos SQL no son evidencia de ETL.
 
 Cuando existan los paquetes, desde Visual Studio seleccionar el parámetro de entorno con `CSV_ROOT` y la conexión SQL, ejecutar el paquete maestro (o los nueve paquetes si se organizan separados), y conservar los mensajes de ejecución y esta consulta de auditoría:
 
