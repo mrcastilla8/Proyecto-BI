@@ -12,9 +12,9 @@ Fixtures sintéticas de nueve fuentes están en `data/fixtures/`, pequeñas y es
 
 ## Contratos y cambios
 
-Contratos versionados se comparten por Git. Castilla mantiene contratos/ADR y DDL; Poma/Cueva revisan columnas, tipos, rechazos, clave natural, agregados y reejecución; Basualdo revisa granos, claves, roles de fecha y medidas; Ángel revisa necesidades de filtros y páginas. La aprobación de contrato necesita evidencia de validación del dataset y aprobación PR de Castilla más revisores humanos de los equipos afectados. CODEOWNERS sugiere solicitud de review, no confiere acceso ni sustituye regla de rama.
+Contratos versionados se comparten por Git. Castilla mantiene contratos/ADR y DDL; Poma/Cueva pueden revisar columnas, tipos, rechazos, claves, agregados y reejecución; Basualdo puede revisar granos, claves, roles de fecha y medidas; Ángel puede revisar filtros y páginas. La aprobación técnica de un contrato requiere evidencia del dataset y trazabilidad del responsable, issue, PR y versión. Ningún revisor externo es requisito de merge; CODEOWNERS solo sugiere responsables.
 
-Cambio compatible aditivo: issue, actualizar versión menor, compatibilidad documentada y review de consumidores tocados. Cambio incompatible de columna/tipo/grano/clave/métrica: issue + ADR + versión mayor + plan de migración, revisión de todos los afectados antes de implementar; cada PR identifica versión consumida. Correcciones editoriales sin cambio semántico incrementan parche. No actualizar el estado contractual por sí solo.
+Cambio compatible aditivo: issue, actualizar versión menor y documentar compatibilidad; solicitar review de consumidores tocados cuando ayude a validar impacto. Cambio incompatible de columna/tipo/grano/clave/métrica: issue + ADR + versión mayor + plan de migración; comunicarlo a los afectados antes de integrar. Cada PR identifica versión consumida. Correcciones editoriales sin cambio semántico incrementan parche. No actualizar el estado contractual por sí solo.
 
 ## Integración y evidencias
 

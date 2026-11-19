@@ -9,7 +9,7 @@ SPEC.loader.exec_module(validator)
 
 
 def contract(status="PROPUESTA_PENDIENTE_VALIDACION", **extra):
-    return {"status": status, **extra}
+    return {"status": status, "version": "1.0.0", **extra}
 
 
 def model_contract(status="PROPUESTA_PENDIENTE_VALIDACION", **extra):
@@ -23,9 +23,11 @@ class ContractStateTests(unittest.TestCase):
         validator.validate_contract_statuses(model_contract(), contract())
 
     def test_accepts_approved_state_structure_only(self):
-        # Valores de prueba ilustran el formato; no representan revisiones reales.
+        # Valores de prueba ilustran el formato; no representan evidencia real.
         approval = {"approved_at": "2026-11-17", "issue": "issue-reference",
-                    "pull_request": "pull-request-reference", "reviewers": ["reviewer-a", "reviewer-b"]}
+                    "pull_request": "pull-request-reference", "owner": "responsable",
+                    "dataset_validation_evidence": "perfil reproducible",
+                    "contract_version": "1.0.0"}
         validator.validate_contract_statuses(model_contract("APROBADO", approval=approval),
                                              contract("APROBADO", approval=approval))
 
@@ -55,10 +57,27 @@ class ContractStateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Estado contractual incoherente"):
             validator.validate_contract_statuses(model_contract(), contract("APROBADO", approval={}))
 
-    def test_rejects_approval_without_two_reviewers(self):
+    def test_rejects_approval_without_technical_owner(self):
         approval = {"approved_at": "2026-11-17", "issue": "issue-reference",
-                    "pull_request": "pull-request-reference", "reviewers": ["reviewer-a"]}
-        with self.assertRaisesRegex(ValueError, "dos revisores"):
+                    "pull_request": "pull-request-reference", "dataset_validation_evidence": "perfil",
+                    "contract_version": "1.0.0"}
+        with self.assertRaisesRegex(ValueError, "responsable"):
+            validator.validate_contract_statuses(model_contract("APROBADO", approval=approval),
+                                                 contract("APROBADO", approval=approval))
+
+    def test_rejects_approval_without_dataset_evidence(self):
+        approval = {"approved_at": "2026-11-17", "issue": "issue-reference",
+                    "pull_request": "pull-request-reference", "owner": "responsable",
+                    "contract_version": "1.0.0"}
+        with self.assertRaisesRegex(ValueError, "evidencia"):
+            validator.validate_contract_statuses(model_contract("APROBADO", approval=approval),
+                                                 contract("APROBADO", approval=approval))
+
+    def test_rejects_approval_version_mismatch(self):
+        approval = {"approved_at": "2026-11-17", "issue": "issue-reference",
+                    "pull_request": "pull-request-reference", "owner": "responsable",
+                    "dataset_validation_evidence": "perfil", "contract_version": "2.0.0"}
+        with self.assertRaisesRegex(ValueError, "Versión"):
             validator.validate_contract_statuses(model_contract("APROBADO", approval=approval),
                                                  contract("APROBADO", approval=approval))
 

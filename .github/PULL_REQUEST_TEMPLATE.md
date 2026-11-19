@@ -9,5 +9,6 @@
 - [ ] Docs actualizadas; límites indicados
 Comandos/resultados reales:
 ## Revisión e integración
-- Revisor distinto del autor:
+- Revisores voluntarios / responsables técnicos notificados:
+- Checks obligatorios y conversaciones:
 - Plan de integración:

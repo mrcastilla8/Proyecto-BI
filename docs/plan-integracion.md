@@ -1,6 +1,6 @@
 # Plan de integración y recuperación
 
-Orden: (1) verificar versiones y contrato/ADR; (2) Castilla crea DDL audit/stg/dw y SQL de control; (3) Poma implementa ingesta en proyecto VS propio y valida fixtures/CSV; (4) Cueva carga dimensiones/hechos con pagos y reviews agregados, prueba idempotencia; (5) reconstruir SQL limpio, ejecutar ETL y conciliar; (6) Basualdo crea/procesa Tabular y coteja DAX con SQL; (7) Ángel conecta Live y verifica páginas; (8) Castilla integra evidencias e informe.
+Orden: (1) verificar versiones y contrato/ADR; (2) Castilla crea DDL audit/stg/dw y SQL de control; (3) Poma implementa ingesta en proyecto VS propio y valida fixtures/CSV; (4) Cueva carga dimensiones/hechos con pagos y reviews agregados, prueba idempotencia; (5) reconstruir SQL limpio, ejecutar ETL y conciliar; (6) Basualdo crea/procesa Tabular y coteja DAX con SQL; (7) Ángel conecta Live y verifica páginas; (8) Castilla integra evidencias e informe. Los scripts DDL son reejecutables; las cargas de staging/DW e idempotencia siguen a cargo de los paquetes SSIS.
 
 | Pregunta | Fuente | Transformación | Modelo | Métrica | Visual previsto |
 |---|---|---|---|---|---|
