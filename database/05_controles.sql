@@ -1,5 +1,20 @@
 USE BI_OLIST;
 GO
+/* Migración aditiva: aplica unicidad técnica también si las tablas stg ya existían. */
+DECLARE @staging_name SYSNAME, @staging_sql NVARCHAR(MAX);
+DECLARE staging_tables CURSOR LOCAL FAST_FORWARD FOR
+ SELECT name FROM (VALUES(N'Orders'),(N'OrderItems'),(N'OrderPayments'),(N'OrderReviews'),(N'Customers'),(N'Sellers'),(N'Products'),(N'Geolocation'),(N'ProductCategoryTranslation')) AS t(name);
+OPEN staging_tables;
+FETCH NEXT FROM staging_tables INTO @staging_name;
+WHILE @@FETCH_STATUS=0
+BEGIN
+ SET @staging_sql=N'IF EXISTS(SELECT 1 FROM stg.'+QUOTENAME(@staging_name)+N' GROUP BY batch_id,source_row_number HAVING COUNT_BIG(*)>1) THROW 51020, ''Duplicate batch/source row in staging.'',1; IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N''stg.'+@staging_name+N''') AND name=N''UX_'+@staging_name+N'_batch_source_row'') CREATE UNIQUE INDEX '+QUOTENAME(N'UX_'+@staging_name+N'_batch_source_row')+N' ON stg.'+QUOTENAME(@staging_name)+N'(batch_id,source_row_number);';
+ EXEC sys.sp_executesql @staging_sql;
+ FETCH NEXT FROM staging_tables INTO @staging_name;
+END;
+CLOSE staging_tables;
+DEALLOCATE staging_tables;
+GO
 IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dw.FactDetallePedido') AND name=N'IX_FactDetallePedido_Fecha')
  CREATE INDEX IX_FactDetallePedido_Fecha ON dw.FactDetallePedido(fecha_compra_key) INCLUDE(order_status,price,freight_value);
 IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dw.FactDetallePedido') AND name=N'IX_FactDetallePedido_Producto')
