@@ -27,14 +27,20 @@ namespace ST_OrdersSnapshot
                     foreach (var file in Text("User::SourceFiles").Split('|'))
                         if (!File.Exists(Path.Combine(root, file)))
                             throw new InvalidDataException("CSV_MISSING: " + file);
-                    using (var connection = new OleDbConnection(Sql().ConnectionString))
+                    var settings = Sql();
+                    using (var connection = new OleDbConnection(settings.ConnectionString))
                     {
                         connection.Open();
                         using (var query = new OleDbCommand(
-                            "SELECT CASE WHEN DB_NAME() <> 'BI_OLIST' OR OBJECT_ID(N'audit.Batch',N'U') IS NULL THEN 0 ELSE 1 END",
+                            "SELECT CASE WHEN DB_NAME() <> ? OR OBJECT_ID(N'audit.Batch',N'U') IS NULL " +
+                            "OR (DB_NAME()=N'BI_OLIST_VALIDACION_TEXTO' AND COALESCE(CONVERT(int,SERVERPROPERTY('IsLocalDB')),0)<>1) " +
+                            "THEN 0 ELSE 1 END",
                             connection))
+                        {
+                            query.Parameters.Add("catalogo", OleDbType.VarWChar, 128).Value = settings["Initial Catalog"];
                             if (Convert.ToInt32(query.ExecuteScalar()) != 1)
                                 throw new InvalidDataException("SQL_SCHEMA: destino de ingesta no disponible.");
+                        }
                     }
                 }
                 else if (task == "Preparar CSV")
@@ -79,8 +85,10 @@ namespace ST_OrdersSnapshot
         {
             var server = Text("$Project::SQL_SERVER");
             var database = Text("$Project::SQL_DATABASE");
-            if (string.IsNullOrWhiteSpace(server) || !string.Equals(database, "BI_OLIST", StringComparison.OrdinalIgnoreCase))
-                throw new InvalidDataException("SQL_SERVER y SQL_DATABASE=BI_OLIST son obligatorios.");
+            bool lab = string.Equals(database, "BI_OLIST_VALIDACION_TEXTO", StringComparison.OrdinalIgnoreCase)
+                && !string.IsNullOrWhiteSpace(server) && server.StartsWith(@"(localdb)\", StringComparison.OrdinalIgnoreCase);
+            if (string.IsNullOrWhiteSpace(server) || (!lab && !string.Equals(database, "BI_OLIST", StringComparison.OrdinalIgnoreCase)))
+                throw new InvalidDataException("SQL_SERVER y un SQL_DATABASE autorizado son obligatorios.");
             var connection = new OleDbConnectionStringBuilder();
             connection.Provider = "MSOLEDBSQL19";
             connection["Integrated Security"] = "SSPI";

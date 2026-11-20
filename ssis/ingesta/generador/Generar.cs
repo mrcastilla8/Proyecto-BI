@@ -33,14 +33,58 @@ internal sealed class Generador
 
     private static int Main(string[] args)
     {
-        if (args.Length != 5 && args.Length != 6)
-            throw new ArgumentException("Contrato, generador, plantilla .dtproj, directorio de salida, ensamblado y fuente de fallo opcional.");
+        if (args.Length < 5 || args.Length > 7)
+            throw new ArgumentException("Contrato, generador, plantilla .dtproj, salida, ensamblado y opciones.");
         var contract = ContractDocument.Load(args[0]);
-        string inject = args.Length == 6 ? args[5] : null;
+        bool update = args.Skip(5).Contains("--actualizar");
+        string inject = args.Skip(5).SingleOrDefault(option => option != "--actualizar");
         if (inject != null && !contract.staging_sources.Any(s => s.Name == inject))
             throw new ArgumentException("Fuente de fallo desconocida.");
-        new Generador(args[1], args[3], args[4]).Build(contract, args[2], inject);
+        var engine = new Generador(args[1], args[3], args[4]);
+        if (update)
+            engine.UpdatePublication(contract, args[2], inject);
+        else
+            engine.Build(contract, args[2], inject);
         return 0;
+    }
+
+    private void UpdatePublication(ContractDocument contract, string template, string inject)
+    {
+        var directory = Path.GetDirectoryName(template);
+        var master = app.LoadPackage(Path.Combine(directory, "ETL_Master.dtsx"), null);
+        UpdateScript(Task(master, "Comprobar entradas"));
+        SaveUpdated(master);
+        foreach (var source in contract.staging_sources)
+        {
+            var package = app.LoadPackage(Path.Combine(directory, source.Package + ".dtsx"), null);
+            var publication = new Publicacion(source, contract.version, Path.Combine(root, "sql"));
+            ((ExecuteSQLTask)Task(package, "Crear temporales de sesión").InnerObject).SqlStatementSource = publication.Temporales();
+            ((ExecuteSQLTask)Task(package, "Publicar y conciliar").InnerObject).SqlStatementSource = publication.Publicar(inject == source.Name);
+            UpdateScript(Task(package, "Preparar CSV"));
+            SaveUpdated(package);
+        }
+        File.Copy(template, Path.Combine(output, Path.GetFileName(template)));
+        File.Copy(Path.Combine(directory, "Project.params"), Path.Combine(output, "Project.params"));
+        Console.WriteLine("Actualizadas las tareas de publicación y la configuración del catálogo; paquetes reabiertos.");
+    }
+
+    private static TaskHost Task(Package package, string name)
+    {
+        return package.Executables.OfType<TaskHost>().Single(host => host.Name == name);
+    }
+
+    private void UpdateScript(TaskHost host)
+    {
+        var storage = ((ScriptTask)host.InnerObject).ScriptStorage;
+        storage.AssemblyCode = scriptBinary;
+        SaveScriptItem(storage, "ScriptMain.cs", Path.Combine(root, "ScriptMain.cs"));
+    }
+
+    private void SaveUpdated(Package package)
+    {
+        var path = Path.Combine(output, package.Name + ".dtsx");
+        app.SaveToXml(path, package, null);
+        app.LoadPackage(path, null).Dispose();
     }
 
     private void Build(ContractDocument contract, string template, string inject)

@@ -5,6 +5,7 @@ param(
     [string]$CsvRoot,
     [string]$VisualStudio,
     [string]$SqlDts = (Join-Path $env:ProgramFiles 'Microsoft SQL Server/170/DTS'),
+    [ValidateSet('BI_OLIST','BI_OLIST_VALIDACION_TEXTO')][string]$Base = 'BI_OLIST',
     [string]$Instancia = '(localdb)\BI_OLIST_ISSUE1_PROTO',
     [switch]$SoloPreparar,
     [switch]$FixturesLf,
@@ -19,10 +20,10 @@ if (Test-Path -LiteralPath $Evidencia) { throw 'La carpeta de la prueba debe ser
 $evidence = (New-Item -ItemType Directory $Evidencia).FullName
 $prefix = (Resolve-Path -LiteralPath $ArchivosLocalDb).Path.TrimEnd('\') + '\'
 $escaped = $prefix.Replace("'", "''")
-$guard = "SET NOCOUNT ON; IF COALESCE(CONVERT(int,SERVERPROPERTY('IsLocalDB')),0)<>1 OR DB_NAME()<>'BI_OLIST' OR EXISTS(SELECT 1 FROM sys.database_files WHERE LEFT(physical_name,LEN(N'$escaped'))<>N'$escaped') THROW 51900,'Destino fuera del laboratorio',1;"
+$guard = "SET NOCOUNT ON; IF COALESCE(CONVERT(int,SERVERPROPERTY('IsLocalDB')),0)<>1 OR DB_NAME()<>N'$Base' OR EXISTS(SELECT 1 FROM sys.database_files WHERE LEFT(physical_name,LEN(N'$escaped'))<>N'$escaped') THROW 51900,'Destino fuera del laboratorio',1;"
 
 function Invoke-Lab([string]$Query, [string]$Target) {
-    & sqlcmd -S $Instancia -E -C -l 10 -b -r 1 -W -s '|' -d BI_OLIST -Q "$guard $Query" 2>&1 |
+    & sqlcmd -S $Instancia -E -C -l 10 -b -r 1 -W -s '|' -d $Base -Q "$guard $Query" 2>&1 |
         Tee-Object -FilePath $Target | Out-Host
     if ($LASTEXITCODE) { throw "SQLCMD devolvió $LASTEXITCODE. Ver $Target" }
 }
@@ -41,6 +42,20 @@ if ($enabledFixtures) {
             $sample.review_comment_title = ''
             $sample.review_comment_message = ('長' * 3770) + [char]34 + ", ñ`r`n" + ('ñ' * 224)
             $rows += $sample
+            $textCases = @(
+                @{ Id='TEXTO-VACIO'; Title=''; Message='' },
+                @{ Id='TEXTO-ESPACIO'; Title=' '; Message='  ' },
+                @{ Id='TEXTO-FINAL'; Title='fim '; Message='conteúdo  ' },
+                @{ Id='TEXTO-UNICODE'; Title=[string][char]0x00AD; Message="ação, `"olá`"`r`nsegunda linha " }
+            )
+            foreach ($case in $textCases) {
+                $example = $sample.PSObject.Copy()
+                $example.review_id = $case.Id
+                $example.review_score = '5'
+                $example.review_comment_title = $case.Title
+                $example.review_comment_message = $case.Message
+                $rows += $example
+            }
             $sample = $sample.PSObject.Copy()
             $sample.review_score = '6'
         } else {
@@ -71,7 +86,7 @@ $copy = (New-Item -ItemType Directory (Join-Path $evidence 'proyecto')).FullName
 Get-ChildItem -LiteralPath $Proyecto -File | Where-Object Extension -in '.database','.dtproj','.dtsx','.params','.slnx' |
     Copy-Item -Destination $copy
 [xml]$parameters = Get-Content -LiteralPath "$copy/Project.params" -Raw
-$values = @{ CSV_ROOT=$CsvRoot; SQL_SERVER=$Instancia; SQL_DATABASE='BI_OLIST' }
+$values = @{ CSV_ROOT=$CsvRoot; SQL_SERVER=$Instancia; SQL_DATABASE=$Base }
 foreach ($parameter in $parameters.SelectNodes('//*[local-name()="Parameter"]')) {
     $name = $parameter.Attributes.GetNamedItem('Name','www.microsoft.com/SqlServer/SSIS').Value
     $property = $parameter.SelectSingleNode('.//*[local-name()="Property"][@*[local-name()="Name"]="Value"]')

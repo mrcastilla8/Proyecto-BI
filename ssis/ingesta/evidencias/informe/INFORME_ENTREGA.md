@@ -1,8 +1,18 @@
 # Entrega local del Issue #1
 
-**Veredicto global: FAIL.** La ingesta, las pruebas en LocalDB, la ejecución con DTExec x64 y la edición de Orders en VSTA pasaron. Visual Studio se cerró al abrir el editor de conversión de Reviews. La captura directa de DTExec en terminal queda pendiente y se conserva su registro verificado.
+**Entrega actual. Funcionalidad ETL: PASS. Integridad de datos: PASS. Edición visual: BLOCKED.** La revisión de integridad se hizo con una carga desde cero en `BI_OLIST_VALIDACION_TEXTO` de la misma LocalDB aislada. Los nueve lotes históricos y la base principal quedaron intactos. El editor de conversión de Visual Studio sigue sin verificación de estabilidad. La captura directa de DTExec queda pendiente y se conserva el registro auténtico.
 
-La revisión posterior reprodujo el cierre al intentar insertar un conversor nativo en una sonda mínima y al abrir el conversor de Customers. La edición por API y la ejecución siguen disponibles. [Resultado de aislamiento y regresión](anexo-b/DIAGNOSTICO_EDITOR_REVIEWS.md).
+## Corrección de integridad
+
+`Publicacion.cs` ahora convierte a NULL únicamente el texto cuya `DATALENGTH` sea cero y conserva espacios en texto opcional y requerido. Un campo requerido realmente vacío se rechaza. Se conservan las reglas de prefijos postales, números, fechas, tamaños y representabilidad. El actualizador SSIS sustituyó solo las tareas de publicación, preparación del catálogo y comprobación del maestro. El Data Flow, los linajes, los parámetros, los IDs de tareas y la topología se comprobaron sin diferencias. [Procedimiento](anexo-f/REPRODUCCION.md).
+
+La solución publicable compiló con un proyecto correcto y cero errores. El `.ispac` contiene diez paquetes. DTExec x64 devolvió 0 para la carga auténtica desde cero (69,19 s) y para su reejecución. Se obtuvieron 1.550.922 leídas y aceptadas, 0 rechazos y nueve lotes `COMPLETE`. La consulta inicial de conciliación requirió agregar la vista aprobada del DDL 05 en el laboratorio nuevo. Después, las salidas SQL anteriores y posteriores a la reejecución resultaron idénticas. [Compilación, DTExec y lotes nuevos](anexo-b/texto-carga.txt).
+
+La comparación de cada fila por ordinal, longitud y SHA-256 verificó las nueve fuentes. En el histórico, únicamente Reviews tenía diferencias. El lote nuevo de Reviews, ID 4, restauró los 10 títulos y 27 comentarios que eran NULL en el lote 40014. Quedaron cero diferencias en 1.550.922 filas. Se verificaron los duplicados, los nulos legítimos y las fixtures de vacío, espacios, Unicode, comillas y saltos. El lote sintético 19 quedó `FAILED` tras la inyección y volvió a `COMPLETE` con el mismo ID, 9 leídas, 8 aceptadas y 1 rechazada. [Integridad global](anexo-b/texto-integridad.txt), [antes y después de Reviews](anexo-b/texto-reviews-antes-despues.txt) y [rollback y recuperación](anexo-b/texto-recuperacion.txt).
+
+La última comparación manual sin automatización no fue posible desde esta sesión. La revisión anterior reprodujo el cierre mediante automatización al insertar un conversor nativo en una sonda mínima y al abrir el conversor de Customers. La edición por API sigue disponible. [Diagnóstico del editor](anexo-b/DIAGNOSTICO_EDITOR_REVIEWS.md).
+
+Las secciones siguientes conservan la trazabilidad de la entrega inicial. Sus IDs de lote y capturas identifican el laboratorio histórico.
 
 ## A y B. Implementación y generación
 

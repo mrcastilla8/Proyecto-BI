@@ -1,0 +1,59 @@
+Histórico. Se omiten los ordinales individuales de los registros con diferencia.
+tabla|filas CSV comparadas|diferencias
+Orders|99441|0
+OrderItems|112650|0
+OrderPayments|103886|0
+OrderReviews|99224|37
+Customers|99441|0
+Sellers|3095|0
+Products|32951|0
+Geolocation|1000163|0
+ProductCategoryTranslation|71|0
+TOTAL|1550922|37
+
+Carga corregida.
+tabla|filas CSV comparadas|diferencias|primeros ordinales
+Orders|99441|0|
+OrderItems|112650|0|
+OrderPayments|103886|0|
+OrderReviews|99224|0|
+Customers|99441|0|
+Sellers|3095|0|
+Products|32951|0|
+Geolocation|1000163|0|
+ProductCategoryTranslation|71|0|
+TOTAL|1550922|0|
+
+Verificaciones adicionales de auditoría, duplicados y fixtures:
+fuente|lote|estado|leidas|aceptadas|rechazadas|staging|ordinal_min|ordinal_max
+------|----|------|------|---------|----------|-------|-----------|-----------
+Orders|1|COMPLETE|99441|99441|0|99441|1|99441
+OrderItems|2|COMPLETE|112650|112650|0|112650|1|112650
+OrderPayments|3|COMPLETE|103886|103886|0|103886|1|103886
+OrderReviews|4|COMPLETE|99224|99224|0|99224|1|99224
+Customers|5|COMPLETE|99441|99441|0|99441|1|99441
+Sellers|6|COMPLETE|3095|3095|0|3095|1|3095
+Products|7|COMPLETE|32951|32951|0|32951|1|32951
+Geolocation|8|COMPLETE|1000163|1000163|0|1000163|1|1000163
+ProductCategoryTranslation|9|COMPLETE|71|71|0|71|1|71
+leidas|aceptadas|rechazadas|staging
+------|---------|----------|-------
+1550922|1550922|0|1550922
+geolocation_duplicadas|review_id_repetidos|resenas_multilinea|max_unidades_utf16
+----------------------|-------------------|------------------|------------------
+261831|814|3852|208
+fixture_reviews|unidades_utf16|resultado
+---------------|--------------|---------
+13|4000|SHA-256 coincide con la fixture
+id|bytes_titulo|bytes_mensaje
+--|------------|-------------
+TEXTO-ESPACIO|2|4
+TEXTO-FINAL|8|20
+TEXTO-UNICODE|2|54
+TEXTO-VACIO|NULL|NULL
+aprobacion_nula|transportista_nulo|entrega_nula
+---------------|------------------|------------
+160|1783|2965
+clientes_zip_con_cero
+---------------------
+23995

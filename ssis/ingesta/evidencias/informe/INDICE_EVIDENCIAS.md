@@ -2,6 +2,8 @@
 
 Las horas corresponden al 20 de noviembre de 2026 en Lima (UTC−05:00). Cada ruta se resuelve desde este directorio. Las imágenes son recortes de capturas directas y los registros seleccionados excluyen rutas personales y datos de fila. Las capturas para las figuras principales son CAP-05, CAP-07 y CAP-12.
 
+Los diagramas siguen mostrando los mismos componentes que los paquetes actualizados. Las imágenes de ejecución y los IDs en la tabla corresponden al laboratorio histórico. Para los conteos, las fechas, la integridad del texto y los lotes de la versión corregida utiliza los resultados de la segunda base LocalDB. [Carga y reejecución](anexo-b/texto-carga.txt), [integridad de las nueve fuentes](anexo-b/texto-integridad.txt), [Reviews antes y después](anexo-b/texto-reviews-antes-despues.txt) y [recuperación](anexo-b/texto-recuperacion.txt).
+
 | ID | Apartado | Imagen y ruta | Herramienta | Hora | Paquete o fuente | Datos | Observación y resultado | Estado | Registro o consulta |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | CAP-01 | 6.1.1 | [CAP-01-solucion.png](6.1.1-objetivo-entradas/CAP-01-solucion.png) | Visual Studio | 03:19:30 | Proyecto completo | Diseño | Explorador de la solución final. Maestro y nueve fuentes visibles. | Válida | [Compilación](anexo-f/compilacion.txt) |

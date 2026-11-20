@@ -30,4 +30,6 @@ La copia de los paquetes entregados compiló con cero errores. Dos ejecuciones d
 
 La comparación de huellas SHA-256 UTF-16LE por ordinal abarcó ambos campos de texto de las 99.224 reseñas. Coincidieron 198.411 de 198.448 campos con equivalencia entre cadena vacía del CSV y NULL de SQL. Las 37 diferencias restantes fueron 10 títulos y 27 comentarios cuyo valor no vacío fue publicado como NULL. Una consulta con la misma intercalación confirmó los 37 casos al aplicar el `NULLIF(valor,N'')` que usa la publicación existente. Once eran un solo espacio ASCII. Este comportamiento ya estaba presente en el lote auténtico 40014. El lote y la regla compartida se conservaron durante el diagnóstico. [Comparación agregada](reviews-texto-autentico.txt).
 
+En la entrega de integridad posterior, la publicación cambió a longitud exacta y los 37 valores se recuperaron byte por byte en el lote 4 de `BI_OLIST_VALIDACION_TEXTO`. La sonda y la incidencia del editor siguen abiertas. La interacción manual sin automatización no se pudo ejecutar desde esta sesión. [Resultado corregido](texto-reviews-antes-despues.txt) y [verificación de las nueve fuentes](texto-integridad.txt).
+
 El registro auténtico de DTExec queda disponible como sustituto documental de CAP-11. La herramienta de escritorio disponible no permite automatizar la terminal. Google Docs quedó intacto.

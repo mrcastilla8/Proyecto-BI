@@ -17,7 +17,8 @@ internal sealed class Publicacion
 
     public string Temporales()
     {
-        return "SET NOCOUNT ON; IF DB_NAME()<>'BI_OLIST' THROW 51900,'SQL_DATABASE',1;\n" +
+        return "SET NOCOUNT ON; IF DB_NAME()<>N'BI_OLIST' AND (DB_NAME()<>N'BI_OLIST_VALIDACION_TEXTO' " +
+            "OR COALESCE(CONVERT(int,SERVERPROPERTY('IsLocalDB')),0)<>1) THROW 51900,'SQL_DATABASE',1;\n" +
             "CREATE TABLE #Lote(batch_id bigint NOT NULL, expected int NOT NULL, session_id int NOT NULL);\n" +
             "CREATE TABLE #FilasIngesta(source_row_number bigint NOT NULL PRIMARY KEY," +
             string.Join(",", source.Fields.Select(x => x.Bracket + " " + x.RawType + " NULL")) + ");";
@@ -55,7 +56,9 @@ internal sealed class Publicacion
 
     private static string Conversion(Column c, string value)
     {
-        return "TRY_CONVERT(" + c.SqlType + ",NULLIF(" + value + ",N'')" +
+        var input = c.IsText ? "CASE WHEN DATALENGTH(" + value + ")=0 THEN NULL ELSE " + value + " END"
+            : "NULLIF(" + value + ",N'')";
+        return "TRY_CONVERT(" + c.SqlType + "," + input +
             (c.Kind == "DATETIME2" ? ",120" : "") + ")";
     }
 
@@ -92,7 +95,8 @@ internal sealed class Publicacion
             if (c.Name == "review_score")
                 rules += " WHEN " + cast + " NOT BETWEEN 1 AND 5 THEN 'REVIEW_SCORE_RANGE'";
         }
-        return "CASE WHEN " + empty + (c.Nullable ? " THEN NULL" : " THEN 'REQUIRED' WHEN NULLIF(TRIM(" + v +
-            "),N'') IS NULL THEN 'REQUIRED'") + rules + " END";
+        string requiredScalar = c.Nullable || c.IsText ? "" :
+            " WHEN NULLIF(TRIM(" + v + "),N'') IS NULL THEN 'REQUIRED'";
+        return "CASE WHEN " + empty + (c.Nullable ? " THEN NULL" : " THEN 'REQUIRED'") + requiredScalar + rules + " END";
     }
 }

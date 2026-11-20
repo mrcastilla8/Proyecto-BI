@@ -16,6 +16,8 @@ La tarea `Preparar CSV` asigna las cadenas de conexión al comenzar la ejecució
 
 Las tareas SQL comprueban la sesión retenida y usan un bloqueo por fuente, hash y versión. La publicación valida los tipos y límites de destino, guarda los rechazos con el ordinal y concilia auditoría con staging antes de confirmar. La transacción incluye staging, rechazos y estado `COMPLETE`. Un fallo revierte las filas de esa publicación. El siguiente intento recuperable conserva el ID de lote. Los lotes ya completos se omiten.
 
+La publicación trata como vacío el texto de cero bytes y conserva los espacios, incluidos los finales. Los campos de texto requeridos realmente vacíos se rechazan y se mantienen las validaciones específicas del contrato. Las pruebas de regresión usan `BI_OLIST_VALIDACION_TEXTO` en LocalDB para volver a leer los mismos archivos sin intervenir lotes históricos confirmados.
+
 ## Verificación y reproducción
 
 - [Resultados de entrega](evidencias/informe/INFORME_ENTREGA.md)

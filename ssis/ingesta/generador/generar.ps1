@@ -3,7 +3,8 @@ param(
     [string]$Plantilla = (Join-Path $PSScriptRoot '../ETL_Olist_Ingesta/ETL_Olist_Ingesta.dtproj'),
     [string]$VisualStudio,
     [string]$SqlDts = (Join-Path $env:ProgramFiles 'Microsoft SQL Server/170/DTS'),
-    [string]$FalloEn
+    [string]$FalloEn,
+    [switch]$ActualizarPublicacion
 )
 $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
@@ -40,6 +41,7 @@ $dest = New-Item -ItemType Directory $Salida
 $configuration = @((Join-Path $repo 'contracts/modelo-dimensional.v1.json'), $PSScriptRoot,
     (Resolve-Path -LiteralPath $Plantilla).Path, $dest.FullName, $script)
 if ($FalloEn) { $configuration += $FalloEn }
+if ($ActualizarPublicacion) { $configuration += '--actualizar' }
 & $engine @configuration
 if ($LASTEXITCODE) { throw "Generación y reapertura: $LASTEXITCODE" }
 foreach ($extension in 'slnx','database') {

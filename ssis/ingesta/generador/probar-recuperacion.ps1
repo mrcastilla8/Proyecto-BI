@@ -3,6 +3,7 @@ param(
     [Parameter(Mandatory)][string]$Fixtures,
     [Parameter(Mandatory)][string]$Evidencia,
     [Parameter(Mandatory)][string]$ArchivosLocalDb,
+    [ValidateSet('BI_OLIST','BI_OLIST_VALIDACION_TEXTO')][string]$Base = 'BI_OLIST',
     [string]$Instancia = '(localdb)\BI_OLIST_ISSUE1_PROTO'
 )
 $ErrorActionPreference = 'Stop'
@@ -20,17 +21,17 @@ $translationData = [IO.File]::ReadAllText($translation).Replace('beleza_saude', 
 $reviewHash = (Get-FileHash -LiteralPath $review).Hash.ToLowerInvariant()
 $translationHash = (Get-FileHash -LiteralPath $translation).Hash.ToLowerInvariant()
 $databasePath = (Resolve-Path -LiteralPath $ArchivosLocalDb).Path.TrimEnd('\').Replace("'","''") + '\'
-$guard = "SET NOCOUNT ON; IF COALESCE(CONVERT(int,SERVERPROPERTY('IsLocalDB')),0)<>1 OR DB_NAME()<>'BI_OLIST' OR EXISTS(SELECT 1 FROM sys.database_files WHERE LEFT(physical_name,LEN(N'$databasePath'))<>N'$databasePath') THROW 51900,'Destino fuera del laboratorio',1;"
+$guard = "SET NOCOUNT ON; IF COALESCE(CONVERT(int,SERVERPROPERTY('IsLocalDB')),0)<>1 OR DB_NAME()<>N'$Base' OR EXISTS(SELECT 1 FROM sys.database_files WHERE LEFT(physical_name,LEN(N'$databasePath'))<>N'$databasePath') THROW 51900,'Destino fuera del laboratorio',1;"
 $lookup = "DECLARE @id bigint=(SELECT batch_id FROM audit.Batch WHERE source_name=N'OrderReviews' AND source_sha256='$reviewHash');"
 function Invoke-Case([string]$sql,[string]$log) {
-    $result = @(& sqlcmd -S $Instancia -E -C -l 10 -b -r 1 -W -h -1 -s '|' -d BI_OLIST -Q "$guard $lookup $sql")
+    $result = @(& sqlcmd -S $Instancia -E -C -l 10 -b -r 1 -W -h -1 -s '|' -d $Base -Q "$guard $lookup $sql")
     if ($LASTEXITCODE) { throw 'No se verificó el estado esperado de la recuperación.' }
     $result | Set-Content "$output/$log"
     $result
 }
 $injected = Join-Path $output 'proyecto-inyectado'
-& (Join-Path $PSScriptRoot 'generar.ps1') -Salida $injected -FalloEn OrderReviews
-$common = @{ CsvRoot=$csv; ArchivosLocalDb=$ArchivosLocalDb; Instancia=$Instancia }
+& (Join-Path $PSScriptRoot 'generar.ps1') -Salida $injected -Plantilla (Join-Path $Proyecto 'ETL_Olist_Ingesta.dtproj') -ActualizarPublicacion -FalloEn OrderReviews
+$common = @{ CsvRoot=$csv; ArchivosLocalDb=$ArchivosLocalDb; Instancia=$Instancia; Base=$Base }
 & (Join-Path $PSScriptRoot 'probar.ps1') -Proyecto $injected -Evidencia "$output/fallo" -FalloEsperado @common
 if (-not (Select-String -LiteralPath "$output/fallo/fallo.log" -SimpleMatch 'Fallo inyectado')) {
     throw 'El fallo de DTExec no corresponde a la inyección después de escribir.'
