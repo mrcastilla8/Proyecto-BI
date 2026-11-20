@@ -1,0 +1,81 @@
+EVALUATE
+UNION (
+    ROW (
+        "escenario", "total",
+        "ventas_productos_entregados", [ventas_productos_entregados],
+        "pedidos_entregados_con_items", [pedidos_entregados_con_items],
+        "pedidos_totales", [pedidos_totales],
+        "ticket_promedio_productos_entregados", [ticket_promedio_productos_entregados],
+        "flete_pedidos_entregados", [flete_pedidos_entregados],
+        "porcentaje_entregas_a_tiempo", [porcentaje_entregas_a_tiempo],
+        "dias_promedio_entrega", [dias_promedio_entrega],
+        "calificacion_promedio", [calificacion_promedio]
+    ),
+    ROW (
+        "escenario", "compra_2017",
+        "ventas_productos_entregados", CALCULATE ( [ventas_productos_entregados], 'DimFecha'[anio] = 2017 ),
+        "pedidos_entregados_con_items", CALCULATE ( [pedidos_entregados_con_items], 'DimFecha'[anio] = 2017 ),
+        "pedidos_totales", CALCULATE ( [pedidos_totales], 'DimFecha'[anio] = 2017 ),
+        "ticket_promedio_productos_entregados", CALCULATE ( [ticket_promedio_productos_entregados], 'DimFecha'[anio] = 2017 ),
+        "flete_pedidos_entregados", CALCULATE ( [flete_pedidos_entregados], 'DimFecha'[anio] = 2017 ),
+        "porcentaje_entregas_a_tiempo", CALCULATE ( [porcentaje_entregas_a_tiempo], 'DimFecha'[anio] = 2017 ),
+        "dias_promedio_entrega", CALCULATE ( [dias_promedio_entrega], 'DimFecha'[anio] = 2017 ),
+        "calificacion_promedio", CALCULATE ( [calificacion_promedio], 'DimFecha'[anio] = 2017 )
+    ),
+    ROW (
+        "escenario", "cliente_sp",
+        "ventas_productos_entregados", CALCULATE ( [ventas_productos_entregados], 'DimGeografiaCliente'[customer_state] = "SP" ),
+        "pedidos_entregados_con_items", CALCULATE ( [pedidos_entregados_con_items], 'DimGeografiaCliente'[customer_state] = "SP" ),
+        "pedidos_totales", CALCULATE ( [pedidos_totales], 'DimGeografiaCliente'[customer_state] = "SP" ),
+        "ticket_promedio_productos_entregados", CALCULATE ( [ticket_promedio_productos_entregados], 'DimGeografiaCliente'[customer_state] = "SP" ),
+        "flete_pedidos_entregados", CALCULATE ( [flete_pedidos_entregados], 'DimGeografiaCliente'[customer_state] = "SP" ),
+        "porcentaje_entregas_a_tiempo", CALCULATE ( [porcentaje_entregas_a_tiempo], 'DimGeografiaCliente'[customer_state] = "SP" ),
+        "dias_promedio_entrega", CALCULATE ( [dias_promedio_entrega], 'DimGeografiaCliente'[customer_state] = "SP" ),
+        "calificacion_promedio", CALCULATE ( [calificacion_promedio], 'DimGeografiaCliente'[customer_state] = "SP" )
+    ),
+    ROW (
+        "escenario", "producto_y_vendedor_sp",
+        "ventas_productos_entregados", CALCULATE ( [ventas_productos_entregados], 'DimProducto'[product_category_name] = "cama_mesa_banho", 'DimGeografiaVendedor'[seller_state] = "SP" ),
+        "pedidos_entregados_con_items", CALCULATE ( [pedidos_entregados_con_items], 'DimProducto'[product_category_name] = "cama_mesa_banho", 'DimGeografiaVendedor'[seller_state] = "SP" ),
+        "pedidos_totales", BLANK (),
+        "ticket_promedio_productos_entregados", CALCULATE ( [ticket_promedio_productos_entregados], 'DimProducto'[product_category_name] = "cama_mesa_banho", 'DimGeografiaVendedor'[seller_state] = "SP" ),
+        "flete_pedidos_entregados", CALCULATE ( [flete_pedidos_entregados], 'DimProducto'[product_category_name] = "cama_mesa_banho", 'DimGeografiaVendedor'[seller_state] = "SP" ),
+        "porcentaje_entregas_a_tiempo", BLANK (),
+        "dias_promedio_entrega", BLANK (),
+        "calificacion_promedio", BLANK ()
+    ),
+    ROW (
+        "escenario", "entrega_real_2017",
+        "ventas_productos_entregados", BLANK (),
+        "pedidos_entregados_con_items", BLANK (),
+        "pedidos_totales", CALCULATE ( [pedidos_totales], 'DimFecha'[anio] = 2017, USERELATIONSHIP ( 'DimFecha'[fecha_key], 'FactPedidos'[fecha_entrega_real_key] ) ),
+        "ticket_promedio_productos_entregados", BLANK (),
+        "flete_pedidos_entregados", BLANK (),
+        "porcentaje_entregas_a_tiempo", CALCULATE ( [porcentaje_entregas_a_tiempo], 'DimFecha'[anio] = 2017, USERELATIONSHIP ( 'DimFecha'[fecha_key], 'FactPedidos'[fecha_entrega_real_key] ) ),
+        "dias_promedio_entrega", CALCULATE ( [dias_promedio_entrega], 'DimFecha'[anio] = 2017, USERELATIONSHIP ( 'DimFecha'[fecha_key], 'FactPedidos'[fecha_entrega_real_key] ) ),
+        "calificacion_promedio", CALCULATE ( [calificacion_promedio], 'DimFecha'[anio] = 2017, USERELATIONSHIP ( 'DimFecha'[fecha_key], 'FactPedidos'[fecha_entrega_real_key] ) )
+    ),
+    ROW (
+        "escenario", "entrega_estimada_2017",
+        "ventas_productos_entregados", BLANK (),
+        "pedidos_entregados_con_items", BLANK (),
+        "pedidos_totales", CALCULATE ( [pedidos_totales], 'DimFecha'[anio] = 2017, USERELATIONSHIP ( 'DimFecha'[fecha_key], 'FactPedidos'[fecha_entrega_estimada_key] ) ),
+        "ticket_promedio_productos_entregados", BLANK (),
+        "flete_pedidos_entregados", BLANK (),
+        "porcentaje_entregas_a_tiempo", CALCULATE ( [porcentaje_entregas_a_tiempo], 'DimFecha'[anio] = 2017, USERELATIONSHIP ( 'DimFecha'[fecha_key], 'FactPedidos'[fecha_entrega_estimada_key] ) ),
+        "dias_promedio_entrega", CALCULATE ( [dias_promedio_entrega], 'DimFecha'[anio] = 2017, USERELATIONSHIP ( 'DimFecha'[fecha_key], 'FactPedidos'[fecha_entrega_estimada_key] ) ),
+        "calificacion_promedio", CALCULATE ( [calificacion_promedio], 'DimFecha'[anio] = 2017, USERELATIONSHIP ( 'DimFecha'[fecha_key], 'FactPedidos'[fecha_entrega_estimada_key] ) )
+    ),
+    ROW (
+        "escenario", "cancelados",
+        "ventas_productos_entregados", CALCULATE ( [ventas_productos_entregados], 'FactPedidos'[order_status] = "canceled", 'FactDetallePedido'[order_status] = "canceled" ),
+        "pedidos_entregados_con_items", CALCULATE ( [pedidos_entregados_con_items], 'FactPedidos'[order_status] = "canceled", 'FactDetallePedido'[order_status] = "canceled" ),
+        "pedidos_totales", CALCULATE ( [pedidos_totales], 'FactPedidos'[order_status] = "canceled", 'FactDetallePedido'[order_status] = "canceled" ),
+        "ticket_promedio_productos_entregados", CALCULATE ( [ticket_promedio_productos_entregados], 'FactPedidos'[order_status] = "canceled", 'FactDetallePedido'[order_status] = "canceled" ),
+        "flete_pedidos_entregados", CALCULATE ( [flete_pedidos_entregados], 'FactPedidos'[order_status] = "canceled", 'FactDetallePedido'[order_status] = "canceled" ),
+        "porcentaje_entregas_a_tiempo", CALCULATE ( [porcentaje_entregas_a_tiempo], 'FactPedidos'[order_status] = "canceled", 'FactDetallePedido'[order_status] = "canceled" ),
+        "dias_promedio_entrega", CALCULATE ( [dias_promedio_entrega], 'FactPedidos'[order_status] = "canceled", 'FactDetallePedido'[order_status] = "canceled" ),
+        "calificacion_promedio", CALCULATE ( [calificacion_promedio], 'FactPedidos'[order_status] = "canceled", 'FactDetallePedido'[order_status] = "canceled" )
+    )
+)
+ORDER BY [escenario]
