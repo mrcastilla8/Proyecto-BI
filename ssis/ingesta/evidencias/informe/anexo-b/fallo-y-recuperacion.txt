@@ -1,0 +1,12 @@
+Prueba en LocalDB aislada - fixture de Orders
+
+lote | estado | leídas | aceptadas | rechazadas | error
+Después de inyectar el fallo tras escribir en staging:
+40031|FAILED|0|0|0|PUBLICAR/51999
+
+Después de repetir la ejecución del mismo lote:
+40031|COMPLETE|5|4|1
+
+ETL_Master.dtsx | DTExec=1 | 2.74 s
+ETL_Master.dtsx | DTExec=0 | 3.76 s
+ETL_Master.dtsx | DTExec=0 | 3.05 s

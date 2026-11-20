@@ -1,0 +1,18 @@
+devenv.com ETL_Olist_Ingesta.slnx /Build Development /Out <registro>
+Código de salida: 0
+========== Compilación: 1 correcta o actualizada, 0 con errores, 0 omitida ============
+========== Compilar completado a las 03:29 y tardó 05.342 segundos ==========
+Entradas de ETL_Olist_Ingesta.ispac:
+ETL_Master.dtsx
+ETL_Orders.dtsx
+ETL_OrderItems.dtsx
+ETL_OrderPayments.dtsx
+ETL_OrderReviews.dtsx
+ETL_Customers.dtsx
+ETL_Sellers.dtsx
+ETL_Products.dtsx
+ETL_Geolocation.dtsx
+ETL_CategoryTranslation.dtsx
+Project.params
+@Project.manifest
+[Content_Types].xml

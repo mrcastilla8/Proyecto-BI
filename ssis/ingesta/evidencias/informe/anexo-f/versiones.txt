@@ -1,0 +1,7 @@
+Visual Studio Community 2026 18.10.3 (devenv.exe 18.10.12224.181)
+Microsoft SQL Server Integration Services Projects 2022+ 2.2
+DTExec 17.0.1000.7, 64 bits
+SQL Server LocalDB 17.0.4025.3
+SSMS.exe 22.10.12217.157
+PowerShell 7.6.9
+Python 3.14.4

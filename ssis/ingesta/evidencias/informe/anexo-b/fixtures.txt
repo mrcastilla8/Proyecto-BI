@@ -1,0 +1,54 @@
+source_name|batch_id|status|rows_read|rows_accepted|rows_rejected|started_at|finished_at
+-----------|--------|------|---------|-------------|-------------|----------|-----------
+Orders|40020|COMPLETE|8|7|1|2026-11-20 03:16:58|2026-11-20 03:16:58
+source_row_number|field_name|reason_code
+-----------------|----------|-----------
+8|order_id|REQUIRED
+source_name|batch_id|status|rows_read|rows_accepted|rows_rejected|started_at|finished_at
+-----------|--------|------|---------|-------------|-------------|----------|-----------
+OrderItems|40021|COMPLETE|5|4|1|2026-11-20 03:17:00|2026-11-20 03:17:00
+source_row_number|field_name|reason_code
+-----------------|----------|-----------
+5|order_id|REQUIRED
+source_name|batch_id|status|rows_read|rows_accepted|rows_rejected|started_at|finished_at
+-----------|--------|------|---------|-------------|-------------|----------|-----------
+OrderPayments|40022|COMPLETE|5|4|1|2026-11-20 03:17:01|2026-11-20 03:17:01
+source_row_number|field_name|reason_code
+-----------------|----------|-----------
+5|order_id|REQUIRED
+source_name|batch_id|status|rows_read|rows_accepted|rows_rejected|started_at|finished_at
+-----------|--------|------|---------|-------------|-------------|----------|-----------
+OrderReviews|40023|COMPLETE|5|4|1|2026-11-20 03:17:02|2026-11-20 03:17:02
+source_row_number|field_name|reason_code
+-----------------|----------|-----------
+5|review_score|REVIEW_SCORE_RANGE
+source_name|batch_id|status|rows_read|rows_accepted|rows_rejected|started_at|finished_at
+-----------|--------|------|---------|-------------|-------------|----------|-----------
+Customers|40024|COMPLETE|5|4|1|2026-11-20 03:17:03|2026-11-20 03:17:03
+source_row_number|field_name|reason_code
+-----------------|----------|-----------
+5|customer_id|REQUIRED
+source_name|batch_id|status|rows_read|rows_accepted|rows_rejected|started_at|finished_at
+-----------|--------|------|---------|-------------|-------------|----------|-----------
+Sellers|40025|COMPLETE|4|3|1|2026-11-20 03:17:04|2026-11-20 03:17:04
+source_row_number|field_name|reason_code
+-----------------|----------|-----------
+4|seller_id|REQUIRED
+source_name|batch_id|status|rows_read|rows_accepted|rows_rejected|started_at|finished_at
+-----------|--------|------|---------|-------------|-------------|----------|-----------
+Products|40026|COMPLETE|5|4|1|2026-11-20 03:17:06|2026-11-20 03:17:06
+source_row_number|field_name|reason_code
+-----------------|----------|-----------
+5|product_id|REQUIRED
+source_name|batch_id|status|rows_read|rows_accepted|rows_rejected|started_at|finished_at
+-----------|--------|------|---------|-------------|-------------|----------|-----------
+Geolocation|40027|COMPLETE|5|4|1|2026-11-20 03:17:07|2026-11-20 03:17:07
+source_row_number|field_name|reason_code
+-----------------|----------|-----------
+5|geolocation_zip_code_prefix|REQUIRED
+source_name|batch_id|status|rows_read|rows_accepted|rows_rejected|started_at|finished_at
+-----------|--------|------|---------|-------------|-------------|----------|-----------
+ProductCategoryTranslation|40028|COMPLETE|4|3|1|2026-11-20 03:17:08|2026-11-20 03:17:08
+source_row_number|field_name|reason_code
+-----------------|----------|-----------
+4|product_category_name|REQUIRED

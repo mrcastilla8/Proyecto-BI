@@ -1,0 +1,10 @@
+TimeCreated : 20/11/2026 03:22:08
+RecordId    : 86405
+Message     : Nombre de aplicación con errores: devenv.exe, versión: 18.10.12224.181, marca de tiempo: 0x6ab57147
+              Nombre del módulo con errores: combase.dll, versión: 10.0.26100.9818, marca de tiempo: 0xbb9366f0
+              Código de excepción: 0xc000041d
+TimeCreated : 20/11/2026 03:21:47
+RecordId    : 86403
+Message     : Nombre de aplicación con errores: devenv.exe, versión: 18.10.12224.181, marca de tiempo: 0x6ab57147
+              Nombre del módulo con errores: combase.dll, versión: 10.0.26100.9818, marca de tiempo: 0xbb9366f0
+              Código de excepción: 0xc0000005

@@ -1,0 +1,19 @@
+DTExec.exe /Project <ispac de ensayo> /Package ETL_Master.dtsx /Reporting EWI
+Carga auténtica inicial y repetición:
+ETL_Master.dtsx | DTExec=0 | 84.41 s
+ETL_Master.dtsx | DTExec=0 | 7.42 s
+Dos ejecuciones con la inicialización final de CM_CSV:
+ETL_Master.dtsx | DTExec=0 | 5.71 s
+ETL_Master.dtsx | DTExec=0 | 6.35 s
+Version 17.0.1000.7 for 64-bit
+Started:  03:17:28
+DTExec: The package execution returned DTSER_SUCCESS (0).
+Started:  03:17:28
+Finished: 03:17:34
+Elapsed:  5.782 seconds
+Comparación SQL:
+PASS: conciliación y reejecución de nueve fuentes
+Proyecto publicable, compilado de nuevo desde una copia con destino LocalDB verificado:
+ETL_Master.dtsx | DTExec=0 | 6.84 s
+ETL_Master.dtsx | DTExec=0 | 6.64 s
+PASS: conciliación y reejecución de nueve fuentes
