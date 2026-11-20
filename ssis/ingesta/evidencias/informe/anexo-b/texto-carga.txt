@@ -1,0 +1,37 @@
+Base: BI_OLIST_VALIDACION_TEXTO en LocalDB 17.0.4025.3; esquema inicial: 9 tablas stg, 2 audit, 0 lotes.
+DDL 00, 01, 02 y bloques de ingesta del 05.
+La primera carga terminó con DTExec=0. La consulta inicial de conciliación requirió aplicar la vista aprobada audit.vw_BatchStatus del DDL 05; los lotes se conciliaron antes de repetir la ejecución.
+
+Compilación publicable:
+========== Compilación: 1 correcta o actualizada, 0 con errores, 0 omitida ============
+========== Compilar completado a las 04:22 y tardó 04.436 segundos ==========
+Entradas de paquete del ISPAC:
+ETL_Master.dtsx
+ETL_Orders.dtsx
+ETL_OrderItems.dtsx
+ETL_OrderPayments.dtsx
+ETL_OrderReviews.dtsx
+ETL_Customers.dtsx
+ETL_Sellers.dtsx
+ETL_Products.dtsx
+ETL_Geolocation.dtsx
+ETL_CategoryTranslation.dtsx
+
+DTExec.exe x64 /Project <ispac de ensayo> /Package ETL_Master.dtsx /Reporting EWI
+ETL_Master.dtsx | DTExec=0 | 69.19 s
+Version 17.0.1000.7 for 64-bit
+DTExec: The package execution returned DTSER_SUCCESS (0).
+Elapsed:  5.687 seconds
+DTExec=0; hashes de conciliación idénticos.
+Lotes históricos de LocalDB: inventario SQL idéntico antes y después.
+
+source_name|batch_id|status|rows_read|rows_accepted|rows_rejected|started_at|finished_at
+Orders|1|COMPLETE|99441|99441|0|2026-11-20 04:17:45|2026-11-20 04:17:46
+OrderItems|2|COMPLETE|112650|112650|0|2026-11-20 04:17:51|2026-11-20 04:17:51
+OrderPayments|3|COMPLETE|103886|103886|0|2026-11-20 04:17:55|2026-11-20 04:17:55
+OrderReviews|4|COMPLETE|99224|99224|0|2026-11-20 04:18:16|2026-11-20 04:18:16
+Customers|5|COMPLETE|99441|99441|0|2026-11-20 04:18:20|2026-11-20 04:18:20
+Sellers|6|COMPLETE|3095|3095|0|2026-11-20 04:18:21|2026-11-20 04:18:21
+Products|7|COMPLETE|32951|32951|0|2026-11-20 04:18:23|2026-11-20 04:18:23
+Geolocation|8|COMPLETE|1000163|1000163|0|2026-11-20 04:18:44|2026-11-20 04:18:48
+ProductCategoryTranslation|9|COMPLETE|71|71|0|2026-11-20 04:18:48|2026-11-20 04:18:48

@@ -1,0 +1,8 @@
+Comparación por ordinal entre los dos lotes auténticos de LocalDB. Los 37 campos restaurados coinciden con longitud y huella del texto fuente, según la verificación global de filas.
+lote_historico|lote_corregido
+--------------|--------------
+40014|4
+campo|nulos_anterior_restaurados|espacios_ascii_restaurados|diferencias_en_campos_antes_no_nulos
+-----|--------------------------|--------------------------|------------------------------------
+mensaje|27|9|0
+titulo|10|2|0

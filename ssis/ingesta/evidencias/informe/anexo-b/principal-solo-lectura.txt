@@ -1,0 +1,16 @@
+version|db|ssisdb
+-------|--|------
+17.0.1000.7|BI_OLIST|NULL
+esquema|name|filas
+-------|----|-----
+audit|Batch|0
+audit|Reject|0
+stg|Customers|0
+stg|Geolocation|0
+stg|OrderItems|0
+stg|OrderPayments|0
+stg|OrderReviews|0
+stg|Orders|0
+stg|ProductCategoryTranslation|0
+stg|Products|0
+stg|Sellers|0

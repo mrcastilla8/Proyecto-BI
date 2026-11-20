@@ -1,0 +1,7 @@
+# Configuración local por usuario de Visual Studio/SSIS
+**/*.dtproj.user
+
+# Artefactos generados por build/deploy
+**/bin/
+**/obj/
+**/*.ispac

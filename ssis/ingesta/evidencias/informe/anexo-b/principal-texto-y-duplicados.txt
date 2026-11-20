@@ -1,0 +1,6 @@
+review_id_repetidos|reviews_multilinea|titulos_nulos|mensajes_nulos|titulos_espacio|mensajes_espacio|filas_duplicadas_geolocation
+-------------------|------------------|-------------|--------------|---------------|----------------|----------------------------
+814|3852|87656|58247|2|9|261831
+aprobacion_nula|transportista_nulo|entrega_nula
+---------------|------------------|------------
+160|1783|2965

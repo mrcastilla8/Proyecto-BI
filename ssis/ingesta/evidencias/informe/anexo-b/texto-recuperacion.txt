@@ -1,0 +1,12 @@
+Rollback y recuperación de una fixture nueva de Reviews en BI_OLIST_VALIDACION_TEXTO.
+Fallo después de escribir: código DTExec 1; sin staging ni rechazos del lote; maestro detenido.
+ETL_Master.dtsx | DTExec=1 | 2.37 s
+19|FAILED|0|0|0|PUBLICAR/51999
+
+Recuperación sobre el mismo hash e ID:
+ETL_Master.dtsx | DTExec=0 | 3.53 s
+ETL_Master.dtsx | DTExec=0 | 3 s
+19|COMPLETE|9|8|1
+
+Contención de Orders, lote auténtico en la nueva base:
+APPLOCK_TEST=0; DTExec=1; BATCH_LOCK_TIMEOUT; lote intacto: 1|COMPLETE|2026-11-20 04:17:45|2026-11-20 04:17:46|99441|99441|0

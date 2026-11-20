@@ -1,0 +1,40 @@
+DTExec x64 17.0.1000.7: copia compilada desde el proyecto definitivo. Compilación 1 correcta, 0 errores.
+ETL_Master.dtsx | DTExec=0 | 7.24 s
+ETL_Master.dtsx | DTExec=0 | 7.53 s
+PASS: conciliación y reejecución de nueve fuentes
+
+Ejecuciones directas de ETL_OrderReviews.dtsx:
+Version 17.0.1000.7 for 64-bit
+DTExec: The package execution returned DTSER_SUCCESS (0).
+Elapsed:  1.422 seconds
+Version 17.0.1000.7 for 64-bit
+DTExec: The package execution returned DTSER_SUCCESS (0).
+Elapsed:  1.328 seconds
+
+fuente|lote|estado|leidas|aceptadas|rechazadas|staging|ordinal_min|ordinal_max
+------|----|------|------|---------|----------|-------|-----------|-----------
+Orders|40011|COMPLETE|99441|99441|0|99441|1|99441
+OrderItems|40012|COMPLETE|112650|112650|0|112650|1|112650
+OrderPayments|40013|COMPLETE|103886|103886|0|103886|1|103886
+OrderReviews|40014|COMPLETE|99224|99224|0|99224|1|99224
+Customers|40015|COMPLETE|99441|99441|0|99441|1|99441
+Sellers|40016|COMPLETE|3095|3095|0|3095|1|3095
+Products|40017|COMPLETE|32951|32951|0|32951|1|32951
+Geolocation|40018|COMPLETE|1000163|1000163|0|1000163|1|1000163
+ProductCategoryTranslation|40019|COMPLETE|71|71|0|71|1|71
+leidas|aceptadas|rechazadas|staging
+------|---------|----------|-------
+1550922|1550922|0|1550922
+Warning: Null value is eliminated by an aggregate or other SET operation.
+geolocation_duplicadas|review_id_repetidos|resenas_multilinea|max_unidades_utf16
+----------------------|-------------------|------------------|------------------
+261831|814|3852|208
+fixture_reviews|unidades_utf16|resultado
+---------------|--------------|---------
+40023|4000|SHA-256 coincide con la fixture
+aprobacion_nula|transportista_nulo|entrega_nula
+---------------|------------------|------------
+160|1783|2965
+clientes_zip_con_cero
+---------------------
+23995

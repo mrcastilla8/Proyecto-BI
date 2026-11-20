@@ -1,0 +1,10 @@
+DTExec x64: reejecución con los nueve CSV auténticos
+
+ETL_Master.dtsx | DTExec=0 | 5.71 s
+ETL_Master.dtsx | DTExec=0 | 6.35 s
+
+SHA-256 de las salidas SQL sanitizadas (cada una incluye los nueve lotes):
+Primera: CB4A6EF1FF7707722E837F6DB444DCD68C3B0765C103C28AA5E2B588BEE75AAD
+Segunda: CB4A6EF1FF7707722E837F6DB444DCD68C3B0765C103C28AA5E2B588BEE75AAD
+
+PASS: conciliación y reejecución de nueve fuentes

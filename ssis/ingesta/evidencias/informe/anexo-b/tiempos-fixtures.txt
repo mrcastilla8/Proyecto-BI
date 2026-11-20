@@ -1,0 +1,11 @@
+ETL_Orders.dtsx | DTExec=0 | 1.5 s
+ETL_OrderItems.dtsx | DTExec=0 | 1.21 s
+ETL_OrderPayments.dtsx | DTExec=0 | 1.16 s
+ETL_OrderReviews.dtsx | DTExec=0 | 1.17 s
+ETL_Customers.dtsx | DTExec=0 | 1.19 s
+ETL_Sellers.dtsx | DTExec=0 | 1.18 s
+ETL_Products.dtsx | DTExec=0 | 1.2 s
+ETL_Geolocation.dtsx | DTExec=0 | 1.18 s
+ETL_CategoryTranslation.dtsx | DTExec=0 | 1.1 s
+ETL_Master.dtsx | DTExec=0 | 3.41 s
+ETL_Master.dtsx | DTExec=0 | 3.04 s

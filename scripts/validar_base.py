@@ -186,7 +186,16 @@ def main():
     env_example = (ROOT / ".env.example").read_text(encoding="utf-8")
     require("SQL_SERVER=localhost" in env_example and "SQL_PASSWORD=" in env_example, "Ejemplo de entorno no es ilustrativo/local")
     forbidden = re.compile(r"C:\\Users\\[^\\\s]+|(?:password|passwd|token|secret)\s*[:=]\s*\S+", re.I)
-    for path in ROOT.rglob("*"):
+    git = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=ROOT, capture_output=True, text=True)
+    if git.returncode == 0 and Path(git.stdout.strip()).resolve() == ROOT:
+        listed = subprocess.run(
+            ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+            cwd=ROOT, capture_output=True, check=True, encoding="utf-8",
+        )
+        candidates = (ROOT / name for name in listed.stdout.split("\0") if name)
+    else:
+        candidates = ROOT.rglob("*")
+    for path in candidates:
         if not path.is_file() or ".git" in path.parts or path.name in {".env.example", "validar_base.py"}:
             continue
         if path.suffix.lower() in {".csv", ".json", ".md", ".py", ".yml", ".sql", ".txt", ".editorconfig", ".gitattributes", ".gitignore"}:
@@ -195,7 +204,6 @@ def main():
             except UnicodeDecodeError:
                 continue
             require(not forbidden.search(content), f"Ruta local/posible secreto en {path.relative_to(ROOT)}")
-    git = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=ROOT, capture_output=True, text=True)
     if git.returncode == 0:
         branch = subprocess.run(["git", "branch", "--show-current"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
         if branch and branch != "master":

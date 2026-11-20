@@ -1,0 +1,28 @@
+BI_OLIST principal, instancia predeterminada local MSSQLSERVER. Contrato 1.0.0.
+========== Compilación: 1 correcta o actualizada, 0 con errores, 0 omitida ============
+========== Compilar completado a las 04:44 y tardó 04.797 segundos ==========
+
+DTExec.exe /Project <ispac configurado localmente> /Package ETL_Master.dtsx /Reporting EWI
+Primera ejecución del maestro: DTExec=0; 64.35 s
+Segunda ejecución del maestro: DTExec=0; 5.69 s
+Version 17.0.1000.7 for 64-bit
+DTExec: The package execution returned DTSER_SUCCESS (0).
+Elapsed:  64.203 seconds
+Version 17.0.1000.7 for 64-bit
+DTExec: The package execution returned DTSER_SUCCESS (0).
+Elapsed:  5.578 seconds
+
+fuente|lote|estado|leidas|aceptadas|rechazadas|staging|ordinal_min|ordinal_max|inicio|fin|primera_fila|ultima_fila
+------|----|------|------|---------|----------|-------|-----------|-----------|------|---|------------|-----------
+Orders|7|COMPLETE|99441|99441|0|99441|1|99441|2026-11-20 04:44:18|2026-11-20 04:44:19|2026-11-20 04:44:18|2026-11-20 04:44:18
+OrderItems|8|COMPLETE|112650|112650|0|112650|1|112650|2026-11-20 04:44:23|2026-11-20 04:44:24|2026-11-20 04:44:23|2026-11-20 04:44:23
+OrderPayments|9|COMPLETE|103886|103886|0|103886|1|103886|2026-11-20 04:44:27|2026-11-20 04:44:28|2026-11-20 04:44:27|2026-11-20 04:44:27
+OrderReviews|10|COMPLETE|99224|99224|0|99224|1|99224|2026-11-20 04:44:49|2026-11-20 04:44:50|2026-11-20 04:44:49|2026-11-20 04:44:49
+Customers|11|COMPLETE|99441|99441|0|99441|1|99441|2026-11-20 04:44:54|2026-11-20 04:44:54|2026-11-20 04:44:54|2026-11-20 04:44:54
+Sellers|12|COMPLETE|3095|3095|0|3095|1|3095|2026-11-20 04:44:55|2026-11-20 04:44:55|2026-11-20 04:44:55|2026-11-20 04:44:55
+Products|13|COMPLETE|32951|32951|0|32951|1|32951|2026-11-20 04:44:57|2026-11-20 04:44:57|2026-11-20 04:44:57|2026-11-20 04:44:57
+Geolocation|14|COMPLETE|1000163|1000163|0|1000163|1|1000163|2026-11-20 04:45:11|2026-11-20 04:45:17|2026-11-20 04:45:11|2026-11-20 04:45:11
+ProductCategoryTranslation|15|COMPLETE|71|71|0|71|1|71|2026-11-20 04:45:17|2026-11-20 04:45:17|2026-11-20 04:45:17|2026-11-20 04:45:17
+leidas|aceptadas|rechazadas|staging
+------|---------|----------|-------
+1550922|1550922|0|1550922

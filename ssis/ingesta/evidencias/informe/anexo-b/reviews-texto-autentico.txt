@@ -1,0 +1,9 @@
+Comparación de título y mensaje por ordinal con SHA-256 UTF-16LE.
+Lote auténtico 40014: 99.224 registros, 198.448 campos.
+Coincidencias con equivalencia cadena vacía = NULL: 198.411.
+Diferencias restantes: 37 campos no vacíos publicados como NULL.
+
+campo|no_vacios_en_csv_y_nulos_en_sql|explicados_por_NULLIF|solo_espacios_ascii
+-----|-------------------------------|---------------------|-------------------
+mensaje|27|27|9
+titulo|10|10|2

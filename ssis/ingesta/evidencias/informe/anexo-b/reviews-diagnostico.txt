@@ -1,0 +1,16 @@
+Reproducción en copia aislada, cierre al abrir la conversión de Reviews.
+Windows Application, evento 1000, registro 86413, 20-11-2026 03:41:14 (Lima).
+Comandos de Windows Debugging Engine: .exr -1, .ecxr, kv 35, !sos.clrstack, !sos.pe.
+
+Microsoft (R) Windows Debugger Version 10.0.26100.1 AMD64
+User Mini Dump File: Only registers, stack and portions of memory are available
+Subcode: 0xa FAST_FAIL_GUARD_ICALL_CHECK_FAILURE
+ExceptionCode: c0000409 (Security check failure or stack buffer overrun)
+Parameter[0]: 000000000000000a
+PDB symbol for clr.dll not loaded
+0000007e716feea8 00007ffd34dfc28f [HelperMethodFrame: 0000007e716feea8] System.Runtime.InteropServices.Marshal.CleanupUnusedObjectsInCurrentContext()
+0000007e716fef90 00007ffc2d82cf0b Microsoft.VisualStudio.Platform.VsRcwCleanupPrivate.CleanUpUnReachableRCWs()
+0000007e716fefc0 00007ffcaa982f78 DomainNeutralILStubClass.IL_STUB_COMtoCLR()
+There is no current managed exception on this thread
+
+La pila administrada sitúa la detención durante la limpieza de objetos COM. Los PDB completos y los detalles del objeto que se estaba liberando no están disponibles en este volcado.

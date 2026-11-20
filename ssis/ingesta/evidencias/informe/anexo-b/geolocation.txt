@@ -1,0 +1,4 @@
+Geolocation: fase Execute iniciada a las 03:14:59.63 y fase Post Execute iniciada a las 03:15:10.75.
+   Description: "OLE DB Destination #FilasIngesta" wrote 1000163 rows.
+Intervalo del flujo: 11,12 s. Las fases de preparación y publicación SQL ocurren fuera de ese intervalo.
+DefaultBufferMaxRows=2048, DefaultBufferSize=1 MiB, ROWS_PER_BATCH=512. Sin medición aislada de RAM máxima.
