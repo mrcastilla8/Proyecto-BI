@@ -1,0 +1,1034 @@
+<?xml version="1.0"?>
+<DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts"
+  DTS:refId="Package"
+  DTS:CreationDate="11/20/2026 3:20:26 AM"
+  DTS:CreationName="Microsoft.Package"
+  DTS:CreatorComputerName="LOCAL"
+  DTS:CreatorName="Equipo BI Olist"
+  DTS:DelayValidation="True"
+  DTS:DTSID="{6BAF6315-755D-4BD9-91D4-CE5FE2E822AD}"
+  DTS:ExecutableType="Microsoft.Package"
+  DTS:LastModifiedProductVersion="17.0.1000.7"
+  DTS:LocaleID="10250"
+  DTS:ObjectName="ETL_Master"
+  DTS:ProtectionLevel="0"
+  DTS:VersionGUID="{893C0B80-8FD5-490E-B654-D7E2DF6D2CD9}">
+  <DTS:Property
+    DTS:Name="PackageFormatVersion">8</DTS:Property>
+  <DTS:Variables>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{7C281584-E56A-4D7A-85CC-6AA8FE836BAE}"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="SourceFiles"
+      DTS:ReadOnly="True">
+      <DTS:VariableValue
+        DTS:DataType="8">olist_orders_dataset.csv|olist_order_items_dataset.csv|olist_order_payments_dataset.csv|olist_order_reviews_dataset.csv|olist_customers_dataset.csv|olist_sellers_dataset.csv|olist_products_dataset.csv|olist_geolocation_dataset.csv|product_category_name_translation.csv</DTS:VariableValue>
+    </DTS:Variable>
+  </DTS:Variables>
+  <DTS:Executables>
+    <DTS:Executable
+      DTS:refId="Package\Comprobar entradas"
+      DTS:CreationName="Microsoft.ScriptTask"
+      DTS:DTSID="{F5F9767C-332D-4606-916D-5242CEEC8160}"
+      DTS:ExecutableType="Microsoft.ScriptTask"
+      DTS:FailPackageOnFailure="True"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Comprobar entradas"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <ScriptProject
+          Name="ST_OrdersSnapshot"
+          VSTAMajorVersion="17"
+          VSTAMinorVersion="0"
+          Language="CSharp"
+          ReadOnlyVariables="System::TaskName,$Project::CSV_ROOT,$Project::SQL_SERVER,$Project::SQL_DATABASE,User::SourceFiles">
+          <ProjectItem
+            Name="ST_OrdersSnapshot.csproj"
+            Encoding="UTF8"><![CDATA[<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectTypeGuids>{30D016F9-3734-4E33-A861-5E7D899E18F3};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{29C0C7AE-3B2A-4F11-8197-7AEEDB099377}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>ST_OrdersSnapshot</RootNamespace>
+    <AssemblyName>ST_OrdersSnapshot</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <ResolveAssemblyReferenceIgnoreTargetFrameworkAttributeVersionMismatch>true</ResolveAssemblyReferenceIgnoreTargetFrameworkAttributeVersionMismatch>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>.\bin\Debug\</OutputPath>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols>false</DebugSymbols>
+    <Optimize>true</Optimize>
+    <OutputPath>.\bin\Release\</OutputPath>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="Microsoft.SqlServer.ManagedDTS, Version=17.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" />
+    <Reference Include="Microsoft.SqlServer.ScriptTask, Version=17.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AppDesigner Include="Properties\" />
+    <Compile Include="Properties\AssemblyInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <EmbeddedResource Include="Properties\Resources.resx">
+         <Generator>ResXFileCodeGenerator</Generator>
+         <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+             <AutoGen>True</AutoGen>
+         <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <None Include="Properties\Settings.settings">
+         <Generator>SettingsSingleFileGenerator</Generator>
+         <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+         <AutoGen>True</AutoGen>
+         <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+    <Compile Include="ScriptMain.cs">
+         <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+
+  <!-- Include the build rules for a C# project.-->
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+
+  <ProjectExtensions>
+    <VisualStudio>
+      <FlavorProperties GUID="{30D016F9-3734-4E33-A861-5E7D899E18F3}">
+        <ProjectProperties HostName="ScriptTask"
+                           HostPackage="{B3A685AA-7EAF-4BC6-9940-57959FA5AC07}"
+                           ApplicationType="usd"
+                           Language="cs"
+                           TemplatesPath=""
+                           DebugInfoCommandLine=""
+                           DebugInfoWorkingDir=""
+                           IconImageList=""/>
+        <Host Name="ScriptTask" GeneratedNamespace="$safeprojectname" IconIndex="">
+        </Host>
+        <ProjectClient>
+            <HostIdentifier>SSIS_ST170</HostIdentifier>
+        </ProjectClient>
+      </FlavorProperties>
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>]]></ProjectItem>
+          <ProjectItem
+            Name="Properties\Resources.resx"
+            Encoding="UTF8"><![CDATA[<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Microsoft ResX Schema
+
+    Version 2.0
+
+    The primary goals of this format is to allow a simple XML format
+    that is mostly human readable. The generation and parsing of the
+    various data types are done through the TypeConverter classes
+    associated with the data types.
+
+    Example:
+
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+
+    There are any number of "resheader" rows that contain simple
+    name/value pairs.
+
+    Each data row contains a name, and value. The row also contains a
+    type or mimetype. Type corresponds to a .NET class that support
+    text/value conversion through the TypeConverter architecture.
+    Classes that don't support this are serialized and stored with the
+    mimetype set.
+
+    The mimetype is used for serialized objects, and tells the
+    ResXResourceReader how to depersist the object. This is currently not
+    extensible. For a given mimetype the value must be set accordingly:
+
+    Note - application/x-microsoft.net.object.binary.base64 is the format
+    that the ResXResourceWriter will generate, however the reader can
+    read any of the formats listed below.
+
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with
+            : System.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+</root>]]></ProjectItem>
+          <ProjectItem
+            Name="Properties\Settings.Designer.cs"
+            Encoding="UTF8"><![CDATA[//------------------------------------------------------------------------------
+// <auto-generated>
+//     This code was generated by a tool.
+//
+//     Changes to this file may cause incorrect behavior and will be lost if
+//     the code is regenerated.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="ST_OrdersSnapshot.Properties.Settings.get_Default():ST_OrdersSnapshot.Properties.Sett" +
+    "ings")]
+
+namespace ST_OrdersSnapshot.Properties {
+
+
+    internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
+
+        [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
+        private static Settings defaultInstance = new Settings();
+
+        public static Settings Default {
+            get {
+                return defaultInstance;
+            }
+        }
+    }
+}]]></ProjectItem>
+          <ProjectItem
+            Name="ScriptMain.cs"
+            Encoding="UTF8"><![CDATA[using System;
+using System.Data.OleDb;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
+using Microsoft.SqlServer.Dts.Runtime;
+using Microsoft.SqlServer.Dts.Tasks.ScriptTask;
+
+namespace ST_OrdersSnapshot
+{
+    [SSISScriptTaskEntryPoint]
+    public partial class ScriptMain : VSTARTScriptObjectModelBase
+    {
+        private static readonly UTF8Encoding Utf8 = new UTF8Encoding(false, true);
+
+        public void Main()
+        {
+            string task = (string)Dts.Variables["System::TaskName"].Value;
+            string snapshot = null;
+            try
+            {
+                if (task == "Comprobar entradas")
+                {
+                    var root = Root();
+                    foreach (var file in Text("User::SourceFiles").Split('|'))
+                        if (!File.Exists(Path.Combine(root, file)))
+                            throw new InvalidDataException("CSV_MISSING: " + file);
+                    using (var connection = new OleDbConnection(Sql().ConnectionString))
+                    {
+                        connection.Open();
+                        using (var query = new OleDbCommand(
+                            "SELECT CASE WHEN DB_NAME() <> 'BI_OLIST' OR OBJECT_ID(N'audit.Batch',N'U') IS NULL THEN 0 ELSE 1 END",
+                            connection))
+                            if (Convert.ToInt32(query.ExecuteScalar()) != 1)
+                                throw new InvalidDataException("SQL_SCHEMA: destino de ingesta no disponible.");
+                    }
+                }
+                else if (task == "Preparar CSV")
+                {
+                    var root = Root();
+                    Dts.Connections["CM_SQL"].ConnectionString = Sql().ConnectionString;
+                    snapshot = Path.Combine(Path.GetTempPath(), "olist-" + Guid.NewGuid().ToString("N") + ".csv");
+                    Dts.Variables["User::Snapshot"].Value = snapshot;
+                    string hash;
+                    int rows = WriteSnapshot(Path.Combine(root, Text("User::SourceFile")), snapshot,
+                        Text("User::Header"), Text("User::FieldCaps").Split(',').Select(int.Parse).ToArray(), out hash);
+                    Dts.Connections["CM_CSV"].ConnectionString = snapshot;
+                    Dts.Variables["User::RowsExpected"].Value = rows;
+                    Dts.Variables["User::SourceHash"].Value = hash;
+                }
+                else
+                {
+                    Delete(Text("User::Snapshot"));
+                }
+                Dts.TaskResult = (int)DTSExecResult.Success;
+            }
+            catch (Exception ex)
+            {
+                Delete(snapshot);
+                string details = ex is InvalidDataException ? ex.Message : ex.GetType().Name;
+                Dts.Events.FireError(1, "Ingesta Olist", details, "", 0);
+                Dts.TaskResult = (int)DTSExecResult.Failure;
+            }
+        }
+
+        private string Text(string name) { return (string)Dts.Variables[name].Value; }
+
+        private string Root()
+        {
+            var root = Text("$Project::CSV_ROOT");
+            if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root))
+                throw new InvalidDataException("CSV_ROOT: indica una carpeta existente.");
+            return root;
+        }
+
+        private OleDbConnectionStringBuilder Sql()
+        {
+            var server = Text("$Project::SQL_SERVER");
+            var database = Text("$Project::SQL_DATABASE");
+            if (string.IsNullOrWhiteSpace(server) || !string.Equals(database, "BI_OLIST", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("SQL_SERVER y SQL_DATABASE=BI_OLIST son obligatorios.");
+            var connection = new OleDbConnectionStringBuilder();
+            connection.Provider = "MSOLEDBSQL19";
+            connection["Integrated Security"] = "SSPI";
+            connection["Use Encryption for Data"] = "Optional";
+            connection["Data Source"] = server;
+            connection["Initial Catalog"] = database;
+            return connection;
+        }
+
+        private static void Delete(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return;
+            try { File.Delete(path); }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+        }
+
+        public static int WriteSnapshot(string source, string snapshot, string header, int[] caps, out string hash)
+        {
+            using (var file = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.Read, 65536))
+            using (var sha = SHA256.Create())
+            {
+                hash = BitConverter.ToString(sha.ComputeHash(file)).Replace("-", "").ToLowerInvariant();
+                file.Position = 0;
+                using (var reader = new StreamReader(file, Utf8, false, 65536))
+                using (var writer = new StreamWriter(new FileStream(snapshot, FileMode.CreateNew, FileAccess.Write,
+                    FileShare.None, 65536), Utf8, 65536))
+                {
+                    if (reader.Peek() == '\ufeff') reader.Read();
+                    var firstLine = reader.ReadLine();
+                    if (firstLine == null || !firstLine.Split(',').Select(UnquoteHeader).SequenceEqual(header.Split(',')))
+                        throw new InvalidDataException("CSV_HEADER: encabezado distinto del contrato.");
+                    writer.Write("source_row_number," + header + "\n");
+                    return AddOrdinals(reader, writer, caps);
+                }
+            }
+        }
+
+        private static string UnquoteHeader(string name)
+        {
+            return name.Length >= 2 && name[0] == '"' && name[name.Length - 1] == '"'
+                ? name.Substring(1, name.Length - 2) : name;
+        }
+
+        private static int AddOrdinals(TextReader reader, TextWriter writer, int[] caps)
+        {
+            var field = new StringBuilder();
+            int ordinal = 0;
+            while (reader.Peek() >= 0)
+            {
+                ordinal = checked(ordinal + 1);
+                writer.Write(ordinal.ToString(CultureInfo.InvariantCulture));
+                for (int index = 0; index < caps.Length; index++)
+                {
+                    field.Clear();
+                    bool quoted = reader.Peek() == '"';
+                    bool closed = false;
+                    int limit = caps[index];
+                    bool overflow = false;
+                    if (quoted) reader.Read();
+                    while (true)
+                    {
+                        int next = reader.Peek();
+                        if (next < 0 || (!quoted && (next == ',' || next == '\r' || next == '\n'))) break;
+                        char value = (char)reader.Read();
+                        if (value == '"')
+                        {
+                            if (!quoted) throw Framing(ordinal);
+                            if (reader.Peek() != '"')
+                            {
+                                closed = true;
+                                break;
+                            }
+                            reader.Read();
+                        }
+                        if (field.Length < limit) field.Append(value);
+                        else overflow = true;
+                    }
+                    if (quoted && !closed) throw Framing(ordinal);
+                    if (overflow)
+                    {
+                        // A marker of the same length is always over the text limit and never a valid scalar.
+                        field.Clear();
+                        field.Append('~', limit);
+                    }
+                    writer.Write(",\"");
+                    for (int offset = 0; offset < field.Length; offset++)
+                    {
+                        var value = field[offset];
+                        if (value == '"') writer.Write('"');
+                        writer.Write(value);
+                    }
+                    writer.Write('"');
+                    int separator = reader.Read();
+                    if (index < caps.Length - 1)
+                    {
+                        if (separator != ',') throw Framing(ordinal);
+                    }
+                    else
+                    {
+                        if (separator == '\r' && reader.Peek() == '\n') reader.Read();
+                        if (separator != -1 && separator != '\r' && separator != '\n') throw Framing(ordinal);
+                        writer.Write('\n');
+                    }
+                }
+            }
+            return ordinal;
+        }
+
+        private static InvalidDataException Framing(int ordinal)
+        {
+            return new InvalidDataException("CSV_FRAMING: registro " + ordinal.ToString(CultureInfo.InvariantCulture));
+        }
+    }
+}]]></ProjectItem>
+          <ProjectItem
+            Name="Project"
+            Encoding="UTF16LE"><![CDATA[<?xml version="1.0" encoding="UTF-16" standalone="yes"?>
+<c:Project xmlns:c="http://schemas.microsoft.com/codeprojectml/2010/08/main" xmlns:msb="http://schemas.microsoft.com/developer/msbuild/2003" runtimeVersion="3.0" schemaVersion="1.0">
+  <msb:PropertyGroup>
+    <msb:Language>msBuild</msb:Language>
+    <msb:CodeName>ST_OrdersSnapshot</msb:CodeName>
+    <msb:DisplayName>ST_OrdersSnapshot</msb:DisplayName>
+    <msb:ProjectId>{04BD65C5-8343-464D-85F7-6302DD8E216E}</msb:ProjectId>
+  </msb:PropertyGroup>
+  <msb:ItemGroup>
+    <msb:Project Include="ST_OrdersSnapshot.csproj" />
+    <msb:File Include="ScriptMain.cs" />
+    <msb:File Include="Properties\Settings.settings" />
+    <msb:File Include="Properties\AssemblyInfo.cs" />
+    <msb:File Include="Properties\Resources.resx" />
+    <msb:File Include="Properties\Resources.Designer.cs" />
+    <msb:File Include="Properties\Settings.Designer.cs" />
+  </msb:ItemGroup>
+</c:Project>]]></ProjectItem>
+          <ProjectItem
+            Name="Properties\AssemblyInfo.cs"
+            Encoding="UTF8"><![CDATA[using System.Reflection;
+using System.Runtime.CompilerServices;
+
+//
+// General Information about an assembly is controlled through the following
+// set of attributes. Change these attribute values to modify the information
+// associated with an assembly.
+//
+[assembly: AssemblyTitle("ST_OrdersSnapshot")]
+[assembly: AssemblyDescription("")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("ST_OrdersSnapshot")]
+[assembly: AssemblyCopyright("Copyright @  2026")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+//
+// Version information for an assembly consists of the following four values:
+//
+//      Major Version
+//      Minor Version
+//      Build Number
+//      Revision
+//
+// You can specify all the values or you can default the Revision and Build Numbers
+// by using the '*' as shown below:
+
+[assembly: AssemblyVersion("1.0.*")]]]></ProjectItem>
+          <ProjectItem
+            Name="Properties\Settings.settings"
+            Encoding="UTF8"><![CDATA[<?xml version='1.0' encoding='iso-8859-1'?>
+<SettingsFile xmlns="uri:settings" CurrentProfile="(Default)">
+  <Profiles>
+    <Profile Name="(Default)" />
+  </Profiles>
+  <Settings />
+</SettingsFile>]]></ProjectItem>
+          <ProjectItem
+            Name="Properties\Resources.Designer.cs"
+            Encoding="UTF8"><![CDATA[//------------------------------------------------------------------------------
+// <auto-generated>
+//     This code was generated by a tool.
+//
+//     Changes to this file may cause incorrect behavior and will be lost if
+//     the code is regenerated.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="ST_OrdersSnapshot.Properties.Resources.get_ResourceManager():System.Resources.Resou" +
+    "rceManager")]
+[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="ST_OrdersSnapshot.Properties.Resources.get_Culture():System.Globalization.CultureIn" +
+    "fo")]
+[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="ST_OrdersSnapshot.Properties.Resources.set_Culture(System.Globalization.CultureInfo" +
+    "):Void")]
+
+namespace ST_OrdersSnapshot.Properties {
+
+
+    /// <summary>
+    ///   A strongly-typed resource class, for looking up localized strings, etc.
+    /// </summary>
+    // This class was auto-generated by the StronglyTypedResourceBuilder
+    // class via a tool like ResGen or Visual Studio.
+    // To add or remove a member, edit your .ResX file then rerun ResGen
+    // with the /str option, or rebuild your VS project.
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+    internal class Resources {
+
+        private static global::System.Resources.ResourceManager resourceMan;
+
+        private static global::System.Globalization.CultureInfo resourceCulture;
+
+        [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
+        internal Resources() {
+        }
+
+        /// <summary>
+        ///   Returns the cached ResourceManager instance used by this class.
+        /// </summary>
+        [global::System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        internal static global::System.Resources.ResourceManager ResourceManager {
+            get {
+                if ((resourceMan == null)) {
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("ST_OrdersSnapshot.Properties.Resources", typeof(Resources).Assembly);
+                    resourceMan = temp;
+                }
+                return resourceMan;
+            }
+        }
+
+        /// <summary>
+        ///   Overrides the current thread's CurrentUICulture property for all
+        ///   resource lookups using this strongly typed resource class.
+        /// </summary>
+        [global::System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        internal static global::System.Globalization.CultureInfo Culture {
+            get {
+                return resourceCulture;
+            }
+            set {
+                resourceCulture = value;
+            }
+        }
+    }
+}]]></ProjectItem>
+          <BinaryItem
+            Name="ST_OrdersSnapshot.dll">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
+NQAAAAIAAAABAAAACwAAAAwAAABMAAAAAwAAAAUAAAACAAAAAQAAAAYAAAAEAAAAAAAKAAEAAAAA
+AAYAhQBcAAoAtgCqAA4A9QDjAAoAQwE5AQoATgE5ARIAbAE5AQoA2QG6AQoAHAL8AQoAPAL8AQYA
+WgJcAAYAfAJcABYA1QK1AhYA7QK1AgoACQNlAQoAHANlAQoAJwM5AQoANAM5AQ4AWgNHAw4AiQPj
+AA4AmQNHAw4AqwPjAA4AuANHAwoA0ANlAQoA4ANlARYA9AO1AhYAEAS1AgoAQwRlAQoAYwRlAQoA
+bwRlARoAjgSCBAoAtASZBAoA4ARlAQoA6gRlAQoACQX3BAYAKQVcAAoAZQU5AQoAbwVlAQoAqwU5
+AQoAtwVlAQoA0wU5AQoA3gU5AQoA5wU5AQoA8gU5AQoAGQb8BQoAJwb8BQoANQY5AQoASAZlAQoA
+ewY5AQoAiAaqAAoAkQY5AQoA5AaqAAoABwfyBgoAKAdlAQAAAAABAAAAAAABAAEAAQAQACAAKwAF
+AAEAAQAxAMMAEwBQIAAAAACGAMgAFwABAEwjAAAAAIEAzQAbAAEAbCMAAAAAgQDSACAAAgCkIwAA
+AACBABIBJAACADQkAAAAAJEAFgEpAAIAdCQAAAAAlgAdAS4AAwAUJgAAAACRACsBOQAIAFAmAAAA
+AJEAWQE+AAkA8ycAAAAAkQCBAUgADAAeKAAAAACGGIkBFwANABAoAAAAAJEYRQcBAg0AAAABAI8B
+AAABAJQBAAABAJkBAAACAKABAAADAKkBAAAEALABAgAFALUBAAABAI8BAAABAOYBAAACAO0BAAAD
+ALABAAABAPQBOQCJARcAQQCJAU4ASQCJARcAUQCJARcACQCOAlgAWQDfAl0AYQD2AmIAaQD/AmgA
+cQAQA2wAcQAhA3IAgQAsA3kAiQA5A38AcQBAA3kAMQCJAYQAkQB0AyAAmQCJAYQAoQCmAxcAqQCJ
+AYkAsQDCA2gAuQDYA5AAwQDsAxcAWQAABJUAyQD2ApoA0QAiBIQAgQA3BKAA2QBIBKQA2QBQBBsA
+cQBAA6kAaQBZBLAA4QBpBLUADACJAcEA8QDCBMcA8QDJBOQAWQDRBE4AAQHvBPUAEQEUBSAAAQEd
+BSAAWQA9BfsAGQFIBQEBcQBSBX8AIQE5A38AcQCABSkBGQCJARcAGQCHBYQAkQCUBTIBcQCdBX8A
+iQAWASkAQQGJAT8BYQEgBk4BaQE8BlQBeQFQBFwBcQBVBmIBcQBdBiAAcQFuBmgBgQGJAW0BkQGJ
+AXkBIQCeBoQBIQCjBoQBIQCoBiAAFACJAcEA8QCxBpQBKQC/BoQAcQDFBoQBcQDQBr4BcQDaBsMB
+mQGJARcAoQETB8kB4QBQBM8BmQE4B9YBmQHFBoQBmQE+B9wBmQE+B+MBmQHQBr4BKQC/BusBEQCJ
+AQUCCQCJARcALgATAAsCLgAbABQCQwAjAFMACgElATgBqQHwAboAiAEEgAAAAAAAAAAAAAAAAAAA
+AAArAAAAEQAAAAAAAAAAAAAAAQA9AAAAAAAEAAAAAAAAAAAAAAAKAKEAAAAAAAQAAAAAAAAAAAAA
+AAoA1wAAAAAABAAAAAAAAAAAAAAACgBlAQAAAAARAAAAAAAAAAAAAAABAJYCAAAAAAQAAAAAAAAA
+AAAAAAoAdgQAAAAAQQDfAEMA8QBBAI8BewClAQAAADxNb2R1bGU+AFNUX09yZGVyc1NuYXBzaG90
+LmRsbABTY3JpcHRNYWluAFNUX09yZGVyc1NuYXBzaG90AE1pY3Jvc29mdC5TcWxTZXJ2ZXIuU2Ny
+aXB0VGFzawBNaWNyb3NvZnQuU3FsU2VydmVyLkR0cy5UYXNrcy5TY3JpcHRUYXNrAFZTVEFSVFNj
+cmlwdE9iamVjdE1vZGVsQmFzZQBtc2NvcmxpYgBTeXN0ZW0uVGV4dABVVEY4RW5jb2RpbmcAVXRm
+OABNYWluAFRleHQAUm9vdABTeXN0ZW0uRGF0YQBTeXN0ZW0uRGF0YS5PbGVEYgBPbGVEYkNvbm5l
+Y3Rpb25TdHJpbmdCdWlsZGVyAFNxbABEZWxldGUAV3JpdGVTbmFwc2hvdABVbnF1b3RlSGVhZGVy
+AFN5c3RlbS5JTwBUZXh0UmVhZGVyAFRleHRXcml0ZXIAQWRkT3JkaW5hbHMAU3lzdGVtAEludmFs
+aWREYXRhRXhjZXB0aW9uAEZyYW1pbmcALmN0b3IAbmFtZQBwYXRoAHNvdXJjZQBzbmFwc2hvdABo
+ZWFkZXIAY2FwcwBoYXNoAFN5c3RlbS5SdW50aW1lLkludGVyb3BTZXJ2aWNlcwBPdXRBdHRyaWJ1
+dGUAcmVhZGVyAHdyaXRlcgBvcmRpbmFsAFN5c3RlbS5SdW50aW1lLkNvbXBpbGVyU2VydmljZXMA
+Q29tcGlsYXRpb25SZWxheGF0aW9uc0F0dHJpYnV0ZQBSdW50aW1lQ29tcGF0aWJpbGl0eUF0dHJp
+YnV0ZQBTU0lTU2NyaXB0VGFza0VudHJ5UG9pbnRBdHRyaWJ1dGUAU2NyaXB0T2JqZWN0TW9kZWwA
+Z2V0X0R0cwBNaWNyb3NvZnQuU3FsU2VydmVyLk1hbmFnZWREVFMATWljcm9zb2Z0LlNxbFNlcnZl
+ci5EdHMuUnVudGltZQBWYXJpYWJsZXMAZ2V0X1ZhcmlhYmxlcwBWYXJpYWJsZQBnZXRfSXRlbQBn
+ZXRfVmFsdWUAU3RyaW5nAG9wX0VxdWFsaXR5AENoYXIAU3BsaXQAUGF0aABDb21iaW5lAEZpbGUA
+RXhpc3RzAENvbmNhdABTeXN0ZW0uRGF0YS5Db21tb24ARGJDb25uZWN0aW9uU3RyaW5nQnVpbGRl
+cgBnZXRfQ29ubmVjdGlvblN0cmluZwBPbGVEYkNvbm5lY3Rpb24ARGJDb25uZWN0aW9uAE9wZW4A
+T2xlRGJDb21tYW5kAERiQ29tbWFuZABFeGVjdXRlU2NhbGFyAENvbnZlcnQAVG9JbnQzMgBJRGlz
+cG9zYWJsZQBEaXNwb3NlAENvbm5lY3Rpb25zAGdldF9Db25uZWN0aW9ucwBDb25uZWN0aW9uTWFu
+YWdlcgBzZXRfQ29ubmVjdGlvblN0cmluZwBHZXRUZW1wUGF0aABHdWlkAE5ld0d1aWQAVG9TdHJp
+bmcAc2V0X1ZhbHVlAEludDMyAFBhcnNlAEZ1bmNgMgBTeXN0ZW0uQ29yZQBTeXN0ZW0uTGlucQBF
+bnVtZXJhYmxlAFN5c3RlbS5Db2xsZWN0aW9ucy5HZW5lcmljAElFbnVtZXJhYmxlYDEAU2VsZWN0
+AFRvQXJyYXkAc2V0X1Rhc2tSZXN1bHQARXhjZXB0aW9uAFR5cGUAR2V0VHlwZQBTeXN0ZW0uUmVm
+bGVjdGlvbgBNZW1iZXJJbmZvAGdldF9OYW1lAGdldF9NZXNzYWdlAEV2ZW50c09iamVjdFdyYXBw
+ZXIAZ2V0X0V2ZW50cwBGaXJlRXJyb3IASXNOdWxsT3JXaGl0ZVNwYWNlAERpcmVjdG9yeQBTdHJp
+bmdDb21wYXJpc29uAEVxdWFscwBzZXRfUHJvdmlkZXIAc2V0X0l0ZW0ASXNOdWxsT3JFbXB0eQBJ
+T0V4Y2VwdGlvbgBVbmF1dGhvcml6ZWRBY2Nlc3NFeGNlcHRpb24ARmlsZVN0cmVhbQBGaWxlTW9k
+ZQBGaWxlQWNjZXNzAEZpbGVTaGFyZQBTeXN0ZW0uU2VjdXJpdHkuQ3J5cHRvZ3JhcGh5AFNIQTI1
+NgBDcmVhdGUASGFzaEFsZ29yaXRobQBTdHJlYW0AQ29tcHV0ZUhhc2gAQml0Q29udmVydGVyAFJl
+cGxhY2UAVG9Mb3dlckludmFyaWFudABzZXRfUG9zaXRpb24AU3RyZWFtUmVhZGVyAEVuY29kaW5n
+AFN0cmVhbVdyaXRlcgBQZWVrAFJlYWQAUmVhZExpbmUAU2VxdWVuY2VFcXVhbABXcml0ZQBnZXRf
+TGVuZ3RoAGdldF9DaGFycwBTdWJzdHJpbmcAU3RyaW5nQnVpbGRlcgBTeXN0ZW0uR2xvYmFsaXph
+dGlvbgBDdWx0dXJlSW5mbwBnZXRfSW52YXJpYW50Q3VsdHVyZQBJRm9ybWF0UHJvdmlkZXIAQ2xl
+YXIAQXBwZW5kAC5jY3RvcgAAIVMAeQBzAHQAZQBtADoAOgBUAGEAcwBrAE4AYQBtAGUAACVDAG8A
+bQBwAHIAbwBiAGEAcgAgAGUAbgB0AHIAYQBkAGEAcwAAI1UAcwBlAHIAOgA6AFMAbwB1AHIAYwBl
+AEYAaQBsAGUAcwAAG0MAUwBWAF8ATQBJAFMAUwBJAE4ARwA6ACAAAIDJUwBFAEwARQBDAFQAIABD
+AEEAUwBFACAAVwBIAEUATgAgAEQAQgBfAE4AQQBNAEUAKAApACAAPAA+ACAAJwBCAEkAXwBPAEwA
+SQBTAFQAJwAgAE8AUgAgAE8AQgBKAEUAQwBUAF8ASQBEACgATgAnAGEAdQBkAGkAdAAuAEIAYQB0
+AGMAaAAnACwATgAnAFUAJwApACAASQBTACAATgBVAEwATAAgAFQASABFAE4AIAAwACAARQBMAFMA
+RQAgADEAIABFAE4ARAABW1MAUQBMAF8AUwBDAEgARQBNAEEAOgAgAGQAZQBzAHQAaQBuAG8AIABk
+AGUAIABpAG4AZwBlAHMAdABhACAAbgBvACAAZABpAHMAcABvAG4AaQBiAGwAZQAuAAAZUAByAGUA
+cABhAHIAYQByACAAQwBTAFYAAA1DAE0AXwBTAFEATAAADW8AbABpAHMAdAAtAAEDTgAACS4AYwBz
+AHYAAB1VAHMAZQByADoAOgBTAG4AYQBwAHMAaABvAHQAACFVAHMAZQByADoAOgBTAG8AdQByAGMA
+ZQBGAGkAbABlAAAZVQBzAGUAcgA6ADoASABlAGEAZABlAHIAAB9VAHMAZQByADoAOgBGAGkAZQBs
+AGQAQwBhAHAAcwAADUMATQBfAEMAUwBWAAAlVQBzAGUAcgA6ADoAUgBvAHcAcwBFAHgAcABlAGMA
+dABlAGQAACFVAHMAZQByADoAOgBTAG8AdQByAGMAZQBIAGEAcwBoAAAbSQBuAGcAZQBzAHQAYQAg
+AE8AbABpAHMAdAAAAQAlJABQAHIAbwBqAGUAYwB0ADoAOgBDAFMAVgBfAFIATwBPAFQAAE9DAFMA
+VgBfAFIATwBPAFQAOgAgAGkAbgBkAGkAYwBhACAAdQBuAGEAIABjAGEAcgBwAGUAdABhACAAZQB4
+AGkAcwB0AGUAbgB0AGUALgAAKSQAUAByAG8AagBlAGMAdAA6ADoAUwBRAEwAXwBTAEUAUgBWAEUA
+UgAALSQAUAByAG8AagBlAGMAdAA6ADoAUwBRAEwAXwBEAEEAVABBAEIAQQBTAEUAABFCAEkAXwBP
+AEwASQBTAFQAAGlTAFEATABfAFMARQBSAFYARQBSACAAeQAgAFMAUQBMAF8ARABBAFQAQQBCAEEA
+UwBFAD0AQgBJAF8ATwBMAEkAUwBUACAAcwBvAG4AIABvAGIAbABpAGcAYQB0AG8AcgBpAG8AcwAu
+AAAZTQBTAE8ATABFAEQAQgBTAFEATAAxADkAACdJAG4AdABlAGcAcgBhAHQAZQBkACAAUwBlAGMA
+dQByAGkAdAB5AAAJUwBTAFAASQAAL1UAcwBlACAARQBuAGMAcgB5AHAAdABpAG8AbgAgAGYAbwBy
+ACAARABhAHQAYQAAEU8AcAB0AGkAbwBuAGEAbAAAF0QAYQB0AGEAIABTAG8AdQByAGMAZQAAH0kA
+bgBpAHQAaQBhAGwAIABDAGEAdABhAGwAbwBnAAADLQABW0MAUwBWAF8ASABFAEEARABFAFIAOgAg
+AGUAbgBjAGEAYgBlAHoAYQBkAG8AIABkAGkAcwB0AGkAbgB0AG8AIABkAGUAbAAgAGMAbwBuAHQA
+cgBhAHQAbwAuAAAlcwBvAHUAcgBjAGUAXwByAG8AdwBfAG4AdQBtAGIAZQByACwAAAMKAAAFLAAi
+AAAtQwBTAFYAXwBGAFIAQQBNAEkATgBHADoAIAByAGUAZwBpAHMAdAByAG8AIAAAMfoQLazrtUi6
+Eu9Vl41UDwAIiYRdzYCAzJEIt3pcVhk04IkDBhIJAyAAAQQgAQ4OAyAADgQgABINBAABAQ4KAAUI
+Dg4OHQgQDgQAAQ4OCQADCBIREhUdCAUAARIZCAQgAQEIBAEAAAAEIAASLQQgABIxBSABEjUcAyAA
+HAUAAgIODgYgAR0OHQMFAAIODg4EAAECDgQgAQEOBiACAQ4STQQAAQgcBCAAEmUFIAESaRwDAAAO
+BAAAEW0GAAMODg4OBCABARwEAAEIDgYVEnUCDggFIAIBHBgXEAICFRJ9AR4BFRJ9AR4AFRJ1Ah4A
+HgEECgIOCAwQAQEdHgAVEn0BHgADCgEIBSAAEoCFBSAAEoCNCCAFAggODg4IGgcQDg4ODhJNElUO
+DggSgIEOHQMdDggRbR0DAwcBDggAAwIODhGAlQUgAgEOHAYHAw4OEg0OIAUBDhGApRGAqRGArQgF
+AAASgLEHIAEdBRKAuQUAAQ4dBQUgAg4ODgQgAQEKCyAEARKAuRKAxQIICiADARKAuRKAxQgDIAAI
+BhUSdQIODgQKAg4OEBABAgIVEn0BHgAVEn0BHgADCgEOFAcIEoChEoCxEoDBEoDJDggdAx0DBCAB
+AwgFIAIOCAgFAAASgNEGIAEOEoDVBSAAEoDNBiABEoDNAwcgAhKAzQMIBCABAQMQBwwSgM0ICAIC
+CAIIAwgDCAMAAAEFIAIBAgIIAQAIAAAAAAAeAQABAFQCFldyYXBOb25FeGNlcHRpb25UaHJvd3MB
+ABw9AAAAAAAAAAAAAD49AAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwPQAAAAAAAAAAAAAAAAAA
+AAAAAAAAX0NvckRsbE1haW4AbXNjb3JlZS5kbGwAAAAAAP8lACAAEAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEA
+EAAAABgAAIAAAAAAAAAAAAAAAAAAAAEAAQAAADAAAIAAAAAAAAAAAAAAAAAAAAEAAAAAAEgAAABY
+QAAAbAIAAAAAAAAAAAAAbAI0AAAAVgBTAF8AVgBFAFIAUwBJAE8ATgBfAEkATgBGAE8AAAAAAL0E
+7/4AAAEAAAAAAAAAAAAAAAAAAAAAAD8AAAAAAAAABAAAAAIAAAAAAAAAAAAAAAAAAABEAAAAAQBW
+AGEAcgBGAGkAbABlAEkAbgBmAG8AAAAAACQABAAAAFQAcgBhAG4AcwBsAGEAdABpAG8AbgAAAAAA
+AACwBMwBAAABAFMAdAByAGkAbgBnAEYAaQBsAGUASQBuAGYAbwAAAKgBAAABADAAMAAwADAAMAA0
+AGIAMAAAACwAAgABAEYAaQBsAGUARABlAHMAYwByAGkAcAB0AGkAbwBuAAAAAAAgAAAAMAAIAAEA
+RgBpAGwAZQBWAGUAcgBzAGkAbwBuAAAAAAAwAC4AMAAuADAALgAwAAAATAAWAAEASQBuAHQAZQBy
+AG4AYQBsAE4AYQBtAGUAAABTAFQAXwBPAHIAZABlAHIAcwBTAG4AYQBwAHMAaABvAHQALgBkAGwA
+bAAAACgAAgABAEwAZQBnAGEAbABDAG8AcAB5AHIAaQBnAGgAdAAAACAAAABUABYAAQBPAHIAaQBn
+AGkAbgBhAGwARgBpAGwAZQBuAGEAbQBlAAAAUwBUAF8ATwByAGQAZQByAHMAUwBuAGEAcABzAGgA
+bwB0AC4AZABsAGwAAAA0AAgAAQBQAHIAbwBkAHUAYwB0AFYAZQByAHMAaQBvAG4AAAAwAC4AMAAu
+ADAALgAwAAAAOAAIAAEAQQBzAHMAZQBtAGIAbAB5ACAAVgBlAHIAcwBpAG8AbgAAADAALgAwAC4A
+MAAuADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAAAAwAAABQPQAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</BinaryItem>
+        </ScriptProject>
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Ingerir Customers"
+      DTS:CreationName="Microsoft.ExecutePackageTask"
+      DTS:DelayValidation="True"
+      DTS:DTSID="{4EE46308-AB06-4CE1-AEAA-0E24B771F8BA}"
+      DTS:ExecutableType="Microsoft.ExecutePackageTask"
+      DTS:FailPackageOnFailure="True"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Ingerir Customers"
+      DTS:TaskContact="Microsoft Corporation; Microsoft SQL Server; Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <ExecutePackageTask>
+          <UseProjectReference>True</UseProjectReference>
+          <PackageName>ETL_Customers.dtsx</PackageName>
+        </ExecutePackageTask>
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Ingerir Geolocation"
+      DTS:CreationName="Microsoft.ExecutePackageTask"
+      DTS:DelayValidation="True"
+      DTS:DTSID="{7ACF5A0D-C1B1-41FD-A94B-6B9D36BD8216}"
+      DTS:ExecutableType="Microsoft.ExecutePackageTask"
+      DTS:FailPackageOnFailure="True"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Ingerir Geolocation"
+      DTS:TaskContact="Microsoft Corporation; Microsoft SQL Server; Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <ExecutePackageTask>
+          <UseProjectReference>True</UseProjectReference>
+          <PackageName>ETL_Geolocation.dtsx</PackageName>
+        </ExecutePackageTask>
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Ingerir OrderItems"
+      DTS:CreationName="Microsoft.ExecutePackageTask"
+      DTS:DelayValidation="True"
+      DTS:DTSID="{36FC46C2-DC14-4BB7-9E5D-1EFDF2A0B924}"
+      DTS:ExecutableType="Microsoft.ExecutePackageTask"
+      DTS:FailPackageOnFailure="True"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Ingerir OrderItems"
+      DTS:TaskContact="Microsoft Corporation; Microsoft SQL Server; Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <ExecutePackageTask>
+          <UseProjectReference>True</UseProjectReference>
+          <PackageName>ETL_OrderItems.dtsx</PackageName>
+        </ExecutePackageTask>
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Ingerir OrderPayments"
+      DTS:CreationName="Microsoft.ExecutePackageTask"
+      DTS:DelayValidation="True"
+      DTS:DTSID="{EAADE5A3-B82F-4051-9244-AD9ADD665A2A}"
+      DTS:ExecutableType="Microsoft.ExecutePackageTask"
+      DTS:FailPackageOnFailure="True"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Ingerir OrderPayments"
+      DTS:TaskContact="Microsoft Corporation; Microsoft SQL Server; Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <ExecutePackageTask>
+          <UseProjectReference>True</UseProjectReference>
+          <PackageName>ETL_OrderPayments.dtsx</PackageName>
+        </ExecutePackageTask>
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Ingerir OrderReviews"
+      DTS:CreationName="Microsoft.ExecutePackageTask"
+      DTS:DelayValidation="True"
+      DTS:DTSID="{DDC8B5A9-BA9F-48EF-8579-764EB3F77854}"
+      DTS:ExecutableType="Microsoft.ExecutePackageTask"
+      DTS:FailPackageOnFailure="True"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Ingerir OrderReviews"
+      DTS:TaskContact="Microsoft Corporation; Microsoft SQL Server; Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <ExecutePackageTask>
+          <UseProjectReference>True</UseProjectReference>
+          <PackageName>ETL_OrderReviews.dtsx</PackageName>
+        </ExecutePackageTask>
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Ingerir Orders"
+      DTS:CreationName="Microsoft.ExecutePackageTask"
+      DTS:DelayValidation="True"
+      DTS:DTSID="{3DFB37B6-7A93-4697-B143-8B414B7CEE68}"
+      DTS:ExecutableType="Microsoft.ExecutePackageTask"
+      DTS:FailPackageOnFailure="True"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Ingerir Orders"
+      DTS:TaskContact="Microsoft Corporation; Microsoft SQL Server; Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <ExecutePackageTask>
+          <UseProjectReference>True</UseProjectReference>
+          <PackageName>ETL_Orders.dtsx</PackageName>
+        </ExecutePackageTask>
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Ingerir ProductCategoryTranslation"
+      DTS:CreationName="Microsoft.ExecutePackageTask"
+      DTS:DelayValidation="True"
+      DTS:DTSID="{6296ADCA-CE49-4D26-A611-A0B7FCD03B0C}"
+      DTS:ExecutableType="Microsoft.ExecutePackageTask"
+      DTS:FailPackageOnFailure="True"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Ingerir ProductCategoryTranslation"
+      DTS:TaskContact="Microsoft Corporation; Microsoft SQL Server; Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <ExecutePackageTask>
+          <UseProjectReference>True</UseProjectReference>
+          <PackageName>ETL_CategoryTranslation.dtsx</PackageName>
+        </ExecutePackageTask>
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Ingerir Products"
+      DTS:CreationName="Microsoft.ExecutePackageTask"
+      DTS:DelayValidation="True"
+      DTS:DTSID="{DC9AECE8-D26E-4DC5-8D8A-65287ABAE2B9}"
+      DTS:ExecutableType="Microsoft.ExecutePackageTask"
+      DTS:FailPackageOnFailure="True"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Ingerir Products"
+      DTS:TaskContact="Microsoft Corporation; Microsoft SQL Server; Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <ExecutePackageTask>
+          <UseProjectReference>True</UseProjectReference>
+          <PackageName>ETL_Products.dtsx</PackageName>
+        </ExecutePackageTask>
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Ingerir Sellers"
+      DTS:CreationName="Microsoft.ExecutePackageTask"
+      DTS:DelayValidation="True"
+      DTS:DTSID="{197C9C16-8728-4FF3-A194-2CC43B3D4EF3}"
+      DTS:ExecutableType="Microsoft.ExecutePackageTask"
+      DTS:FailPackageOnFailure="True"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Ingerir Sellers"
+      DTS:TaskContact="Microsoft Corporation; Microsoft SQL Server; Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <ExecutePackageTask>
+          <UseProjectReference>True</UseProjectReference>
+          <PackageName>ETL_Sellers.dtsx</PackageName>
+        </ExecutePackageTask>
+      </DTS:ObjectData>
+    </DTS:Executable>
+  </DTS:Executables>
+  <DTS:PrecedenceConstraints>
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[{04307575-3397-447E-9465-4BB13E276F71\}]"
+      DTS:CreationName=""
+      DTS:DTSID="{04307575-3397-447E-9465-4BB13E276F71}"
+      DTS:From="Package\Ingerir Sellers"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="{04307575-3397-447E-9465-4BB13E276F71}"
+      DTS:To="Package\Ingerir Products" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[{54AA7774-7CF6-453E-BD04-B14292D1D6A4\}]"
+      DTS:CreationName=""
+      DTS:DTSID="{54AA7774-7CF6-453E-BD04-B14292D1D6A4}"
+      DTS:From="Package\Comprobar entradas"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="{54AA7774-7CF6-453E-BD04-B14292D1D6A4}"
+      DTS:To="Package\Ingerir Orders" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[{567D0D6E-B79D-485C-A35C-0270A6982D26\}]"
+      DTS:CreationName=""
+      DTS:DTSID="{567D0D6E-B79D-485C-A35C-0270A6982D26}"
+      DTS:From="Package\Ingerir OrderReviews"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="{567D0D6E-B79D-485C-A35C-0270A6982D26}"
+      DTS:To="Package\Ingerir Customers" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[{9572BC13-FE96-4E47-8FE5-CCB345C1A75A\}]"
+      DTS:CreationName=""
+      DTS:DTSID="{9572BC13-FE96-4E47-8FE5-CCB345C1A75A}"
+      DTS:From="Package\Ingerir Products"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="{9572BC13-FE96-4E47-8FE5-CCB345C1A75A}"
+      DTS:To="Package\Ingerir Geolocation" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[{C218AA6C-40FE-4348-9000-2246F092B9CD\}]"
+      DTS:CreationName=""
+      DTS:DTSID="{C218AA6C-40FE-4348-9000-2246F092B9CD}"
+      DTS:From="Package\Ingerir OrderPayments"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="{C218AA6C-40FE-4348-9000-2246F092B9CD}"
+      DTS:To="Package\Ingerir OrderReviews" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[{ED41F019-3C9C-4604-A8AE-9D07E76FFDE4\}]"
+      DTS:CreationName=""
+      DTS:DTSID="{ED41F019-3C9C-4604-A8AE-9D07E76FFDE4}"
+      DTS:From="Package\Ingerir OrderItems"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="{ED41F019-3C9C-4604-A8AE-9D07E76FFDE4}"
+      DTS:To="Package\Ingerir OrderPayments" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[{F774528C-97A8-4C4A-8435-9E2E240829DE\}]"
+      DTS:CreationName=""
+      DTS:DTSID="{F774528C-97A8-4C4A-8435-9E2E240829DE}"
+      DTS:From="Package\Ingerir Geolocation"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="{F774528C-97A8-4C4A-8435-9E2E240829DE}"
+      DTS:To="Package\Ingerir ProductCategoryTranslation" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[{F90AA2ED-F51B-48E8-8FAF-B424DD8E160A\}]"
+      DTS:CreationName=""
+      DTS:DTSID="{F90AA2ED-F51B-48E8-8FAF-B424DD8E160A}"
+      DTS:From="Package\Ingerir Customers"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="{F90AA2ED-F51B-48E8-8FAF-B424DD8E160A}"
+      DTS:To="Package\Ingerir Sellers" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[{FF85BC87-033E-4B81-95BA-815AE66EC96C\}]"
+      DTS:CreationName=""
+      DTS:DTSID="{FF85BC87-033E-4B81-95BA-815AE66EC96C}"
+      DTS:From="Package\Ingerir Orders"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="{FF85BC87-033E-4B81-95BA-815AE66EC96C}"
+      DTS:To="Package\Ingerir OrderItems" />
+  </DTS:PrecedenceConstraints>
+</DTS:Executable>
