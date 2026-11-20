@@ -1,0 +1,26 @@
+Original y round-trip por las API SSIS. Comparación con copia guardada desde Visual Studio: las siete conversiones y sus mapeos coincidieron.
+
+review_id: DT_STR/195 (CP 65001) -> DT_WSTR/65 -> review_id; linaje 48 -> 16
+order_id: DT_STR/195 (CP 65001) -> DT_WSTR/65 -> order_id; linaje 51 -> 19
+review_score: DT_STR/288 (CP 65001) -> DT_WSTR/96 -> review_score; linaje 54 -> 22
+review_comment_title: DT_STR/3003 (CP 65001) -> DT_WSTR/1001 -> review_comment_title; linaje 57 -> 25
+review_comment_message: DT_TEXT/0 (CP 65001) -> DT_NTEXT/0 -> review_comment_message; linaje 60 -> 28
+review_creation_date: DT_STR/288 (CP 65001) -> DT_WSTR/96 -> review_creation_date; linaje 63 -> 31
+review_answer_timestamp: DT_STR/288 (CP 65001) -> DT_WSTR/96 -> review_answer_timestamp; linaje 66 -> 34
+Metadatos después de guardar y recargar:
+review_id: DT_STR/195 (CP 65001) -> DT_WSTR/65 -> review_id; linaje 48 -> 16
+order_id: DT_STR/195 (CP 65001) -> DT_WSTR/65 -> order_id; linaje 51 -> 19
+review_score: DT_STR/288 (CP 65001) -> DT_WSTR/96 -> review_score; linaje 54 -> 22
+review_comment_title: DT_STR/3003 (CP 65001) -> DT_WSTR/1001 -> review_comment_title; linaje 57 -> 25
+review_comment_message: DT_TEXT/0 (CP 65001) -> DT_NTEXT/0 -> review_comment_message; linaje 60 -> 28
+review_creation_date: DT_STR/288 (CP 65001) -> DT_WSTR/96 -> review_creation_date; linaje 63 -> 31
+review_answer_timestamp: DT_STR/288 (CP 65001) -> DT_WSTR/96 -> review_answer_timestamp; linaje 66 -> 34
+
+DTExec x64 de la copia editada por API, salida 0 en dos intentos. Hubo carga de una fixture nueva con BOM, UTF-8 y EOF sin terminador.
+batch_id|status|rows_read|rows_accepted|rows_rejected
+--------|------|---------|-------------|-------------
+40033|COMPLETE|6|5|1
+staging
+-------
+5
+Se comprobó la huella SHA-256 de 4.000 unidades UTF-16, el título NULL y el texto Unicode de la fila adicional.

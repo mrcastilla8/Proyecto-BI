@@ -27,5 +27,6 @@ Las horas corresponden al 20 de noviembre de 2026 en Lima (UTC−05:00). Cada ru
 
 - [Anexo B](anexo-b/) conserva conciliación, ejecuciones, rechazo, recuperación, contención, integridad y eventos del IDE. [Consulta SQL de las capturas](../../generador/sql/consultas-evidencia.sql).
 - Edición representativa de Orders en una copia aislada. [Código guardado en VSTA a las 03:39:55](anexo-b/vsta-orders-guardado.png), [reapertura a las 03:40:29](anexo-b/vsta-orders-reapertura.png) y [diagnóstico del cierre de Reviews posterior](anexo-b/reviews-diagnostico.txt).
+- Verificación adicional de Reviews con su lote auténtico ya confirmado. [Ejecución exitosa a las 04:02:18](anexo-b/reviews-ejecucion.png), [regreso al diseñador a las 04:02:22](anexo-b/reviews-regreso.png) y [diagnóstico comparativo](anexo-b/DIAGNOSTICO_EDITOR_REVIEWS.md).
 - [Anexo F](anexo-f/REPRODUCCION.md) contiene el procedimiento Windows, compilación y versiones.
 - [Informe de entrega](INFORME_ENTREGA.md).

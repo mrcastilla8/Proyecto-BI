@@ -2,6 +2,8 @@
 
 **Veredicto global: FAIL.** La ingesta, las pruebas en LocalDB, la ejecución con DTExec x64 y la edición de Orders en VSTA pasaron. Visual Studio se cerró al abrir el editor de conversión de Reviews. La captura directa de DTExec en terminal queda pendiente y se conserva su registro verificado.
 
+La revisión posterior reprodujo el cierre al intentar insertar un conversor nativo en una sonda mínima y al abrir el conversor de Customers. La edición por API y la ejecución siguen disponibles. [Resultado de aislamiento y regresión](anexo-b/DIAGNOSTICO_EDITOR_REVIEWS.md).
+
 ## A y B. Implementación y generación
 
 Se conservó la solución existente y se respaldó el estado local antes de reconciliar el proyecto, los parámetros y el paquete Orders. El `Package.dtsx` local vacío quedó preservado junto con los inventarios y hashes en el directorio ignorado de ensayo. El generador C# usa ManagedDTS y Pipeline Wrapper con metadatos del contrato 1.0.0. Crea nueve Data Flow nativos y el maestro. Cada flujo tiene sus propios campos, tipos, reglas y destino. Los scripts compartidos parametrizan las conexiones, capturan ordinales, calculan SHA-256 y preparan la instantánea que lee Flat File Source. El destino OLE DB carga `#FilasIngesta` y las tareas SQL publican al destino contractual con auditoría.
