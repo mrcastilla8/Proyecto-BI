@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SSIS:Parameters xmlns:SSIS="www.microsoft.com/SqlServer/SSIS">
+  <SSIS:Parameter SSIS:Name="SQL_CONNECTION">
+    <SSIS:Properties>
+      <SSIS:Property SSIS:Name="ID">{FD39B61B-0DB6-4793-8D33-41E963D81AA2}</SSIS:Property>
+      <SSIS:Property SSIS:Name="CreationName"></SSIS:Property>
+      <SSIS:Property SSIS:Name="Description">Conexión OLE DB con autenticación Windows.</SSIS:Property>
+      <SSIS:Property SSIS:Name="IncludeInDebugDump">0</SSIS:Property>
+      <SSIS:Property SSIS:Name="Required">1</SSIS:Property>
+      <SSIS:Property SSIS:Name="Sensitive">0</SSIS:Property>
+      <SSIS:Property SSIS:Name="Value"></SSIS:Property>
+      <SSIS:Property SSIS:Name="DataType">18</SSIS:Property>
+    </SSIS:Properties>
+  </SSIS:Parameter>
+  <SSIS:Parameter SSIS:Name="LOTS_JSON">
+    <SSIS:Properties>
+      <SSIS:Property SSIS:Name="ID">{D224A557-B41B-44AC-B21B-191E3457F5DD}</SSIS:Property>
+      <SSIS:Property SSIS:Name="CreationName"></SSIS:Property>
+      <SSIS:Property SSIS:Name="Description">Objeto JSON con los nueve IDs del snapshot confirmado.</SSIS:Property>
+      <SSIS:Property SSIS:Name="IncludeInDebugDump">0</SSIS:Property>
+      <SSIS:Property SSIS:Name="Required">1</SSIS:Property>
+      <SSIS:Property SSIS:Name="Sensitive">0</SSIS:Property>
+      <SSIS:Property SSIS:Name="Value"></SSIS:Property>
+      <SSIS:Property SSIS:Name="DataType">18</SSIS:Property>
+    </SSIS:Properties>
+  </SSIS:Parameter>
+</SSIS:Parameters>
