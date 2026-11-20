@@ -78,6 +78,14 @@ python "$gen/verificar_valores.py" --csv $csvRoot --perfil $perfil --archivos "$
 
 La comparación global recorre cada ordinal del CSV y la tabla de destino. Distingue NULL de una cadena no vacía y compara longitud y SHA-256 de la representación UTF-16LE de las columnas. Los enteros y decimales se representan con su tipo y escala del contrato. La salida contiene totales y, ante diferencias, una muestra de ordinales sin datos de fila. La [consulta antes y después](../../../generador/sql/conciliar-texto-reviews.sql) compara el lote auténtico histórico y el nuevo dentro de la misma instancia LocalDB. [Resultados reproducidos](../anexo-b/texto-integridad.txt).
 
+## Ejecutar en BI_OLIST principal
+
+Para una carga inicial, identifica primero el servicio de SQL Server instalado y verifica en lectura `@@SERVERNAME`, `DB_NAME()` e identidad efectiva. Confirma esquema, permisos del ejecutor, los nueve hashes de los CSV, espacio, ausencia de actividad interferente y que staging y auditoría estén vacíos. En esta entrega la instancia principal era el servicio predeterminado local `MSSQLSERVER`. [Preflight observado](../anexo-b/principal-preflight.txt).
+
+Copia la solución a un directorio local ignorado. Configura `SQL_SERVER` con el destino verificado, `SQL_DATABASE=BI_OLIST` y `CSV_ROOT` con la carpeta local. Compila esa copia con `devenv.com <solución> /Build Development /Out <registro>`. Ejecuta `DTExec.exe /Project <ispac> /Package ETL_Master.dtsx /Reporting EWI` usando el runtime x64 17.x y guarda la salida y el código de retorno.
+
+Antes de repetir, concilia los lotes y compara los CSV mediante `python ssis/ingesta/generador/verificar_valores.py --principal --csv <carpeta> --perfil <perfil-autentico.json>`. Esta opción abre en solo lectura la base `BI_OLIST` de la instancia predeterminada del mismo equipo a través de memoria compartida y verifica su identidad. Ejecuta la [consulta de disponibilidad](../../../generador/sql/consultas-principal.sql) para los lotes de esta carga. Tras la reejecución, compara IDs, estados, fechas y conteos. Los resultados de esta instancia son independientes de LocalDB. [Cargas verificadas](../anexo-b/principal-carga.txt) y [huella de reejecución](../anexo-b/principal-idempotencia.txt).
+
 ## Inspeccionar y mantener la conversión de Reviews
 
 Desde la raíz del repositorio, usa la API del Pipeline con una carpeta ignorada nueva. La sonda termina tras inspeccionar si se proporciona solo el paquete de entrada. Con un segundo argumento guarda una edición de descripción en una salida nueva y comprueba su persistencia, tipos y linajes. Se ejecuta con el runtime SSIS 2025 x64 instalado.

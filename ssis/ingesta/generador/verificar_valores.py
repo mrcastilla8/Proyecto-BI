@@ -1,8 +1,9 @@
-"""Compare authenticated CSV values with isolated SQL staging by ordinal and SHA-256."""
+"""Compare authenticated CSV values with SQL staging by ordinal and SHA-256."""
 import argparse
 import csv
 import hashlib
 import json
+import os
 import re
 import subprocess
 from decimal import Decimal
@@ -13,6 +14,7 @@ from pathlib import Path
 CONTRACT = Path(__file__).resolve().parents[3] / "contracts" / "modelo-dimensional.v1.json"
 COLUMN = re.compile(r"([a-z_]+) (VARCHAR|NVARCHAR|CHAR|INT|TINYINT|DECIMAL|DATETIME2)(?:\((\d+)(?:,(\d+))?\))?( NULL)?")
 BASES = ("BI_OLIST", "BI_OLIST_VALIDACION_TEXTO")
+LOCALDB = r"(localdb)\BI_OLIST_ISSUE1_PROTO"
 
 
 def row_digest(row, columns):
@@ -52,12 +54,9 @@ def verify(args, source, entry):
         val = f"CONVERT(nvarchar(max),[{name}]{style})"
         fields.append(f"CASE WHEN [{name}] IS NULL THEN N'N;' ELSE CONCAT(DATALENGTH({val}),N':',{val}) END")
     payload = "CONCAT(CONVERT(nvarchar(max),N'')," + ",".join(fields) + ")"
-    directory = str(args.archivos.resolve(strict=True)).rstrip("\\") + "\\"
     sql = f"""
 SET NOCOUNT ON;
-IF COALESCE(CONVERT(int,SERVERPROPERTY('IsLocalDB')),0)<>1 OR DB_NAME()<>{quote(args.base)}
- OR EXISTS(SELECT 1 FROM sys.database_files WHERE LEFT(physical_name,LEN({quote(directory)}))<>{quote(directory)})
- THROW 51900,'Destino fuera del laboratorio',1;
+{args.guard}
 DECLARE @batch bigint=(SELECT batch_id FROM audit.Batch WHERE source_name={quote(entry["source"])}
  AND source_sha256='{digest}' AND contract_version='1.0.0' AND status='COMPLETE');
 IF @batch IS NULL THROW 51901,'Lote no encontrado',1;
@@ -90,12 +89,32 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--csv", required=True, type=Path)
     parser.add_argument("--perfil", required=True, type=Path)
-    parser.add_argument("--archivos", required=True, type=Path)
-    parser.add_argument("--base", default=BASES[1], choices=BASES)
-    parser.add_argument("--instancia", default=r"(localdb)\BI_OLIST_ISSUE1_PROTO")
+    parser.add_argument("--archivos", type=Path)
+    parser.add_argument("--base", choices=BASES)
+    parser.add_argument("--instancia")
+    parser.add_argument("--principal", action="store_true", help="Consulta de solo lectura a BI_OLIST del servicio local MSSQLSERVER.")
     args = parser.parse_args()
-    if not re.fullmatch(r"\(localdb\)\\[a-zA-Z0-9_-]+", args.instancia):
-        parser.error("Se requiere LocalDB con nombre.")
+    if args.principal:
+        if args.archivos or args.instancia or args.base:
+            parser.error("--principal identifica el servicio local y no admite opciones de LocalDB.")
+        computer = os.getenv("COMPUTERNAME", "")
+        if not re.fullmatch(r"[A-Za-z0-9_-]+", computer):
+            parser.error("No se pudo identificar el equipo Windows.")
+        args.instancia = f"lpc:{computer}"
+        args.base = BASES[0]
+        args.guard = f"""IF COALESCE(CONVERT(int,SERVERPROPERTY('IsLocalDB')),0)<>0
+ OR SERVERPROPERTY('InstanceName') IS NOT NULL OR DB_NAME()<>N'BI_OLIST'
+ OR @@SERVERNAME<>{quote(computer)} OR CONNECTIONPROPERTY('net_transport')<>N'Shared memory'
+ THROW 51900,'Destino distinto de BI_OLIST principal local',1;"""
+    else:
+        args.instancia = args.instancia or LOCALDB
+        args.base = args.base or BASES[1]
+        if not args.archivos or not re.fullmatch(r"\(localdb\)\\[a-zA-Z0-9_-]+", args.instancia):
+            parser.error("Se requieren LocalDB con nombre y --archivos.")
+        directory = str(args.archivos.resolve(strict=True)).rstrip("\\") + "\\"
+        args.guard = f"""IF COALESCE(CONVERT(int,SERVERPROPERTY('IsLocalDB')),0)<>1 OR DB_NAME()<>{quote(args.base)}
+ OR EXISTS(SELECT 1 FROM sys.database_files WHERE LEFT(physical_name,LEN({quote(directory)}))<>{quote(directory)})
+ THROW 51900,'Destino fuera del laboratorio',1;"""
     sources = json.loads(CONTRACT.read_text(encoding="utf-8"))["staging_sources"]
     profile = {item["source"]: item for item in json.loads(args.perfil.read_text(encoding="utf-8-sig"))}
     total = differences = 0

@@ -1,0 +1,7 @@
+BI_OLIST principal. Nueve lotes confirmados y 1.550.922 filas.
+Segunda ejecución del maestro: DTExec=0; 5.69 s
+
+SHA-256 SQL antes:   17EC282478917E94D4D801D471C131468995C443C6762D70B96259A1F876979C
+SHA-256 SQL después: 17EC282478917E94D4D801D471C131468995C443C6762D70B96259A1F876979C
+
+Coinciden IDs, estado, fechas de lote y de carga, conteos, ordinales y rechazos.

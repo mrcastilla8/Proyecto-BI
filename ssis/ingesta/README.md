@@ -21,6 +21,7 @@ La publicación trata como vacío el texto de cero bytes y conserva los espacios
 ## Verificación y reproducción
 
 - [Resultados de entrega](evidencias/informe/INFORME_ENTREGA.md)
+- [Entrega de staging para Axel](HANDOFF_AXEL.md)
 - [Índice de evidencias](evidencias/informe/INDICE_EVIDENCIAS.md)
 - [Procedimiento reproducible para Windows](evidencias/informe/anexo-f/REPRODUCCION.md)
 

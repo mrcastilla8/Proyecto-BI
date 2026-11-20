@@ -1,0 +1,33 @@
+Servicio principal activo: MSSQLSERVER; catálogo BI_OLIST; conexión local integrada; motor 17.0.1000.7; edición Standard Developer Editi; transporte Shared memory.
+Las 11 tablas coinciden en tipos, longitudes, precisión, escala, nulos, valores por defecto e índices. Las restricciones y el trigger están habilitados y coinciden con la referencia.
+Las diferencias de definición de la vista son de formato. Las diferencias restantes son nombres automáticos de PK e intercalación, con la misma página de códigos 1252.
+Permisos de ingesta y lectura confirmados con la identidad integrada disponible. Contrato 1.0.0 por esquema, default de auditoría y archivos autenticados por SHA-256.
+audit|Batch|1|1|1|1
+audit|Reject|1|1|1|1
+stg|Customers|1|1|1|1
+stg|Geolocation|1|1|1|1
+stg|OrderItems|1|1|1|1
+stg|OrderPayments|1|1|1|1
+stg|OrderReviews|1|1|1|1
+stg|Orders|1|1|1|1
+stg|ProductCategoryTranslation|1|1|1|1
+stg|Products|1|1|1|1
+stg|Sellers|1|1|1|1
+VISTA|1|APPLOCK|1
+OTRAS_SESIONES|0
+OTRAS_PETICIONES|0
+OTRAS_TRANSACCIONES|0
+LIBRE_MIB|LOG|77480|8
+LIBRE_MIB|ROWS|77480|8
+VERSIONES_LOTE|0
+INICIO|audit|Batch|0
+INICIO|audit|Reject|0
+INICIO|stg|Customers|0
+INICIO|stg|Geolocation|0
+INICIO|stg|OrderItems|0
+INICIO|stg|OrderPayments|0
+INICIO|stg|OrderReviews|0
+INICIO|stg|Orders|0
+INICIO|stg|ProductCategoryTranslation|0
+INICIO|stg|Products|0
+INICIO|stg|Sellers|0

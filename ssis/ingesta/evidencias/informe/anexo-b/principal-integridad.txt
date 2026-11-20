@@ -1,0 +1,13 @@
+BI_OLIST principal. Comparación CSV y SQL por ordinal, longitud y SHA-256 UTF-16LE.
+
+tabla|filas CSV comparadas|diferencias|primeros ordinales
+Orders|99441|0|
+OrderItems|112650|0|
+OrderPayments|103886|0|
+OrderReviews|99224|0|
+Customers|99441|0|
+Sellers|3095|0|
+Products|32951|0|
+Geolocation|1000163|0|
+ProductCategoryTranslation|71|0|
+TOTAL|1550922|0|

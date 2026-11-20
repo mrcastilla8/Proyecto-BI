@@ -1,6 +1,10 @@
 # Entrega local del Issue #1
 
-**Entrega actual. Funcionalidad ETL: PASS. Integridad de datos: PASS. Edición visual: BLOCKED.** La revisión de integridad se hizo con una carga desde cero en `BI_OLIST_VALIDACION_TEXTO` de la misma LocalDB aislada. Los nueve lotes históricos y la base principal quedaron intactos. El editor de conversión de Visual Studio sigue sin verificación de estabilidad. La captura directa de DTExec queda pendiente y se conserva el registro auténtico.
+**Entrega actual. Funcionalidad ETL, integridad y carga principal: PASS. Edición visual: BLOCKED.** La carga en `BI_OLIST` principal (servicio local MSSQLSERVER, SQL Server 17.0.1000.7) confirmó los lotes 7 a 15. Se aceptaron **1.550.922 filas** de nueve fuentes, con cero rechazos y cero diferencias frente a los CSV por ordinal. DTExec x64 devolvió 0 en la carga (64,35 s) y la repetición (5,69 s). Los resultados SQL antes y después tienen la misma huella e incluyen IDs, fechas, conteos y ordinales. [Preflight](anexo-b/principal-preflight.txt), [ejecución](anexo-b/principal-carga.txt), [integridad](anexo-b/principal-integridad.txt) y [reejecución](anexo-b/principal-idempotencia.txt).
+
+El motor preservó 261.831 duplicados exactos adicionales de Geolocation, 814 repeticiones de `review_id` y 3.852 reseñas multilínea. Los conteos, espacios y nulos se comprobaron en SQL. La lectura de las nueve tablas y la vista se validó con la identidad Windows disponible. El permiso de una identidad distinta se verifica en el entorno de Axel. [Texto y duplicados](anexo-b/principal-texto-y-duplicados.txt) · [Handoff para Axel](../../HANDOFF_AXEL.md).
+
+Las secciones del laboratorio conservan la evidencia de LocalDB y su carga corregida. Los datos de esos ensayos permanecieron separados de los lotes de la instancia principal. La captura directa de DTExec queda pendiente y se conserva el registro auténtico. El cierre manual del editor fue reportado en las instrucciones de cierre. No se probó de nuevo en esta ejecución. [Diagnóstico](anexo-b/DIAGNOSTICO_EDITOR_REVIEWS.md).
 
 ## Corrección de integridad
 
@@ -10,7 +14,7 @@ La solución publicable compiló con un proyecto correcto y cero errores. El `.i
 
 La comparación de cada fila por ordinal, longitud y SHA-256 verificó las nueve fuentes. En el histórico, únicamente Reviews tenía diferencias. El lote nuevo de Reviews, ID 4, restauró los 10 títulos y 27 comentarios que eran NULL en el lote 40014. Quedaron cero diferencias en 1.550.922 filas. Se verificaron los duplicados, los nulos legítimos y las fixtures de vacío, espacios, Unicode, comillas y saltos. El lote sintético 19 quedó `FAILED` tras la inyección y volvió a `COMPLETE` con el mismo ID, 9 leídas, 8 aceptadas y 1 rechazada. [Integridad global](anexo-b/texto-integridad.txt), [antes y después de Reviews](anexo-b/texto-reviews-antes-despues.txt) y [rollback y recuperación](anexo-b/texto-recuperacion.txt).
 
-La última comparación manual sin automatización no fue posible desde esta sesión. La revisión anterior reprodujo el cierre mediante automatización al insertar un conversor nativo en una sonda mínima y al abrir el conversor de Customers. La edición por API sigue disponible. [Diagnóstico del editor](anexo-b/DIAGNOSTICO_EDITOR_REVIEWS.md).
+En la revisión del laboratorio se reprodujo el cierre mediante automatización al insertar un conversor nativo en una sonda mínima y al abrir el conversor de Customers. La edición por API sigue disponible. [Diagnóstico del editor](anexo-b/DIAGNOSTICO_EDITOR_REVIEWS.md).
 
 Las secciones siguientes conservan la trazabilidad de la entrega inicial. Sus IDs de lote y capturas identifican el laboratorio histórico.
 
@@ -63,7 +67,7 @@ La primera revisión del flujo Reviews registró `0xc0000005` y `0xc000041d` en 
 
 La entrega incluye los diez paquetes, proyecto y parámetros portables, fuentes del generador, scripts de validación y evidencias seleccionadas. La validación base usa el inventario de Git para seguir comprobando archivos versionados y nuevos publicables, con las copias ignoradas fuera del recorrido. Pasaron `python scripts/validar_base.py`, las 14 pruebas Python existentes y `git diff --check`.
 
-Las pruebas con escrituras apuntaron a la LocalDB aislada `(localdb)\BI_OLIST_ISSUE1_PROTO`, SQL Server 17.0.4025.3. La base principal se consultó en modo de lectura y conservó los conteos iniciales de nueve tablas staging y dos tablas de auditoría. No recibió escrituras de la implementación ni de las pruebas. El Issue sigue abierto y no se hizo push, PR ni merge. [Verificación de la principal](anexo-b/principal-solo-lectura.txt) y [reproducción](anexo-f/REPRODUCCION.md).
+Durante la entrega inicial las pruebas con escrituras apuntaron a la LocalDB aislada y la base principal solo se consultó. El cierre posterior publicó la rama y la cargó tras el preflight autorizado. El [PR #10](https://github.com/mrcastilla8/Proyecto-BI/pull/10) está abierto. [Verificación histórica de solo lectura](anexo-b/principal-solo-lectura.txt) y [reproducción](anexo-f/REPRODUCCION.md).
 
 ## I. Informe académico
 
