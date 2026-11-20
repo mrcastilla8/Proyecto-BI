@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts"
+  DTS:refId="Package"
+  DTS:CreationName="Microsoft.Package"
+  DTS:CreatorName="Equipo BI Olist"
+  DTS:DelayValidation="True"
+  DTS:DTSID="{2BDBB30B-C9CA-4072-9464-D5FE38ECD53E}"
+  DTS:ExecutableType="Microsoft.Package"
+  DTS:LastModifiedProductVersion="17.0.1000.7"
+  DTS:LocaleID="10250"
+  DTS:ObjectName="ETL_Transformar"
+  DTS:ProtectionLevel="0"
+  DTS:VersionGUID="{81DAB4A5-82AF-4366-977E-3F2AB54671FC}">
+  <DTS:Property DTS:Name="PackageFormatVersion">8</DTS:Property>
+  <DTS:ConnectionManagers>
+    <DTS:ConnectionManager
+      DTS:refId="Package.ConnectionManagers[CM_SQL]"
+      DTS:CreationName="OLEDB"
+      DTS:DelayValidation="True"
+      DTS:DTSID="{BB143810-6E2C-4867-A4EA-3CAE2AA972E7}"
+      DTS:ObjectName="CM_SQL">
+      <DTS:PropertyExpression DTS:Name="ConnectionString">@[$Project::SQL_CONNECTION]</DTS:PropertyExpression>
+      <DTS:ObjectData>
+        <DTS:ConnectionManager DTS:ConnectionString="Provider=MSOLEDBSQL19;Integrated Security=SSPI;Use Encryption for Data=Mandatory;" />
+      </DTS:ObjectData>
+    </DTS:ConnectionManager>
+  </DTS:ConnectionManagers>
+  <DTS:Variables>
+    <DTS:Variable DTS:CreationName="" DTS:DTSID="{8F243B31-E24C-4D6B-BC78-85C820F2A7B9}"
+      DTS:EvaluateAsExpression="True" DTS:Expression="@[$Project::LOTS_JSON]"
+      DTS:Namespace="User" DTS:ObjectName="Lotes">
+      <DTS:VariableValue DTS:DataType="8"></DTS:VariableValue>
+    </DTS:Variable>
+  </DTS:Variables>
+  <DTS:Executables>
+    <DTS:Executable
+      DTS:refId="Package\Publicar Data Mart"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:DelayValidation="True"
+      DTS:DTSID="{8C61701A-A953-4BBC-8A93-394F493F519C}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:FailPackageOnFailure="True"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Publicar Data Mart">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask"
+          SQLTask:Connection="{BB143810-6E2C-4867-A4EA-3CAE2AA972E7}"
+          SQLTask:BypassPrepare="True"
+          SQLTask:SqlStatementSource="EXEC dw.usp_CargarOlist @Lotes = ?;">
+          <SQLTask:ParameterBinding SQLTask:ParameterName="0"
+            SQLTask:DtsVariableName="User::Lotes"
+            SQLTask:ParameterDirection="Input" SQLTask:DataType="130" SQLTask:ParameterSize="400" />
+        </SQLTask:SqlTaskData>
+      </DTS:ObjectData>
+    </DTS:Executable>
+  </DTS:Executables>
+</DTS:Executable>
