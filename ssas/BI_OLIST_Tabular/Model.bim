@@ -1,0 +1,731 @@
+{
+  "name": "BI_OLIST_Tabular",
+  "compatibilityLevel": 1700,
+  "model": {
+    "culture": "es-PE",
+    "defaultMode": "import",
+    "sourceQueryCulture": "es-PE",
+    "dataSources": [
+      {
+        "type": "provider",
+        "name": "BI_OLIST",
+        "connectionString": "Provider=MSOLEDBSQL19;Data Source=CONFIGURAR_SERVIDOR_SQL;Initial Catalog=BI_OLIST;Integrated Security=SSPI;Use Encryption for Data=Mandatory;",
+        "impersonationMode": "impersonateServiceAccount"
+      }
+    ],
+    "tables": [
+      {
+        "name": "DimFecha",
+        "description": "Calendario compartido. El miembro -1 representa fecha desconocida.",
+        "columns": [
+          {
+            "name": "fecha_key",
+            "dataType": "int64",
+            "sourceColumn": "fecha_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "fecha",
+            "dataType": "dateTime",
+            "sourceColumn": "fecha",
+            "summarizeBy": "none",
+            "formatString": "yyyy-MM-dd"
+          },
+          {
+            "name": "anio",
+            "dataType": "int64",
+            "sourceColumn": "anio",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "trimestre",
+            "dataType": "int64",
+            "sourceColumn": "trimestre",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "mes",
+            "dataType": "int64",
+            "sourceColumn": "mes",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "nombre_mes",
+            "dataType": "string",
+            "sourceColumn": "nombre_mes",
+            "summarizeBy": "none",
+            "sortByColumn": "mes"
+          },
+          {
+            "name": "dia",
+            "dataType": "int64",
+            "sourceColumn": "dia",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "dia_semana",
+            "dataType": "int64",
+            "sourceColumn": "dia_semana",
+            "summarizeBy": "none"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "DimFecha",
+            "mode": "import",
+            "source": {
+              "type": "query",
+              "dataSource": "BI_OLIST",
+              "query": "SELECT [fecha_key], [fecha], [anio], [trimestre], [mes], [nombre_mes], [dia], [dia_semana] FROM [dw].[DimFecha]"
+            }
+          }
+        ],
+        "hierarchies": [
+          {
+            "name": "Calendario",
+            "levels": [
+              {
+                "name": "Año",
+                "ordinal": 0,
+                "column": "anio"
+              },
+              {
+                "name": "Trimestre",
+                "ordinal": 1,
+                "column": "trimestre"
+              },
+              {
+                "name": "Mes",
+                "ordinal": 2,
+                "column": "nombre_mes"
+              },
+              {
+                "name": "Fecha",
+                "ordinal": 3,
+                "column": "fecha"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "DimCliente",
+        "columns": [
+          {
+            "name": "cliente_key",
+            "dataType": "int64",
+            "sourceColumn": "cliente_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "customer_unique_id",
+            "dataType": "string",
+            "sourceColumn": "customer_unique_id",
+            "summarizeBy": "none"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "DimCliente",
+            "mode": "import",
+            "source": {
+              "type": "query",
+              "dataSource": "BI_OLIST",
+              "query": "SELECT [cliente_key], [customer_unique_id] FROM [dw].[DimCliente]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "DimProducto",
+        "columns": [
+          {
+            "name": "producto_key",
+            "dataType": "int64",
+            "sourceColumn": "producto_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "product_id",
+            "dataType": "string",
+            "sourceColumn": "product_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "product_category_name",
+            "dataType": "string",
+            "sourceColumn": "product_category_name",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "product_category_name_english",
+            "dataType": "string",
+            "sourceColumn": "product_category_name_english",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "product_name_lenght",
+            "dataType": "int64",
+            "sourceColumn": "product_name_lenght",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "product_description_lenght",
+            "dataType": "int64",
+            "sourceColumn": "product_description_lenght",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "product_photos_qty",
+            "dataType": "int64",
+            "sourceColumn": "product_photos_qty",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "product_weight_g",
+            "dataType": "decimal",
+            "sourceColumn": "product_weight_g",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "product_length_cm",
+            "dataType": "decimal",
+            "sourceColumn": "product_length_cm",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "product_height_cm",
+            "dataType": "decimal",
+            "sourceColumn": "product_height_cm",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "product_width_cm",
+            "dataType": "decimal",
+            "sourceColumn": "product_width_cm",
+            "summarizeBy": "none"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "DimProducto",
+            "mode": "import",
+            "source": {
+              "type": "query",
+              "dataSource": "BI_OLIST",
+              "query": "SELECT [producto_key], [product_id], [product_category_name], [product_category_name_english], [product_name_lenght], [product_description_lenght], [product_photos_qty], [product_weight_g], [product_length_cm], [product_height_cm], [product_width_cm] FROM [dw].[DimProducto]"
+            }
+          }
+        ],
+        "hierarchies": [
+          {
+            "name": "Categoría y producto",
+            "levels": [
+              {
+                "name": "Categoría",
+                "ordinal": 0,
+                "column": "product_category_name"
+              },
+              {
+                "name": "Producto",
+                "ordinal": 1,
+                "column": "product_id"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "DimVendedor",
+        "columns": [
+          {
+            "name": "vendedor_key",
+            "dataType": "int64",
+            "sourceColumn": "vendedor_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "seller_id",
+            "dataType": "string",
+            "sourceColumn": "seller_id",
+            "summarizeBy": "none"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "DimVendedor",
+            "mode": "import",
+            "source": {
+              "type": "query",
+              "dataSource": "BI_OLIST",
+              "query": "SELECT [vendedor_key], [seller_id] FROM [dw].[DimVendedor]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "DimGeografiaCliente",
+        "columns": [
+          {
+            "name": "geografia_cliente_key",
+            "dataType": "int64",
+            "sourceColumn": "geografia_cliente_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "customer_city",
+            "dataType": "string",
+            "sourceColumn": "customer_city",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "customer_state",
+            "dataType": "string",
+            "sourceColumn": "customer_state",
+            "summarizeBy": "none"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "DimGeografiaCliente",
+            "mode": "import",
+            "source": {
+              "type": "query",
+              "dataSource": "BI_OLIST",
+              "query": "SELECT [geografia_cliente_key], [customer_city], [customer_state] FROM [dw].[DimGeografiaCliente]"
+            }
+          }
+        ],
+        "hierarchies": [
+          {
+            "name": "Geografía del cliente",
+            "levels": [
+              {
+                "name": "Estado",
+                "ordinal": 0,
+                "column": "customer_state"
+              },
+              {
+                "name": "Ciudad",
+                "ordinal": 1,
+                "column": "customer_city"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "DimGeografiaVendedor",
+        "columns": [
+          {
+            "name": "geografia_vendedor_key",
+            "dataType": "int64",
+            "sourceColumn": "geografia_vendedor_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "seller_city",
+            "dataType": "string",
+            "sourceColumn": "seller_city",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "seller_state",
+            "dataType": "string",
+            "sourceColumn": "seller_state",
+            "summarizeBy": "none"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "DimGeografiaVendedor",
+            "mode": "import",
+            "source": {
+              "type": "query",
+              "dataSource": "BI_OLIST",
+              "query": "SELECT [geografia_vendedor_key], [seller_city], [seller_state] FROM [dw].[DimGeografiaVendedor]"
+            }
+          }
+        ],
+        "hierarchies": [
+          {
+            "name": "Geografía del vendedor",
+            "levels": [
+              {
+                "name": "Estado",
+                "ordinal": 0,
+                "column": "seller_state"
+              },
+              {
+                "name": "Ciudad",
+                "ordinal": 1,
+                "column": "seller_city"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "FactPedidos",
+        "description": "Una fila por pedido. Incluye pedidos sin líneas.",
+        "columns": [
+          {
+            "name": "order_id",
+            "dataType": "string",
+            "sourceColumn": "order_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "cliente_key",
+            "dataType": "int64",
+            "sourceColumn": "cliente_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "geografia_cliente_key",
+            "dataType": "int64",
+            "sourceColumn": "geografia_cliente_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "fecha_compra_key",
+            "dataType": "int64",
+            "sourceColumn": "fecha_compra_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "fecha_entrega_estimada_key",
+            "dataType": "int64",
+            "sourceColumn": "fecha_entrega_estimada_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "fecha_entrega_real_key",
+            "dataType": "int64",
+            "sourceColumn": "fecha_entrega_real_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "order_status",
+            "dataType": "string",
+            "sourceColumn": "order_status",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "order_purchase_timestamp",
+            "dataType": "dateTime",
+            "sourceColumn": "order_purchase_timestamp",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "order_delivered_customer_date",
+            "dataType": "dateTime",
+            "sourceColumn": "order_delivered_customer_date",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "review_score",
+            "dataType": "decimal",
+            "sourceColumn": "review_score",
+            "summarizeBy": "none",
+            "isHidden": true
+          }
+        ],
+        "partitions": [
+          {
+            "name": "FactPedidos",
+            "mode": "import",
+            "source": {
+              "type": "query",
+              "dataSource": "BI_OLIST",
+              "query": "SELECT [order_id], [cliente_key], [geografia_cliente_key], [fecha_compra_key], [fecha_entrega_estimada_key], [fecha_entrega_real_key], [order_status], [order_purchase_timestamp], [order_delivered_customer_date], [review_score] FROM [dw].[FactPedidos]"
+            }
+          }
+        ],
+        "measures": [
+          {
+            "name": "pedidos_totales",
+            "description": "Pedidos distintos de cualquier estado, incluidos los que carecen de líneas.",
+            "expression": "DISTINCTCOUNT ( 'FactPedidos'[order_id] )",
+            "formatString": "#,0",
+            "displayFolder": "Pedidos y ventas"
+          },
+          {
+            "name": "porcentaje_entregas_a_tiempo",
+            "description": "Proporción de entregas con fechas conocidas cuyo día real es anterior o igual al prometido.",
+            "expression": [
+              "VAR PedidosElegibles =",
+              "    CALCULATETABLE (",
+              "        'FactPedidos',",
+              "        KEEPFILTERS ( 'FactPedidos'[order_status] = \"delivered\" ),",
+              "        KEEPFILTERS ( 'FactPedidos'[fecha_entrega_real_key] <> -1 ),",
+              "        KEEPFILTERS ( 'FactPedidos'[fecha_entrega_estimada_key] <> -1 )",
+              "    )",
+              "VAR PedidosATiempo =",
+              "    FILTER (",
+              "        PedidosElegibles,",
+              "        'FactPedidos'[fecha_entrega_real_key] <= 'FactPedidos'[fecha_entrega_estimada_key]",
+              "    )",
+              "RETURN",
+              "    DIVIDE ( COALESCE ( COUNTROWS ( PedidosATiempo ), 0 ), COUNTROWS ( PedidosElegibles ) )"
+            ],
+            "formatString": "0.00%",
+            "displayFolder": "Logística"
+          },
+          {
+            "name": "dias_promedio_entrega",
+            "description": "Promedio de días transcurridos, con fracción de día, entre compra y entrega real.",
+            "expression": [
+              "CALCULATE (",
+              "    AVERAGEX (",
+              "        'FactPedidos',",
+              "        DIVIDE (",
+              "            DATEDIFF (",
+              "                'FactPedidos'[order_purchase_timestamp],",
+              "                'FactPedidos'[order_delivered_customer_date],",
+              "                SECOND",
+              "            ),",
+              "            86400",
+              "        )",
+              "    ),",
+              "    KEEPFILTERS ( 'FactPedidos'[order_status] = \"delivered\" ),",
+              "    KEEPFILTERS ( 'FactPedidos'[fecha_compra_key] <> -1 ),",
+              "    KEEPFILTERS ( 'FactPedidos'[fecha_entrega_real_key] <> -1 )",
+              ")"
+            ],
+            "formatString": "#,0.00",
+            "displayFolder": "Logística"
+          },
+          {
+            "name": "calificacion_promedio",
+            "description": "Promedio de las notas válidas consolidadas por pedido.",
+            "expression": [
+              "AVERAGEX (",
+              "    'FactPedidos',",
+              "    VAR Nota = 'FactPedidos'[review_score]",
+              "    RETURN IF ( NOT ISBLANK ( Nota ), CONVERT ( Nota, DOUBLE ) )",
+              ")"
+            ],
+            "formatString": "0.00",
+            "displayFolder": "Satisfacción"
+          }
+        ]
+      },
+      {
+        "name": "FactDetallePedido",
+        "description": "Una fila por pedido e ítem. Los filtros de producto y vendedor se aplican a este hecho.",
+        "columns": [
+          {
+            "name": "order_id",
+            "dataType": "string",
+            "sourceColumn": "order_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "order_item_id",
+            "dataType": "int64",
+            "sourceColumn": "order_item_id",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "producto_key",
+            "dataType": "int64",
+            "sourceColumn": "producto_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "vendedor_key",
+            "dataType": "int64",
+            "sourceColumn": "vendedor_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "cliente_key",
+            "dataType": "int64",
+            "sourceColumn": "cliente_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "geografia_cliente_key",
+            "dataType": "int64",
+            "sourceColumn": "geografia_cliente_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "geografia_vendedor_key",
+            "dataType": "int64",
+            "sourceColumn": "geografia_vendedor_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "fecha_compra_key",
+            "dataType": "int64",
+            "sourceColumn": "fecha_compra_key",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "order_status",
+            "dataType": "string",
+            "sourceColumn": "order_status",
+            "summarizeBy": "none"
+          },
+          {
+            "name": "price",
+            "dataType": "decimal",
+            "sourceColumn": "price",
+            "summarizeBy": "none",
+            "isHidden": true
+          },
+          {
+            "name": "freight_value",
+            "dataType": "decimal",
+            "sourceColumn": "freight_value",
+            "summarizeBy": "none",
+            "isHidden": true
+          }
+        ],
+        "partitions": [
+          {
+            "name": "FactDetallePedido",
+            "mode": "import",
+            "source": {
+              "type": "query",
+              "dataSource": "BI_OLIST",
+              "query": "SELECT [order_id], [order_item_id], [producto_key], [vendedor_key], [cliente_key], [geografia_cliente_key], [geografia_vendedor_key], [fecha_compra_key], [order_status], [price], [freight_value] FROM [dw].[FactDetallePedido]"
+            }
+          }
+        ],
+        "measures": [
+          {
+            "name": "ventas_productos_entregados",
+            "description": "Precio de líneas entregadas, sin flete. BRL.",
+            "expression": "CALCULATE ( SUM ( 'FactDetallePedido'[price] ), KEEPFILTERS ( 'FactDetallePedido'[order_status] = \"delivered\" ) )",
+            "formatString": "\"R$ \" #,0.00",
+            "displayFolder": "Pedidos y ventas"
+          },
+          {
+            "name": "pedidos_entregados_con_items",
+            "description": "Pedidos distintos con líneas entregadas en el contexto filtrado.",
+            "expression": "CALCULATE ( DISTINCTCOUNT ( 'FactDetallePedido'[order_id] ), KEEPFILTERS ( 'FactDetallePedido'[order_status] = \"delivered\" ) )",
+            "formatString": "#,0",
+            "displayFolder": "Pedidos y ventas"
+          },
+          {
+            "name": "ticket_promedio_productos_entregados",
+            "description": "Precio de productos por pedido entregado con líneas. BRL.",
+            "expression": "DIVIDE ( CONVERT ( [ventas_productos_entregados], DOUBLE ), [pedidos_entregados_con_items] )",
+            "formatString": "\"R$ \" #,0.00",
+            "displayFolder": "Pedidos y ventas"
+          },
+          {
+            "name": "flete_pedidos_entregados",
+            "description": "Suma del flete de las líneas entregadas. BRL.",
+            "expression": "CALCULATE ( SUM ( 'FactDetallePedido'[freight_value] ), KEEPFILTERS ( 'FactDetallePedido'[order_status] = \"delivered\" ) )",
+            "formatString": "\"R$ \" #,0.00",
+            "displayFolder": "Pedidos y ventas"
+          }
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "name": "FactPedidos_cliente_key_DimCliente",
+        "fromTable": "FactPedidos",
+        "fromColumn": "cliente_key",
+        "toTable": "DimCliente",
+        "toColumn": "cliente_key"
+      },
+      {
+        "name": "FactPedidos_geografia_cliente_key_DimGeografiaCliente",
+        "fromTable": "FactPedidos",
+        "fromColumn": "geografia_cliente_key",
+        "toTable": "DimGeografiaCliente",
+        "toColumn": "geografia_cliente_key"
+      },
+      {
+        "name": "FactPedidos_fecha_compra_key_DimFecha",
+        "fromTable": "FactPedidos",
+        "fromColumn": "fecha_compra_key",
+        "toTable": "DimFecha",
+        "toColumn": "fecha_key"
+      },
+      {
+        "name": "FactPedidos_fecha_entrega_estimada_key_DimFecha",
+        "fromTable": "FactPedidos",
+        "fromColumn": "fecha_entrega_estimada_key",
+        "toTable": "DimFecha",
+        "toColumn": "fecha_key",
+        "isActive": false
+      },
+      {
+        "name": "FactPedidos_fecha_entrega_real_key_DimFecha",
+        "fromTable": "FactPedidos",
+        "fromColumn": "fecha_entrega_real_key",
+        "toTable": "DimFecha",
+        "toColumn": "fecha_key",
+        "isActive": false
+      },
+      {
+        "name": "FactDetallePedido_producto_key_DimProducto",
+        "fromTable": "FactDetallePedido",
+        "fromColumn": "producto_key",
+        "toTable": "DimProducto",
+        "toColumn": "producto_key"
+      },
+      {
+        "name": "FactDetallePedido_vendedor_key_DimVendedor",
+        "fromTable": "FactDetallePedido",
+        "fromColumn": "vendedor_key",
+        "toTable": "DimVendedor",
+        "toColumn": "vendedor_key"
+      },
+      {
+        "name": "FactDetallePedido_cliente_key_DimCliente",
+        "fromTable": "FactDetallePedido",
+        "fromColumn": "cliente_key",
+        "toTable": "DimCliente",
+        "toColumn": "cliente_key"
+      },
+      {
+        "name": "FactDetallePedido_geografia_cliente_key_DimGeografiaCliente",
+        "fromTable": "FactDetallePedido",
+        "fromColumn": "geografia_cliente_key",
+        "toTable": "DimGeografiaCliente",
+        "toColumn": "geografia_cliente_key"
+      },
+      {
+        "name": "FactDetallePedido_geografia_vendedor_key_DimGeografiaVendedor",
+        "fromTable": "FactDetallePedido",
+        "fromColumn": "geografia_vendedor_key",
+        "toTable": "DimGeografiaVendedor",
+        "toColumn": "geografia_vendedor_key"
+      },
+      {
+        "name": "FactDetallePedido_fecha_compra_key_DimFecha",
+        "fromTable": "FactDetallePedido",
+        "fromColumn": "fecha_compra_key",
+        "toTable": "DimFecha",
+        "toColumn": "fecha_key"
+      }
+    ]
+  }
+}
