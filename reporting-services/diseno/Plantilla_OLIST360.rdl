@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2010/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources><DataSource Name="BI_OLIST_DW"><DataSourceReference>/OLIST360/DataSources/BI_OLIST_DW</DataSourceReference><rd:DataSourceID>a0916a20-342f-4474-bfef-339941e0b6a4</rd:DataSourceID></DataSource></DataSources>
+  <Body>
+    <ReportItems>
+      <Textbox Name="Cabecera">
+        <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+        <Paragraphs><Paragraph><TextRuns><TextRun><Value>OLIST 360°  |  [Nombre del informe]</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>18pt</FontSize><FontWeight>Bold</FontWeight><Color>White</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs>
+        <rd:DefaultName>Cabecera</rd:DefaultName><Top>0.4cm</Top><Left>0.4cm</Left><Height>1.1cm</Height><Width>26.2cm</Width>
+        <Style><BackgroundColor>#101C32</BackgroundColor><PaddingLeft>8pt</PaddingLeft><PaddingTop>5pt</PaddingTop><PaddingBottom>5pt</PaddingBottom><VerticalAlign>Middle</VerticalAlign></Style>
+      </Textbox>
+      <Textbox Name="Subtitulo">
+        <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+        <Paragraphs><Paragraph><TextRuns><TextRun><Value>[Propósito breve y alcance del informe]</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>10pt</FontSize><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs>
+        <rd:DefaultName>Subtitulo</rd:DefaultName><Top>1.7cm</Top><Left>0.5cm</Left><Height>0.7cm</Height><Width>26cm</Width><Style><PaddingLeft>2pt</PaddingLeft><VerticalAlign>Middle</VerticalAlign></Style>
+      </Textbox>
+      <Textbox Name="Filtros">
+        <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+        <Paragraphs><Paragraph><TextRuns><TextRun><Value>Período de compra: [Desde] — [Hasta]     |     Filtros: [filtros aplicados]</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><Color>#14233B</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs>
+        <rd:DefaultName>Filtros</rd:DefaultName><Top>2.55cm</Top><Left>0.5cm</Left><Height>0.8cm</Height><Width>26cm</Width><Style><BackgroundColor>#EAF0F7</BackgroundColor><PaddingLeft>7pt</PaddingLeft><PaddingTop>3pt</PaddingTop><VerticalAlign>Middle</VerticalAlign></Style>
+      </Textbox>
+      <Textbox Name="KpiUno">
+        <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+        <Paragraphs><Paragraph><TextRuns><TextRun><Value>[Indicador principal]</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph><Paragraph><TextRuns><TextRun><Value>[Valor y unidad]</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>18pt</FontSize><FontWeight>Bold</FontWeight><Color>#2563EB</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs>
+        <rd:DefaultName>KpiUno</rd:DefaultName><Top>3.7cm</Top><Left>0.5cm</Left><Height>1.6cm</Height><Width>8.4cm</Width><Style><BackgroundColor>#FFFFFF</BackgroundColor><Border><Style>Solid</Style><Color>#CBD5E1</Color></Border><PaddingLeft>8pt</PaddingLeft><PaddingTop>5pt</PaddingTop></Style>
+      </Textbox>
+      <Textbox Name="KpiDos">
+        <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+        <Paragraphs><Paragraph><TextRuns><TextRun><Value>[Indicador secundario]</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph><Paragraph><TextRuns><TextRun><Value>[Valor y unidad]</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>18pt</FontSize><FontWeight>Bold</FontWeight><Color>#0D9488</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs>
+        <rd:DefaultName>KpiDos</rd:DefaultName><Top>3.7cm</Top><Left>9.5cm</Left><Height>1.6cm</Height><Width>8.4cm</Width><Style><BackgroundColor>#FFFFFF</BackgroundColor><Border><Style>Solid</Style><Color>#CBD5E1</Color></Border><PaddingLeft>8pt</PaddingLeft><PaddingTop>5pt</PaddingTop></Style>
+      </Textbox>
+      <Textbox Name="KpiTres">
+        <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+        <Paragraphs><Paragraph><TextRuns><TextRun><Value>[Indicador complementario]</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph><Paragraph><TextRuns><TextRun><Value>[Valor y unidad]</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>18pt</FontSize><FontWeight>Bold</FontWeight><Color>#D97706</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs>
+        <rd:DefaultName>KpiTres</rd:DefaultName><Top>3.7cm</Top><Left>18.5cm</Left><Height>1.6cm</Height><Width>8cm</Width><Style><BackgroundColor>#FFFFFF</BackgroundColor><Border><Style>Solid</Style><Color>#CBD5E1</Color></Border><PaddingLeft>8pt</PaddingLeft><PaddingTop>5pt</PaddingTop></Style>
+      </Textbox>
+      <Textbox Name="TituloDetalle">
+        <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+        <Paragraphs><Paragraph><TextRuns><TextRun><Value>[Pregunta que responde el detalle]</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>12pt</FontSize><FontWeight>Bold</FontWeight><Color>#14233B</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs>
+        <rd:DefaultName>TituloDetalle</rd:DefaultName><Top>5.7cm</Top><Left>0.5cm</Left><Height>0.7cm</Height><Width>26cm</Width><Style><Border><Bottom><Style>Solid</Style><Color>#CBD5E1</Color></Bottom></Border><PaddingBottom>3pt</PaddingBottom></Style>
+      </Textbox>
+      <Textbox Name="EspacioDetalle">
+        <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+        <Paragraphs><Paragraph><TextRuns><TextRun><Value>Agregue aquí el Tablix del informe. Use campos legibles, orden explícito y un mensaje claro cuando no haya datos.</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs>
+        <rd:DefaultName>EspacioDetalle</rd:DefaultName><Top>6.6cm</Top><Left>0.5cm</Left><Height>1cm</Height><Width>26cm</Width><Style><BackgroundColor>#F8FAFC</BackgroundColor><Border><Style>Dashed</Style><Color>#CBD5E1</Color></Border><PaddingLeft>8pt</PaddingLeft><PaddingTop>5pt</PaddingTop><VerticalAlign>Middle</VerticalAlign></Style>
+      </Textbox>
+    </ReportItems>
+    <Height>8cm</Height><Style><BackgroundColor>#FFFFFF</BackgroundColor></Style>
+  </Body>
+  <Width>27cm</Width>
+  <Page>
+    <PageFooter><Height>0.7cm</Height><PrintOnFirstPage>true</PrintOnFirstPage><PrintOnLastPage>true</PrintOnLastPage><ReportItems>
+      <Textbox Name="PiePagina"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=&quot;Fuente: Olist  |  BRL nominales  |  Página &quot; &amp; Globals!PageNumber &amp; &quot; de &quot; &amp; Globals!TotalPages</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#475569</Color></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><rd:DefaultName>PiePagina</rd:DefaultName><Top>0.1cm</Top><Left>0.5cm</Left><Height>0.5cm</Height><Width>26cm</Width><Style><Border><Top><Style>Solid</Style><Color>#CBD5E1</Color></Top></Border><PaddingTop>3pt</PaddingTop></Style></Textbox>
+    </ReportItems><Style /></PageFooter>
+    <PageHeight>21cm</PageHeight><PageWidth>29.7cm</PageWidth><LeftMargin>1.2cm</LeftMargin><RightMargin>1.2cm</RightMargin><TopMargin>1.2cm</TopMargin><BottomMargin>1.2cm</BottomMargin><Style />
+  </Page>
+  <Language>es-PE</Language><ConsumeContainerWhitespace>true</ConsumeContainerWhitespace><rd:ReportUnitType>Cm</rd:ReportUnitType><rd:ReportID>bd64eae5-22a4-42e7-b50a-519219ed3c61</rd:ReportID>
+</Report>
