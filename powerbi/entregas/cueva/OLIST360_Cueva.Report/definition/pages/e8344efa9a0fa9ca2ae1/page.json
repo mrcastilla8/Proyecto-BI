@@ -1,0 +1,42 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
+  "name": "e8344efa9a0fa9ca2ae1",
+  "displayName": "T03 · Tooltip logístico",
+  "displayOption": "FitToPage",
+  "height": 300,
+  "width": 480,
+  "pageBinding": {
+    "name": "3367df6626d77fd0963e",
+    "type": "Tooltip",
+    "parameters": [],
+    "acceptsFilterContext": "Default"
+  },
+  "objects": {
+    "background": [
+      {
+        "properties": {
+          "color": {
+            "solid": {
+              "color": {
+                "expr": {
+                  "Literal": {
+                    "Value": "'#EAF0F7'"
+                  }
+                }
+              }
+            }
+          },
+          "transparency": {
+            "expr": {
+              "Literal": {
+                "Value": "0D"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "type": "Tooltip",
+  "visibility": "HiddenInViewMode"
+}

@@ -1,0 +1,51 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
+  "name": "e7a642322fd3c2332418",
+  "displayName": "P05 · Logística",
+  "displayOption": "FitToPage",
+  "height": 1080,
+  "width": 1920,
+  "pageBinding": {
+    "name": "9f346f3e2420bf8cb830",
+    "type": "Default",
+    "parameters": []
+  },
+  "objects": {
+    "background": [
+      {
+        "properties": {
+          "color": {
+            "solid": {
+              "color": {
+                "expr": {
+                  "Literal": {
+                    "Value": "'#EAF0F7'"
+                  }
+                }
+              }
+            }
+          },
+          "transparency": {
+            "expr": {
+              "Literal": {
+                "Value": "0D"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "visualInteractions": [
+    {
+      "source": "3a39cbb960a7047d9dcd",
+      "target": "63ff34f12bd2371382db",
+      "type": "NoFilter"
+    },
+    {
+      "source": "66a1b21415d3258b5b52",
+      "target": "63ff34f12bd2371382db",
+      "type": "NoFilter"
+    }
+  ]
+}

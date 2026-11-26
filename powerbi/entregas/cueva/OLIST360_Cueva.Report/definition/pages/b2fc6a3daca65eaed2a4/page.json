@@ -1,0 +1,76 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
+  "name": "b2fc6a3daca65eaed2a4",
+  "displayName": "D02 · Detalle de vendedor",
+  "displayOption": "FitToPage",
+  "height": 1080,
+  "width": 1920,
+  "pageBinding": {
+    "name": "0b6d0603ff93b8680f62",
+    "type": "Drillthrough",
+    "parameters": [
+      {
+        "name": "Param_Filterfb701c69e4858d5ccfb90ab1",
+        "boundFilter": "Filterfb701c69e4858d5ccfb90ab1",
+        "fieldExpr": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "DimVendedor"
+              }
+            },
+            "Property": "seller_id"
+          }
+        }
+      }
+    ],
+    "acceptsFilterContext": "Default"
+  },
+  "objects": {
+    "background": [
+      {
+        "properties": {
+          "color": {
+            "solid": {
+              "color": {
+                "expr": {
+                  "Literal": {
+                    "Value": "'#EAF0F7'"
+                  }
+                }
+              }
+            }
+          },
+          "transparency": {
+            "expr": {
+              "Literal": {
+                "Value": "0D"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "type": "Drillthrough",
+  "visibility": "HiddenInViewMode",
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "Filterfb701c69e4858d5ccfb90ab1",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "DimVendedor"
+              }
+            },
+            "Property": "seller_id"
+          }
+        },
+        "type": "Categorical",
+        "howCreated": "Drillthrough"
+      }
+    ]
+  }
+}
