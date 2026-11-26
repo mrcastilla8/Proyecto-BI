@@ -24,7 +24,7 @@ $xml = [System.Xml.XmlDocument]::new()
 $xml.XmlResolver = $null
 $xml.Load((Resolve-Path -LiteralPath $ReportPath).Path)
 $ns = [System.Xml.XmlNamespaceManager]::new($xml.NameTable)
-$ns.AddNamespace('r', 'http://schemas.microsoft.com/sqlserver/reporting/2010/01/reportdefinition')
+$ns.AddNamespace('r', 'http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition')
 
 $dataSource = $xml.SelectSingleNode('/r:Report/r:DataSources/r:DataSource', $ns)
 $reference = if ($null -ne $dataSource) { $dataSource.SelectSingleNode('r:DataSourceReference', $ns) } else { $null }
@@ -32,7 +32,7 @@ $command = $xml.SelectSingleNode('/r:Report/r:DataSets/r:DataSet/r:Query/r:Comma
 $datasets = $xml.SelectNodes('/r:Report/r:DataSets/r:DataSet', $ns)
 $fields = $xml.SelectNodes('/r:Report/r:DataSets/r:DataSet/r:Fields/r:Field', $ns)
 
-Add-Check 'RDL-01' 'RDL 2010 parseable y un dataset' ($datasets.Count -eq 1) ("datasets=$($datasets.Count)")
+Add-Check 'RDL-01' 'RDL 2016 parseable y un dataset' ($datasets.Count -eq 1) ("datasets=$($datasets.Count)")
 Add-Check 'RDL-02' 'Origen compartido OLIST 360' ($null -ne $reference -and $reference.InnerText -eq '/OLIST360/DataSources/BI_OLIST_DW') $(if ($null -ne $reference) { $reference.InnerText } else { 'DataSourceReference ausente' })
 Add-Check 'RDL-03' 'CommandText idéntico al SQL versionado' ($null -ne $command -and $command.InnerText.Trim() -ceq $sql) 'Comparación textual exacta luego de quitar espacios exteriores.'
 Add-Check 'RDL-04' 'Consulta comienza con SELECT y no usa stg' ($sql -match '^SELECT\b' -and $sql -notmatch '(?i)\bstg\s*\.') 'Solo lectura de conteos agregados.'
