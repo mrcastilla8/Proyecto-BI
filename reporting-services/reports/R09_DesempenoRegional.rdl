@@ -298,6 +298,34 @@ ORDER BY nivel DESC, estado, ciudad;
       </ValidValues>
     </ReportParameter>
   </ReportParameters>
+  <ReportParametersLayout>
+    <GridLayoutDefinition>
+      <NumberOfColumns>2</NumberOfColumns>
+      <NumberOfRows>2</NumberOfRows>
+      <CellDefinitions>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>Desde</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>Hasta</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>EstadoCliente</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>Ciudad</ParameterName>
+        </CellDefinition>
+      </CellDefinitions>
+    </GridLayoutDefinition>
+  </ReportParametersLayout>
   <ReportSections>
     <ReportSection>
       <Body>
@@ -646,7 +674,7 @@ ORDER BY nivel DESC, estado, ciudad;
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Entregados</Value>
+                                  <Value>Entreg.</Value>
                                   <Style>
                                     <FontFamily>Segoe UI</FontFamily>
                                     <FontSize>9pt</FontSize>
@@ -1370,7 +1398,7 @@ ORDER BY nivel DESC, estado, ciudad;
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Entregados</Value>
+                                  <Value>Entreg.</Value>
                                   <Style>
                                     <FontFamily>Segoe UI</FontFamily>
                                     <FontSize>9pt</FontSize>
@@ -1605,7 +1633,7 @@ ORDER BY nivel DESC, estado, ciudad;
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=If(IsNothing(Fields!ventas_relativas.Value), "—", StrDup(CInt(Math.Ceiling(12 * CDbl(Fields!ventas_relativas.Value))), "▰"))</Value>
+                                  <Value>=If(IsNothing(Fields!ventas_relativas.Value), "—", StrDup(CInt(Math.Ceiling(12 * CDbl(Fields!ventas_relativas.Value))), "|"))</Value>
                                   <Style>
                                     <FontFamily>Segoe UI</FontFamily>
                                     <FontSize>9pt</FontSize>
@@ -2118,7 +2146,7 @@ ORDER BY nivel DESC, estado, ciudad;
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>Entregados</Value>
+                                  <Value>Entreg.</Value>
                                   <Style>
                                     <FontFamily>Segoe UI</FontFamily>
                                     <FontSize>9pt</FontSize>
