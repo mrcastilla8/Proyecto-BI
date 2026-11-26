@@ -69,8 +69,10 @@ Hashes SHA-256 de los RDL versionados:
 
 ## Pendiente visual y alcance
 
-- No se archivó una captura del informe ejecutándose ni se abrieron las exportaciones en las aplicaciones de escritorio. Brave mostró un diálogo de autenticación al usar `127.0.0.1`; `localhost` respondió HTTP 200 en la verificación de endpoints. La respuesta HTTP no sustituye una sesión visual autenticada, así que esa evidencia sigue pendiente.
-- PRE_G0_Humo se conserva temporalmente en el portal mientras se revisa la vista local; retirarlo después de la captura.
+- La captura [ssrs-humo-portal.png](../evidencias/ssrs-humo-portal.png) documenta la página renderizada por SSRS mediante `localhost`, con ambos conteos reales visibles. Se recortó para no mostrar el usuario de Windows ni información de pedidos. SHA-256: `B7932E6DC7E43CD3DD31FFB1B4561BEC70E09DBF65DE844A24033F5F1F735540`.
+- No se abrieron todavía los PDF en un visor de escritorio ni los XLSX en Excel. El HTTP 200, la firma PDF y la estructura Open XML están comprobados; la revisión visual de los seis archivos queda pendiente.
+- Brave mostró un diálogo de autenticación al usar `127.0.0.1`; la misma página carga por `http://localhost/Reports` en el navegador de Codex con autenticación Windows integrada.
+- PRE_G0_Humo permanece temporalmente publicado en `/OLIST360/Pruebas/PRE_G0_Humo` para la revisión local; retirarlo al cerrar esa revisión.
 - Publicar los ocho RDL restantes y los diez informes juntos cuando los compañeros los entreguen.
 - Roles avanzados, cuenta dedicada, SSAS y PBIX Live quedan fuera de la prioridad simplificada vigente.
 
