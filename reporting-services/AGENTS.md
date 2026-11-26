@@ -1,6 +1,6 @@
 # Agentes Reporting Services (SSRS 2022)
 
-Manual operativo para el desarrollo, revisión, publicación y validación de los 10 informes paginados RDL del Nivel 2 (**OLIST 360° — Business Intelligence Suite**). Este documento es normativo; durante la fase documental del PR `#14` no se instalan servicios ni se crean archivos `.rdl` ni proyectos simulados.
+Manual operativo para el desarrollo, revisión, publicación y validación de los 10 informes paginados RDL del Nivel 2 (**OLIST 360° — Business Intelligence Suite**, `ADR-0002` **`ACEPTADO`** por `mrcastilla8` el `2026-11-26` en el PR `#14`, con entrada en vigor tras el merge). Este documento es normativo; durante la fase de cierre documental no se instalan servicios ni se crean archivos `.rdl` ni proyectos simulados.
 
 ## 1. Roles y responsables
 

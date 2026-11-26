@@ -11,8 +11,8 @@ flowchart LR
 
 ## Estado
 
-- **Nivel 1:** DDL SQL de auditoría, staging, dimensiones, hechos y controles implementado y probado en SQL Server 2025 Express. Las pruebas pasaron desde base nueva y en reejecución. El dataset real no se cargó a staging/DW en esa etapa inicial. Los contratos v1, SSIS, SSAS y Power BI Live (4 páginas iniciales) conforman la línea base congelada del proyecto.
-- **Nivel 2 (OLIST 360° — Business Intelligence Suite):** En fase de formalización documental (`PROPUESTA_PENDIENTE_VALIDACION`, pendiente de aprobación mediante PR). Amplía exclusivamente la capa de consumo hacia **15 páginas en Power BI Live** (8 principales, 4 tooltips y 3 drill-through) y **10 informes RDL en SSRS 2022 Developer (Native Mode)**, manteniendo intactos Data Mart, contratos v1, SSIS, SSAS Tabular y las 8 medidas DAX originales. **No está implementado ni certificado todavía.**
+- **Nivel 1 (línea base congelada):** DDL SQL de auditoría, staging, dimensiones, hechos y controles probado en SQL Server (`18-11-2026`); cadena completa `CSV → SSIS → DW → SSAS Tabular → Power BI Live` ejecutada y verificada localmente el `20-11-2026` (`1.550.922` filas aceptadas en ingesta, `99.441` pedidos, `112.650` líneas, 8 KPI históricos conciliados entre SQL y DAX en `ssas/README.md` y 4 páginas Live capturadas en `powerbi/evidencias/INDICE.md`). Los contratos v1, `database/`, `ssis/`, `ssas/` y la línea base del PBIX conforman el núcleo congelado del proyecto.
+- **Nivel 2 (OLIST 360° — Business Intelligence Suite):** Alcance arquitectónico y documental **`ACEPTADO`** por `mrcastilla8` el `2026-11-26` ([ADR-0002](docs/decisiones/ADR-0002-nivel-2-powerbi-reporting-services.md), PR `#14`), con entrada en vigor tras el merge a `master`. Amplía exclusivamente la capa de consumo hacia **15 páginas en Power BI Live** (8 principales, 4 tooltips y 3 drill-through) y **10 informes RDL en SSRS 2022 Developer (Native Mode)**, manteniendo intactos Data Mart, contratos v1, SSIS, SSAS Tabular y las 8 medidas DAX originales. **La implementación, validación práctica de SSRS/Shape Map y certificación (29 casos) permanecen pendientes.**
 
 ## Reconstrucción local
 

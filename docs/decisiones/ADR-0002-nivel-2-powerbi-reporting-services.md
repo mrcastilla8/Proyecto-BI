@@ -1,8 +1,10 @@
 # ADR-0002: Ampliación Nivel 2 — Power BI Live rediseñado y Microsoft SQL Server Reporting Services (OLIST 360°)
 
-- **Estado:** `PROPUESTA_PENDIENTE_VALIDACION` — pendiente de aprobación mediante el Pull Request correspondiente en `castilla/nivel-2-plan`.
-- **Fecha:** 2026-11-26.
-- **Responsable de formalización:** Castilla (`mrcastilla8`).
+- **Estado:** `ACEPTADO` (aprobación arquitectónica y documental; entra en vigor tras el merge del PR `#14`).
+- **Fecha de creación:** 2026-11-26.
+- **Fecha efectiva de aprobación:** 2026-11-26.
+- **Aprobador:** `mrcastilla8` (líder del proyecto).
+- **PR de formalización:** `#14` (`castilla/nivel-2-plan` → `master`).
 - **Alcance relacionado:** `docs/nivel-2/` (16 documentos de especificación y guías individuales).
 
 ## 1. Motivación académica y empresarial
@@ -66,7 +68,10 @@ flowchart LR
 
 ## 7. Estado de aprobación
 
-Este documento formaliza la arquitectura del Nivel 2 y se mantiene en estado **`PROPUESTA_PENDIENTE_VALIDACION`** mientras el Pull Request `#14` permanezca en estado **Draft**.
+Este documento se encuentra en estado **`ACEPTADO`** como definición arquitectónica y documental del Nivel 2:
 
-- **Mecanismo de aprobación:** la aprobación definitiva de este ADR corresponde exclusivamente al líder del proyecto **`mrcastilla8`**, quien autorizará el cambio explícito de estado a **`ACEPTADO`** antes del merge del PR `#14`.
-- **Alcance de la aprobación:** la aprobación arquitectónica (`ACEPTADO`) habilita la ejecución de las puertas `G0` y `G1` descritas en [00_PLAN_MAESTRO.md](../nivel-2/00_PLAN_MAESTRO.md), pero **no equivale a certificar la compatibilidad práctica de SSRS 2022 con SQL Server 2025 Developer, Shape Map en conexión Live ni el cumplimiento funcional del Nivel 2**, los cuales deberán demostrarse con evidencia real en Windows en `G0` y en los **29 casos de certificación** (`BASE`: 3, `PBI`: 9, `SSRS`: 14, `INT`: 3) de [08_PRUEBAS_CERTIFICACION.md](../nivel-2/08_PRUEBAS_CERTIFICACION.md).
+- **Aprobador:** `mrcastilla8` (líder del proyecto).
+- **Fecha efectiva de aprobación:** 2026-11-26.
+- **PR de formalización:** `#14` (`castilla/nivel-2-plan` → `master`).
+- **Entrada en vigor:** efectiva tras el merge del PR `#14` hacia `master`, momento a partir del cual se habilita la creación de issues/ramas individuales y la ejecución de las puertas `G0` y `G1` descritas en [00_PLAN_MAESTRO.md](../nivel-2/00_PLAN_MAESTRO.md).
+- **Alcance y límites:** esta aprobación es exclusivamente **arquitectónica y documental**. La **implementación y certificación práctica del Nivel 2 permanecen pendientes** (los 29 casos de certificación en `08_PRUEBAS_CERTIFICACION.md` continúan en estado `NOT_RUN`), y la **compatibilidad práctica de SSRS 2022 con SQL Server 2025 Developer y de Shape Map en conexión Live** queda sujeta a validación real en Windows durante `G0` y `PBI-08`.

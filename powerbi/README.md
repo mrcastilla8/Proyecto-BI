@@ -35,9 +35,9 @@ Todas las páginas excluyen el miembro técnico de fecha `-1` (año vacío) con 
 
 Evidencia real del 20-11-2026 en [evidencias/INDICE.md](evidencias/INDICE.md). Incluye la reproducción local de la cadena SQL Server → SSIS → SSAS y las capturas de la conexión Live y de las cuatro páginas. Sin filtros, las tarjetas coinciden con el escenario `total` del cotejo SQL/DAX: R$ 13.221.498,11; 96.478; 99.441; R$ 137,04; R$ 2.198.275,64; 93,23 %; 12,56; 4,09.
 
-## Planificación Nivel 2 — OLIST 360° (pendiente de aprobación e implementación)
+## Planificación Nivel 2 — OLIST 360° (alcance aprobado; implementación pendiente)
 
-La ampliación documental del Nivel 2 ([03_ESPECIFICACION_POWER_BI.md](../docs/nivel-2/03_ESPECIFICACION_POWER_BI.md) y [ADR-0002](../docs/decisiones/ADR-0002-nivel-2-powerbi-reporting-services.md)) proyecta evolucionar el reporte actual de 4 páginas hacia **15 páginas totales** sin alterar el modelo semántico:
+La ampliación del Nivel 2 ([03_ESPECIFICACION_POWER_BI.md](../docs/nivel-2/03_ESPECIFICACION_POWER_BI.md) y [ADR-0002](../docs/decisiones/ADR-0002-nivel-2-powerbi-reporting-services.md), estado **`ACEPTADO`** por `mrcastilla8` el `2026-11-26` en el PR `#14`, con entrada en vigor tras el merge) proyecta evolucionar el reporte actual de 4 páginas hacia **15 páginas totales** sin alterar el modelo semántico:
 
 - **Páginas planificadas (15 totales):** 8 páginas principales visibles (`P01` Resumen ejecutivo, `P02` Inteligencia comercial, `P03` Productos y categorías, `P04` Desempeño de vendedores, `P05` Logística, `P06` Experiencia del cliente, `P07` Inteligencia geográfica, `P08` Centro de informes), 4 páginas auxiliares de tooltip (`T01`–`T04`) y 3 páginas auxiliares de drill-through (`D01`–`D03`).
 - **Custodia del PBIX maestro:** durante la integración del Nivel 2, **Ángel (`@luisdem01`)** es el único escritor autorizado de `powerbi/BI_OLIST.pbix` para evitar conflictos binarios; los demás integrantes entregan avances individuales para integración controlada.
