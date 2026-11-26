@@ -28,4 +28,13 @@ Validación local de compatibilidad CSV (18-11-2026): el perfilador y el control
 
 Resultado SQL local: la migración se aplicó a la base `BI_OLIST` existente sin recrearla. La ejecución satisfactoria de scripts 00–06 y la reejecución 00–05 se registran para el HEAD del PR. `06` terminó en `PASS`: unicidad de ordinales en las nueve tablas, repetidos de origen conservados, repetición del mismo ordinal rechazada, contadores parciales permitidos en estados no terminales, contadores incompletos rechazados en `COMPLETE`, transiciones válidas e inválidas y finalización coherente; también los controles de grano/FK, importes, fechas y casos negativos con rollback. Los controles informaron cero filas porque los CSV aún no se cargaron a staging/DW. La base local no contiene datos de ETL.
 
-Evidencia de integración pendiente: (1) SSIS ingesta y transformación, conteos, rechazos e idempotencia; (2) SSAS, procesamiento y cotejo DAX/SQL; (3) Power BI Live, páginas y filtros; (4) conclusiones solo con resultados integrados. Las fixtures son sintéticas y no prueban hallazgos de Olist.
+Evidencia histórica integrada del Nivel 1 (20-11-2026): se ejecutó localmente la cadena completa `CSV → SSIS → DW → SSAS → Power BI Live` (`1.550.922` filas aceptadas en ingesta, `99.441` pedidos en `FactPedidos`, `112.650` líneas en `FactDetallePedido`), conciliación SQL/DAX de los 8 KPI en `ssas/README.md` y capturas de las 4 páginas Live en `powerbi/evidencias/INDICE.md`. Las fixtures de `data/fixtures/` son sintéticas y no prueban hallazgos de Olist.
+
+## Nivel 2 — OLIST 360° (alcance aprobado; certificación pendiente)
+
+El plan de certificación del Nivel 2 (`ADR-0002` `ACEPTADO` por `mrcastilla8` el `2026-11-26` en el PR `#14`) se especifica en [08_PRUEBAS_CERTIFICACION.md](nivel-2/08_PRUEBAS_CERTIFICACION.md) y contempla un checklist independiente de preflight (`G0`: `PRE-G0-01`..`PRE-G0-08`) y **29 casos de certificación** para `G3`/`G4`, **todos actualmente en estado `NOT_RUN`** (sin ejecución práctica ni instalación de SSRS todavía):
+
+- `BASE-01` a `BASE-03` (3 casos): integridad del alcance congelado, validadores Python y conciliación baseline SQL/DAX.
+- `PBI-01` a `PBI-09` (9 casos): conexión Live, 8 páginas visibles, 7 auxiliares (4 tooltips + 3 drill-through), filtros sincronizados, contexto detalle/cabecera, panel/reset, Shape Map (27 UF) y casos límite.
+- `SSRS-01` a `SSRS-14` (14 casos): versión/catálogo/portal con 10 RDL publicados, seguridad Windows/Browser/solo lectura, validación funcional y numérica de `R01`–`R10`, guardas de parámetros y exportaciones 10/10 PDF y XLSX.
+- `INT-01` a `INT-03` (3 casos): navegación Power BI → SSRS (`P08` y `P01`–`P07`), drill-through `R05` → `R08` y reproducción en equipo demo.
