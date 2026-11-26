@@ -1,0 +1,5 @@
+/validacion/salidas/
+/evidencias/privadas/
+/evidencias/*.pdf
+/evidencias/*.xlsx
+/evidencias/*.rdl.export
