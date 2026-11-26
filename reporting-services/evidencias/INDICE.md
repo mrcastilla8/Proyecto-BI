@@ -1,20 +1,24 @@
 # Índice de evidencias M01–M05
 
-Estado observado el 2026-11-26. Las ejecuciones SQL locales están registradas en `validacion/matriz.csv` y `validacion/RESULTADOS_M01_M02.md`. No se inventan capturas, publicaciones ni exportaciones.
+Estado real observado el 2026-11-26 en Windows. El SHA probado para los cuatro RDL y el validador es `feff597f3d066b5f25c82d76eadd29d83c0d9b96`. Resultados, comandos, conteos y hashes de exportación están en `validacion/RESULTADOS_M01_M02.md`; los estados por caso están en `validacion/matriz.csv`.
 
 | ID | Evidencia | Resultado disponible | Estado |
 |---|---|---|---|
-| EVD-SSRS-01 | Versión SSRS y estado del servicio | WMI identifica SSRS Developer `16.0.1122.6`; `SQLServerReportingServices` está `Running` con inicio `Auto`. MSI de Report Builder firmado por Microsoft; instalación aún pendiente de reparación/elevación | PARCIAL |
-| EVD-SSRS-02 | Catálogo y servicio SSRS | Servicio activo; `ReportServer` y `ReportServerTempDB` aún no existen | BLOCKED |
-| EVD-SSRS-03 | Web Service URL y Web Portal URL | Ambas URLs estándar en `localhost:80` rechazan conexión | BLOCKED |
-| EVD-SSRS-04 | Roles Browser/Content Manager y no autorizado | Se excluyeron las pruebas de cuentas/roles por la simplificación solicitada | NOT_IN_SCOPE |
-| EVD-SSRS-05 | Origen compartido BI_OLIST_DW | Pendiente de catálogo y portal | BLOCKED |
-| EVD-SSRS-06 | Humo PRE_G0_Humo en el portal | Conteos SQL locales reales disponibles; el RDL no se publicó ni ejecutó en SSRS | BLOCKED |
-| EVD-SSRS-07 | Publicación conjunta de diez RDL | R07 y R08 están preparados localmente; faltan los otros ocho RDL | PENDIENTE |
-| EVD-SSRS-08 | Exportaciones PDF y Excel del humo | No hay archivos; todavía no se puede ejecutar desde el portal | BLOCKED |
-| SQL-LOCAL-R07 | Validación de consulta y total R07 | 99.441 pedidos; 99.440 con pago; 1 sin pago; importe observado `16008872.1200` | PASS |
-| SQL-LOCAL-R08-01 | Pedido de varias líneas | 1 cabecera y 2 líneas; pago agregado presente | PASS |
-| SQL-LOCAL-R08-02 | Pedido inexistente | 0 filas de cabecera y 0 filas de detalle | PASS |
-| PRE-G0-08 | Conexión Power BI Live a SSAS | Fuera del alcance de la corrección solicitada | NOT_IN_SCOPE |
+| EVD-SSRS-01 | Versión SSRS, servicio y Report Builder | SSRS Developer Native Mode `16.0.1122.6`; servicio `SQLServerReportingServices` Running/Auto; Report Builder `15.1.30001.02` | PASS |
+| EVD-SSRS-02 | Catálogo SSRS | `ReportServer` y `ReportServerTempDB` ONLINE en SQL Server local | PASS |
+| EVD-SSRS-03 | Portal y Web Service | HTTP 200 en `http://localhost/Reports` y `http://localhost/ReportServer`; WSDL HTTP 200, sin redirecciones | PASS |
+| EVD-SSRS-04 | Roles avanzados y cuenta de prueba no autorizada | No requeridos por la corrección de alcance académico simplificado | NOT_IN_SCOPE |
+| EVD-SSRS-05 | Origen compartido BI_OLIST_DW | Origen SQL publicado en `/OLIST360/DataSources/BI_OLIST_DW`; autenticación integrada y render real contra `BI_OLIST` | PASS |
+| EVD-SSRS-06 | Ejecución PRE_G0_Humo | Informe publicado y renderizado con 99.441 pedidos y 112.650 líneas | PASS |
+| EVD-SSRS-07 | Exportaciones del humo | PDF y XLSX HTTP 200; firmas/estructura y SHA-256 registrados. Apertura en aplicaciones de escritorio pendiente | PARCIAL |
+| EVD-SSRS-08 | Publicación conjunta de diez informes | R07 y R08 publicados; los otros ocho RDL aún no fueron entregados | PENDIENTE |
+| M03-01 | Plantilla | XSD SSRS 2016 validado; plantilla publicada | PASS |
+| M04-01 | R07 Importes Pagados | Consulta ejecutada y render real; 162 agregados y totales en resultados | PASS |
+| M04-02 | Exportaciones R07 | PDF y XLSX HTTP 200, estructuras y hashes registrados; apertura visual pendiente | PARCIAL |
+| M05-01 | R08 Ficha de Pedido | Pedido real con dos líneas; informe renderizado y pago agregado presente | PASS |
+| M05-02 | Parámetro para pedido inexistente | Consulta real devuelve cero cabeceras y cero líneas | PASS |
+| M05-03 | Exportaciones R08 | PDF y XLSX HTTP 200, estructuras y hashes registrados; apertura visual pendiente | PARCIAL |
+| EVD-VIS-01 | Captura del portal y apertura de exportaciones | No hay capturas archivadas. La pantalla del navegador mostró un diálogo de autenticación al usar `127.0.0.1`; el portal fue comprobado por HTTP con `localhost` | PENDIENTE |
+| PRE-G0-08 | Power BI Live a SSAS | SSAS y PBIX excluidos por el alcance corregido | NOT_IN_SCOPE |
 
-Las capturas de informe ejecutado, las exportaciones y sus hashes se agregarán después de configurar el portal. Las capturas se redactarán para ocultar identidad local y datos identificables.
+Las seis exportaciones locales se guardan en `validacion/salidas/`, ignorado por Git; sus hashes están en el informe de resultados. No se incluyen exportaciones ni identificadores de pedidos en el repositorio. El informe temporal de humo permanece publicado en `/OLIST360/Pruebas/PRE_G0_Humo` para revisión local; retirarlo tras obtener la captura pendiente. Las capturas deben ocultar identidad local y datos de pedidos.

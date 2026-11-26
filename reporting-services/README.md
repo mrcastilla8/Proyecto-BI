@@ -9,7 +9,8 @@ Los resultados observados y evidencias reales se registran en [`validacion/RESUL
 ## Requisitos y límites
 
 - Windows de escritorio compatible, permisos de administrador local para instalar/configurar servicios, SQL Server Developer para el catálogo y el DW, y espacio libre suficiente.
-- **SQL Server 2022 Reporting Services (SSRS), edición Developer, modo nativo**. En este equipo WMI confirma `16.0.1122.6` y el servicio está activo; el catálogo y las URLs locales siguen pendientes. No sustituir por Power BI Report Server.
+- **SQL Server 2022 Reporting Services (SSRS), edición Developer, modo nativo**. En este equipo SSRS `16.0.1122.6` está activo; `ReportServer` y `ReportServerTempDB` están `ONLINE`; portal y WSDL responden HTTP 200 en `http://localhost`. No sustituir por Power BI Report Server.
+- Microsoft Report Builder `15.1.30001.02` está instalado. Para navegar en Brave usa `http://localhost/Reports`; la IP `127.0.0.1` puede abrir un diálogo de credenciales.
 - Report Builder para editar/publicar el RDL. La extensión de Reporting Services para Visual Studio es opcional.
 - `BI_OLIST` con el esquema dimensional cargado. Esta entrega no instala/configura SSAS ni cambia el PBIX.
 - Mantener URLs ligadas a loopback o a una LAN privada autorizada. No abrir puertos al público. HTTP se admite únicamente en laboratorio local; usar TLS si el portal será accesible desde otro equipo.
@@ -42,8 +43,8 @@ Si SSRS aún no está instalado, `Verificar-Entorno.ps1` lo mostrará como bloqu
 
    El `CommandText` debe coincidir exactamente con [`datasets/PRE_G0_Humo.sql`](datasets/PRE_G0_Humo.sql), usar `BI_OLIST_DW` y consultar solo conteos agregados.
 2. En Report Builder, abra [`pruebas/humo/PRE_G0_Humo.rdl`](pruebas/humo/PRE_G0_Humo.rdl), compruebe la referencia de origen `/OLIST360/DataSources/BI_OLIST_DW` y publíquelo temporalmente en `/OLIST360/Pruebas/PRE_G0_Humo`.
-3. Ejecute `Verificar-CatalogoSSRS.ps1` con las URLs efectivas y confirme servicios/catálogos/HTTP. Ejecute la prueba desde el portal. Los conteos esperados de la evidencia actual son 99.441 pedidos y 112.650 líneas; si la base cambió, documente el valor observado, no fuerce la carga.
-4. Exporte desde el portal a PDF y Excel (`EXCELOPENXML`). Opcionalmente, use `Exportar-VerificarHumo.ps1` con la URL de Web Service y una carpeta temporal fuera del repositorio. Comprueba HTTP, firma PDF/ZIP XLSX y SHA-256; no conserva ni sube los archivos.
+3. Ejecute `Verificar-CatalogoSSRS.ps1` con las URLs efectivas y confirme servicios/catálogos/HTTP. En la instalación local documentada, use `-TrustServerCertificate` porque el SQL de desarrollo presenta un certificado no confiable para el cliente de prueba. Ejecute la prueba desde el portal. Los conteos observados son 99.441 pedidos y 112.650 líneas; si la base cambia, documente el valor, no fuerce la carga.
+4. Exporte desde el portal a PDF y Excel (`EXCELOPENXML`). Opcionalmente, use `Exportar-VerificarHumo.ps1` con la URL del Web Service y `-OutputDirectory` en una carpeta local. Comprueba HTTP, firma PDF/ZIP XLSX y SHA-256, y guarda los archivos en esa carpeta. Las salidas de esta ejecución están en `validacion/salidas/`, ignorado por Git.
 5. Registre resultado, URL real, fecha, HEAD y hash local en `validacion/matriz.csv`/`evidencias/INDICE.md`. Redacte capturas para que no muestren identidad Windows, credenciales ni datos de pedidos.
 6. Retire el informe temporal del portal al cerrar la prueba. Conserva el origen compartido y el catálogo.
 
@@ -63,14 +64,15 @@ Ejecutar desde la raíz del repositorio en Windows PowerShell 5.1 o posterior. L
 .\reporting-services\scripts\Verificar-CatalogoSSRS.ps1 `
   -SqlServerInstance '<instancia SQL local>' `
   -PortalUrl '<URL de loopback del portal>' `
-  -ReportServerUrl '<URL de loopback del servicio>'
+  -ReportServerUrl '<URL de loopback del servicio>' `
+  -TrustServerCertificate
 .\reporting-services\scripts\Validar-RDLHumo.ps1
 ```
 
-Los scripts devuelven filas `PASS`, `FAIL` o `BLOCKED`; los checks no ejecutados permanecen `NOT_RUN`. Para guardar resultados locales sin versionarlos, use `reporting-services/validacion/salidas/` (ignorado por Git). No copie ahí contraseñas, exportaciones o registros de pedido.
+Los scripts devuelven filas `PASS`, `FAIL` o `BLOCKED`; los checks no ejecutados permanecen `NOT_RUN`. En este equipo el SQL local usa un certificado no confiable por el cliente de prueba; `-TrustServerCertificate` se limita a esa conexión del verificador y no cambia la configuración de SQL Server. Para guardar resultados locales sin versionarlos, use `reporting-services/validacion/salidas/` (ignorado por Git). No copie ahí contraseñas, exportaciones o registros de pedido.
 
 ## Evidencias y pendientes
 
-El estado ejecutado está en [`validacion/RESULTADOS_M01_M02.md`](validacion/RESULTADOS_M01_M02.md); el índice de evidencias es [`evidencias/INDICE.md`](evidencias/INDICE.md). Se registran solo instalaciones, consultas, exportaciones y capturas observadas en esta máquina. La integración conjunta de los diez informes queda pendiente hasta recibir los ocho RDL restantes.
+El estado ejecutado está en [`validacion/RESULTADOS_M01_M02.md`](validacion/RESULTADOS_M01_M02.md); el índice de evidencias es [`evidencias/INDICE.md`](evidencias/INDICE.md). Las exportaciones locales se guardan en `validacion/salidas/`, ignorado por Git. La captura visual del portal y la apertura en las aplicaciones de escritorio siguen pendientes; la publicación conjunta de los diez informes espera los ocho RDL restantes.
 
 Referencias oficiales: [instalar SSRS](https://learn.microsoft.com/en-us/sql/reporting-services/install-windows/install-reporting-services?view=sql-server-ver17), [crear catálogo](https://learn.microsoft.com/en-us/sql/reporting-services/install-windows/ssrs-report-server-create-a-report-server-database?view=sql-server-ver17), [probar credenciales del origen](https://learn.microsoft.com/en-us/sql/reporting-services/report-data/specify-credential-and-connection-information-for-report-data-sources?view=sql-server-ver15), [exportar mediante URL](https://learn.microsoft.com/en-us/sql/reporting-services/export-a-report-using-url-access?view=sql-server-ver17).
