@@ -37,4 +37,15 @@ Raíz `/OLIST360`; carpetas `01_Gerencia`, `02_Comercial`, `03_Operaciones`, `04
 Registrar hash SHA-256 de RDL local y descargado si API/portal lo permite; registrar versión en manifiesto, URL, resultado de prueba, fecha y equipo. No almacenar contraseña ni auth header. Para publicación manual, abrir RDL en Report Builder, Save As al servidor/carpeta, asociar data source y probar parámetros. Si se automatiza, usar API/servicio soportado y credencial integrada, nunca modificar directamente catálogo. Un solo publicador (Poma) en entorno demo; rollback republicando última versión validada de RDL, sin tocar DW.
 
 ## Evidencia mínima
-SSRS-01 versión; SSRS-02 catálogo y servicio; SSRS-03 portal; SSRS-04 permisos Browser y rechazo; SSRS-05 conexión compartida; SSRS-06 árbol 10 informes; SSRS-07 matriz ejecución; SSRS-08 exportaciones. Los pasos son especificación, no instalación acreditada.
+Los identificadores de evidencia documental (`EVD-SSRS-*`) son independientes de los casos de certificación (`SSRS-01` a `SSRS-14` en `08_PRUEBAS_CERTIFICACION.md`):
+
+- `EVD-SSRS-01`: versiones (Windows, SQL `SELECT @@VERSION`, edición, SSAS, Power BI Desktop, Report Builder y SSRS). Relacionado con preflight `G0` y `SSRS-01`.
+- `EVD-SSRS-02`: catálogo y servicio (`ReportServer`/`ReportServerTempDB` y servicio nativo activo). Relacionado con preflight `G0` y `SSRS-01`.
+- `EVD-SSRS-03`: portal (Web Portal URL y Web Service URL en laboratorio local). Relacionado con preflight `G0` y `SSRS-01`.
+- `EVD-SSRS-04`: permisos `Browser` y acceso rechazado a usuario no autorizado. Relacionado con preflight `G0` y `SSRS-02`.
+- `EVD-SSRS-05`: conexión compartida (`BI_OLIST_DW` y `BI_OLIST_AUDIT` si aplica, solo lectura sin DML). Relacionado con preflight `G0` y `SSRS-02`.
+- `EVD-SSRS-06`: árbol de diez informes definitivos publicados en `/OLIST360` (`G3`). Relacionado con `SSRS-01` e `INT-01`.
+- `EVD-SSRS-07`: matriz de ejecución de los diez RDL (`G3`/`G4`). Relacionado con `SSRS-03` a `SSRS-13`.
+- `EVD-SSRS-08`: exportaciones verificables (humo PDF/XLSX en `G0`; 10 PDF y 10 XLSX definitivos en `G3`/`G4`). Relacionado con `SSRS-14`.
+
+Los pasos son especificación, no instalación acreditada. No exigir los diez informes definitivos para superar el preflight `G0`.

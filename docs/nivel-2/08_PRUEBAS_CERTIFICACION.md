@@ -3,7 +3,20 @@
 **BI-OLIST Nivel 2 · 26/11/2026 · Especificación de implementación (no evidencia de ejecución)**
 
 ## Convención
-Estado inicial NOT_RUN. PASS requiere fecha, HEAD, entorno, filtro, esperado, obtenido, evidencia y responsable. FAIL si difiere; BLOCKED si falta prerrequisito, con reproducción. No marcar un objetivo como resultado. Usar `powerbi/validacion/matriz.csv` y `reporting-services/validacion/matriz.csv` con columnas `id,componente,head,entorno,precondicion,entrada,esperado,obtenido,estado,evidencia,responsable`. No subir datos crudos.
+Estado inicial `NOT_RUN` para los **29 casos de certificación** (`BASE`: 3, `PBI`: 9, `SSRS`: 14, `INT`: 3). `PASS` requiere fecha, HEAD, entorno, filtro, esperado, obtenido, evidencia y responsable. `FAIL` si difiere; `BLOCKED` si falta prerrequisito, con reproducción. No marcar un objetivo como resultado. Usar `powerbi/validacion/matriz.csv` y `reporting-services/validacion/matriz.csv` con columnas `id,componente,head,entorno,precondicion,entrada,esperado,obtenido,estado,evidencia,responsable`. No subir datos crudos.
+
+### Checklist independiente de preflight (G0 — previo a certificación final)
+El preflight `G0` verifica la plataforma base sin exigir los 10 informes RDL definitivos:
+- `PRE-G0-01`: instalación de SSRS 2022 Developer Native Mode (`EVD-SSRS-01`).
+- `PRE-G0-02`: catálogo `ReportServer`/`ReportServerTempDB` funcional en SQL Server 2025 Developer (`EVD-SSRS-02`).
+- `PRE-G0-03`: portal web disponible en loopback/red autorizada (`EVD-SSRS-03`).
+- `PRE-G0-04`: autenticación Windows y rol `Browser` / rechazo (`EVD-SSRS-04`).
+- `PRE-G0-05`: fuente de datos compartida de solo lectura (`EVD-SSRS-05`).
+- `PRE-G0-06`: informe temporal de humo publicado en portal de prueba.
+- `PRE-G0-07`: exportación de humo PDF y XLSX válida (`EVD-SSRS-08` parcial de humo).
+- `PRE-G0-08`: conexión Live a SSAS verificada desde Power BI Desktop.
+
+### Matriz de certificación final (G3/G4 — 29 casos)
 
 | ID | Caso | Esperado | Responsable |
 |---|---|---|---|

@@ -18,7 +18,7 @@ Arquitectura, contratos, diseño y certificación. Alcance asignado: **P01, P08;
 | C08 | Certificar cierre | matriz de pruebas, informe y demo | G4 sin regresiones y evidencia real |
 
 ## Dependencias y decisiones
-Poma confirma servidor y rutas; Ángel confirma plantilla PBIX e integración; Basualdo verifica ocho KPI; Cueva revisa SQL. No asumir aprobación del ADR ni marcar PASS por mera documentación.
+Tras el merge del PR documental `#14`, se crean los issues y ramas individuales desde `master` actualizado. Poma ejecuta `M01`–`M02` para `G0`; Castilla, Ángel y Poma ejecutan las actividades preparatorias de `G1` (`C02`, `A01`, `M03`). El desarrollo funcional paralelo de páginas e informes definitivos comienza tras superar `G1`. Basualdo verifica ocho KPI; Cueva revisa SQL. No asumir aprobación del ADR ni marcar PASS por mera documentación.
 
 ## Criterios de aceptación
 BASE-01/02, SSRS-03/12, INT-01/03; validar C01–C08. Cada tarea requiere archivo real, ejecución en Windows, evidencia con HEAD y filtro, y registro de limitaciones. Los SQL de 06 son referencias pendientes de ejecución: probar con SSMS y Report Builder, guardar CommandText equivalente y conciliación. Los RDL deben incluir parámetros, origen compartido, no-data, PDF y Excel. Las páginas PBI deben conservar Live, usar solo medidas aprobadas y cumplir retícula e interacciones. Entregar PBIX individual (si aplica), no editar el maestro salvo el custodio.
@@ -28,7 +28,7 @@ BASE-01/02, SSRS-03/12, INT-01/03; validar C01–C08. Cada tarea requiere archiv
 git fetch origin
 git switch master
 git pull --ff-only origin master
-# Crear rama indicada tras aprobar G0/G1; si ya existe, actualizarla sin reescritura.
+# Crear la rama asignada desde master actualizado tras el merge del PR #14; desarrollar páginas e informes definitivos tras aprobar G1.
 python scripts/validar_base.py
 python -m unittest discover -s scripts -p 'test_*.py'
 git diff --check

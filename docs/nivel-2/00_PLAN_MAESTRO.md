@@ -25,14 +25,25 @@ Repositorio: `mrcastilla8/Proyecto-BI`, `master` auditada en `d96789ef7f17f3c36b
 | Poma | Prueba de integración P08 | R07 R08 | Infraestructura SSRS, proyecto, portal, despliegue, exportación |
 
 ## 4. Hitos y puertas de integración
+Secuencia vinculante de ejecución:
+1. Aprobación y merge del PR documental `#14`.
+2. Creación de los issues y ramas individuales desde `master` actualizado.
+3. **G0 (preflight):** instalación de SSRS, catálogo funcional, portal disponible, autenticación Windows, fuente de datos compartida, informe temporal de humo, exportación de humo PDF y XLSX, y conexión Live a SSAS verificada. Tras el merge documental, **Poma** queda autorizado para ejecutar `M01` y `M02` necesarios para satisfacer `G0` (no se exigen los diez RDL definitivos para superar `G0`).
+4. **G1 (plantillas):** construcción y aprobación de las plantillas comunes de Power BI (`olist360.json`, retícula, menú/panel) y RDL (`reporting-services/diseno/`, contrato de parámetros y rutas). **Castilla, Ángel y Poma** pueden ejecutar las actividades preparatorias correspondientes (`C02`, `A01`, `M03`).
+5. **G2 (desarrollo paralelo):** comienza **después de superar G1**; desarrollo de las 8 páginas + 7 auxiliares en entregas individuales y los 10 RDL definitivos con su SQL verificable.
+6. **G3 (integración):** PBIX maestro Live bajo custodia de Ángel, portal con los 10 RDL definitivos publicados, 10 exportaciones PDF y 10 XLSX, y accesos cruzados Power BI–SSRS.
+7. **G4 (certificación):** matriz de pruebas con los 29 casos de certificación (`BASE`: 3, `PBI`: 9, `SSRS`: 14, `INT`: 3), resultados reales, regresión, demo ensayada y PRs integrados.
+
+No se exige superar una puerta para comenzar las tareas necesarias para satisfacer esa misma puerta.
+
 | Puerta | Entrega obligatoria | Bloquea |
 |---|---|---|
-| G0 | ADR aprobado, HEAD base, inventario Windows y prueba Live, instalación SSRS y portal de prueba | Desarrollo integrado |
-| G1 | Tema, plantilla PBIX, plantilla RDL, contrato de nombres de parámetros y rutas portal | Trabajo paralelo |
-| G2 | 8 páginas + 7 auxiliares en entregas individuales; 10 RDL y SQL verificables | Integración |
-| G3 | PBIX maestro Live, portal 10/10, accesos cruzados, exportaciones | Certificación |
-| G4 | Matriz de pruebas, resultados reales, regresión, demo ensayada y PRs integrados | Cierre |
-No fijar fechas sin acuerdo del equipo. G0/G1 son prioridad; RDL y páginas avanzan en paralelo después del contrato común.
+| G0 | ADR aprobado, HEAD base, inventario Windows, prueba Live a SSAS, instalación SSRS, catálogo, autenticación Windows, origen compartido y prueba de humo (portal + PDF/XLSX) | Cierre de preflight de plataforma |
+| G1 | Tema, plantilla PBIX, plantilla RDL, contrato de nombres de parámetros y rutas portal | Inicio de G2 (desarrollo funcional paralelo definitivo) |
+| G2 | 8 páginas + 7 auxiliares en entregas individuales; 10 RDL y SQL verificables | G3 (integración) |
+| G3 | PBIX maestro Live, portal 10/10 RDL definitivos, 10 PDF + 10 XLSX, accesos cruzados | G4 (certificación) |
+| G4 | Matriz de pruebas (29 casos), resultados reales, regresión, demo ensayada y PRs integrados | Cierre |
+No fijar fechas sin acuerdo del equipo. G0 y G1 se habilitan tras el merge del PR documental `#14`; el desarrollo funcional paralelo definitivo (G2) inicia tras aprobar G1.
 
 ## 5. Evidencia histórica de referencia
 1.550.922 filas de ingesta aceptadas; 99.441 pedidos y 112.650 líneas. Ocho KPI históricos: ventas R$ 13.221.498,11; pedidos con ítems entregados 96.478; pedidos totales 99.441; ticket R$ 137,04; flete R$ 2.198.275,64; puntualidad 93,23 %; duración 12,56 días; calificación 4,09/5. Fuente: `ssas/README.md` y `powerbi/README.md`, evidencia 20/11/2026. No extrapolar a una carga diferente ni convertir redondeos en resultados exactos.

@@ -17,7 +17,7 @@ Revisor SQL y granularidad. Alcance asignado: **P04, P05, T03, D02; R03, R05**. 
 | X07 | Pruebas y entrega | capturas, SQL y matriz | filtros compatibles, fixtures aisladas y evidencia exportable |
 
 ## Dependencias y decisiones
-Poma entrega plantilla RDL y ruta R08; Ángel integra páginas. Basualdo revisa semántica. No editar SSIS, DDL ni datos; no añadir índices.
+Tras el merge del PR documental `#14`, se crean los issues y ramas desde `master` actualizado. El desarrollo funcional paralelo (`X01`–`X05`) comienza después de superar `G1` (Poma entrega plantilla RDL y ruta R08; Ángel integra páginas; Basualdo revisa semántica). No editar SSIS, DDL ni datos; no añadir índices.
 
 ## Criterios de aceptación
 PBI-05/06, SSRS-05/07, revisión SQL R01–R10. Cada tarea requiere archivo real, ejecución en Windows, evidencia con HEAD y filtro, y registro de limitaciones. Los SQL de 06 son referencias pendientes de ejecución: probar con SSMS y Report Builder, guardar CommandText equivalente y conciliación. Los RDL deben incluir parámetros, origen compartido, no-data, PDF y Excel. Las páginas PBI deben conservar Live, usar solo medidas aprobadas y cumplir retícula e interacciones. Entregar PBIX individual (si aplica), no editar el maestro salvo el custodio.
@@ -27,7 +27,7 @@ PBI-05/06, SSRS-05/07, revisión SQL R01–R10. Cada tarea requiere archivo real
 git fetch origin
 git switch master
 git pull --ff-only origin master
-# Crear rama indicada tras aprobar G0/G1; si ya existe, actualizarla sin reescritura.
+# Crear la rama asignada desde master actualizado tras el merge del PR #14; desarrollar páginas e informes definitivos tras aprobar G1.
 python scripts/validar_base.py
 python -m unittest discover -s scripts -p 'test_*.py'
 git diff --check

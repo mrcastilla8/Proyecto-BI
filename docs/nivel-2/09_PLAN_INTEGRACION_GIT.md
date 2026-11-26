@@ -11,7 +11,14 @@ git switch master
 git pull --ff-only origin master
 git switch -c castilla/nivel-2-plan
 ```
-Castilla incorpora `docs/nivel-2/`, ADR y actualizaciones normativas en PR inicial; no abrir desarrollo antes de G0/G1 aprobados. Tras merge, cada integrante crea rama desde master actualizado.
+Castilla incorpora `docs/nivel-2/`, `ADR-0002` y las actualizaciones normativas en el PR documental `#14`. Secuencia obligatoria tras aprobar y hacer merge del PR `#14` hacia `master`:
+1. Crear los issues y ramas individuales desde `master` actualizado.
+2. **G0 (preflight):** Poma ejecuta `M01` y `M02` (instalación SSRS, catálogo, seguridad, portal y humo) y se verifica conexión Live a SSAS.
+3. **G1 (plantillas):** Castilla, Ángel y Poma ejecutan las actividades preparatorias (`C02`, `A01`, `M03`: tema, plantilla PBIX, plantilla RDL, parámetros y rutas).
+4. **G2 (desarrollo paralelo):** comienza **después de superar G1**; cada integrante desarrolla sus páginas e informes definitivos asignados.
+5. **G3 / G4:** integración del PBIX maestro por Ángel, publicación de 10 RDL por Poma y certificación de los 29 casos.
+
+No se exige superar una puerta para comenzar las tareas necesarias para satisfacer esa misma puerta.
 
 | Rama sugerida | Propietario | Archivos |
 |---|---|---|

@@ -18,17 +18,17 @@ Responsable del servidor SSRS y publicación. Alcance asignado: **Apoyo P08; R07
 | M08 | Integración y demo | URLs verificadas, pasos de reproducción | P08 accesible, R05→R08, equipo demo y rollback |
 
 ## Dependencias y decisiones
-Preflight prioritario G0. Si extensión Visual Studio no compatible, Report Builder es ruta aprobada. No tocar SSIS ingesta, modelo ni datos. Castilla/Cueva revisan consultas, Ángel necesita rutas finales.
+Tras el merge del PR documental `#14`, se crean los issues y ramas desde `master` actualizado. **Poma queda autorizado inmediatamente tras el merge documental** para ejecutar `M01` y `M02` (necesarias para satisfacer `G0`: instalación SSRS, catálogo, seguridad, portal, informe temporal de humo y exportación de humo PDF/XLSX, sin exigir los 10 RDL definitivos), así como `M03` para construir la plantilla RDL (`G1`) junto con Castilla y Ángel. El desarrollo de los informes definitivos (`M04`–`M05`) comienza después de superar `G1`, y la publicación/exportación final de los 10 RDL (`M06`–`M08`) corresponde a `G3`/`G4`. Si extensión Visual Studio no compatible, Report Builder es ruta aprobada. No tocar SSIS ingesta, modelo ni datos. Castilla/Cueva revisan consultas, Ángel necesita rutas finales.
 
 ## Criterios de aceptación
-SSRS-01/02/09/10/14, INT-02/03; registrar ejecución de todos los RDL y permisos. Cada tarea requiere archivo real, ejecución en Windows, evidencia con HEAD y filtro, y registro de limitaciones. Los SQL de 06 son referencias pendientes de ejecución: probar con SSMS y Report Builder, guardar CommandText equivalente y conciliación. Los RDL deben incluir parámetros, origen compartido, no-data, PDF y Excel. Las páginas PBI deben conservar Live, usar solo medidas aprobadas y cumplir retícula e interacciones. Entregar PBIX individual (si aplica), no editar el maestro salvo el custodio.
+SSRS-01/02/09/10/14, INT-02/03 y evidencias `EVD-SSRS-01`..`08`; registrar ejecución de todos los RDL y permisos. Cada tarea requiere archivo real, ejecución en Windows, evidencia con HEAD y filtro, y registro de limitaciones. Los SQL de 06 son referencias pendientes de ejecución: probar con SSMS y Report Builder, guardar CommandText equivalente y conciliación. Los RDL deben incluir parámetros, origen compartido, no-data, PDF y Excel. Las páginas PBI deben conservar Live, usar solo medidas aprobadas y cumplir retícula e interacciones. Entregar PBIX individual (si aplica), no editar el maestro salvo el custodio.
 
 ## Procedimiento Git (PowerShell)
 ```powershell
 git fetch origin
 git switch master
 git pull --ff-only origin master
-# Crear rama indicada tras aprobar G0/G1; si ya existe, actualizarla sin reescritura.
+# Crear la rama asignada desde master actualizado tras el merge del PR #14; ejecutar M01–M02 (G0) y M03 (G1), y desarrollar R07/R08 tras aprobar G1.
 python scripts/validar_base.py
 python -m unittest discover -s scripts -p 'test_*.py'
 git diff --check

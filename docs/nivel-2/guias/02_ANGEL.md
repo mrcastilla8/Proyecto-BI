@@ -18,7 +18,7 @@ Custodia exclusiva del PBIX maestro. Alcance asignado: **P02, P03, T01, T02, D01
 | A08 | Certificar visual y rendimiento | powerbi/validacion/, evidencias/ | capturas 15, Performance Analyzer, matriz e interacciones |
 
 ## Dependencias y decisiones
-Esperar plantilla aprobada G1 y entregas de Castilla, Cueva y Basualdo para A07. No editar PBIX maestro durante integración de otros autores; tú eres el único escritor. Poma entrega URLs, Basualdo concilia.
+Tras el merge del PR documental `#14`, se crean los issues y ramas desde `master` actualizado. Ángel participa en la actividad preparatoria `A01` para construir y aprobar `G1` junto con Castilla y Poma; el desarrollo paralelo de páginas e informes definitivos (`A02`–`A06`) comienza después de superar `G1`. Esperar entregas de Castilla, Cueva y Basualdo para `A07`. No editar PBIX maestro durante integración de otros autores; tú eres el único escritor. Poma entrega URLs, Basualdo concilia.
 
 ## Criterios de aceptación
 PBI-01/02/03/07/09, SSRS-04/06; exportaciones propias para revisión de Poma. Cada tarea requiere archivo real, ejecución en Windows, evidencia con HEAD y filtro, y registro de limitaciones. Los SQL de 06 son referencias pendientes de ejecución: probar con SSMS y Report Builder, guardar CommandText equivalente y conciliación. Los RDL deben incluir parámetros, origen compartido, no-data, PDF y Excel. Las páginas PBI deben conservar Live, usar solo medidas aprobadas y cumplir retícula e interacciones. Entregar PBIX individual (si aplica), no editar el maestro salvo el custodio.
@@ -28,7 +28,7 @@ PBI-01/02/03/07/09, SSRS-04/06; exportaciones propias para revisión de Poma. Ca
 git fetch origin
 git switch master
 git pull --ff-only origin master
-# Crear rama indicada tras aprobar G0/G1; si ya existe, actualizarla sin reescritura.
+# Crear la rama asignada desde master actualizado tras el merge del PR #14; ejecutar A01 para G1 y desarrollar A02–A06 tras aprobar G1.
 python scripts/validar_base.py
 python -m unittest discover -s scripts -p 'test_*.py'
 git diff --check

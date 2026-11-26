@@ -66,4 +66,7 @@ flowchart LR
 
 ## 7. Estado de aprobación
 
-Este documento formaliza la arquitectura del Nivel 2. **No constituye evidencia de implementación, aprobación ni certificación.** Su entrada en vigor requiere la revisión y aprobación del Pull Request correspondiente sobre la rama `castilla/nivel-2-plan`, tras lo cual se habilitarán las puertas `G0` y `G1` definidas en [00_PLAN_MAESTRO.md](../nivel-2/00_PLAN_MAESTRO.md).
+Este documento formaliza la arquitectura del Nivel 2 y se mantiene en estado **`PROPUESTA_PENDIENTE_VALIDACION`** mientras el Pull Request `#14` permanezca en estado **Draft**.
+
+- **Mecanismo de aprobación:** la aprobación definitiva de este ADR corresponde exclusivamente al líder del proyecto **`mrcastilla8`**, quien autorizará el cambio explícito de estado a **`ACEPTADO`** antes del merge del PR `#14`.
+- **Alcance de la aprobación:** la aprobación arquitectónica (`ACEPTADO`) habilita la ejecución de las puertas `G0` y `G1` descritas en [00_PLAN_MAESTRO.md](../nivel-2/00_PLAN_MAESTRO.md), pero **no equivale a certificar la compatibilidad práctica de SSRS 2022 con SQL Server 2025 Developer, Shape Map en conexión Live ni el cumplimiento funcional del Nivel 2**, los cuales deberán demostrarse con evidencia real en Windows en `G0` y en los **29 casos de certificación** (`BASE`: 3, `PBI`: 9, `SSRS`: 14, `INT`: 3) de [08_PRUEBAS_CERTIFICACION.md](../nivel-2/08_PRUEBAS_CERTIFICACION.md).
