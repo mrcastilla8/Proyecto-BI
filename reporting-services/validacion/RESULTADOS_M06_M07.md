@@ -132,3 +132,66 @@ Los archivos de exportación se guardan en la carpeta local ignorada `validacion
 - El encabezado `SSRS-APP` de `Verificar-Entorno.ps1` informa la versión registrada de Windows; el portal es SQL Server 2022 Reporting Services. El servicio, catálogo y ejecuciones están comprobados independientemente.
 - El PDF de humo final tiene SHA-256 `CD02F104E921F93123EBBF1CE3284D83984497525486B757E0A467AC21AB09F9` (158551 bytes, 1 página); el XLSX local tiene SHA-256 `C090E8C5CD7865FC663417A5C44ABA914B851C45240D3D77DC9B98F66B9C39BC` (5142 bytes). El XLSX se abrió en Excel y los dos archivos quedaron en la carpeta ignorada.
 - Los cinco pares de exportación de la tabla histórica son del corte anterior; los valores de este cierre son los de la tabla actual y del manifiesto local actualizado.
+
+## Correcciones funcionales focalizadas posteriores al PR #25 — 2026-11-27
+
+Esta ronda vuelve a ejecutar solo R01, R07, R09 y R10 en el SSRS local. No se reinstaló SSRS ni se volvió a publicar el conjunto completo. El commit de los RDL/SQL corregidos es `5f0d44c80587524160fd052990569a90a6c309a9`; sus cuatro SHA-256 coinciden con las definiciones recuperadas del catálogo después de publicarlas mediante la API soportada de SSRS (HTTP 200, cero advertencias).
+
+### R07 — selector y exportación corregidos
+
+La consulta de valores disponibles para EstadoPedido contiene «Todos» y los estados observados, sin `__DESCONOCIDO__` ni «Desconocido / NULL». `GetItemParameters` con `ForRendering=true` confirmó las opciones publicadas. Se regeneraron PDF y XLSX con el rango histórico completo y todos los estados. Revisé visualmente las seis páginas del PDF: no aparece el nivel «Desconocido / NULL» y la última página cierra con 99.441 pedidos, 99.440 con pago observado, 1 sin pago y R$ 16.008.872,12. El XLSX tiene 172 × 20 celdas y 969 valores numéricos.
+
+### R09 — barras de ventas comparativas
+
+El cambio de glifos verticales por imágenes de barra embebidas se verificó con dos exportaciones: el filtro previo de São Paulo, para conservar sus cifras históricas, y todos los estados/ciudades para evaluar barras de distintas longitudes. En la primera página del segundo PDF las barras horizontales se distinguen en los estados con venta baja, media y alta; inspeccioné también el último folio, que no presenta una página vacía ni una fila recortada. El PDF multestado tiene 144 páginas; no se inspeccionaron una por una. Su XLSX abre como OOXML y contiene 3.450 × 15 celdas, incluidos 27.196 números. El caso São Paulo conserva 6.381 pedidos, 6.123 entregados, R$ 752.425,64 en ventas, R$ 100.270,40 de flete, 95,93 % a tiempo, 8,64 días y nota 4,12.
+
+### R01 y R10 — tipos utilizables en Excel
+
+La comparación con las exportaciones previas confirmó el problema antes de aplicar la propuesta versionada `propuestas/r01-r10-formato-exportacion.patch`:
+
+- En R01, las ocho métricas de F20:F27 eran texto en el XLSX anterior (43 celdas no vacías, todas de tipo texto). Ahora son ocho valores numéricos con formato de moneda, conteo, porcentaje, días y nota; el XLSX corregido tiene 33 × 8 celdas. R01 no expone fechas como columnas de datos: el rango Desde/Hasta sigue siendo una etiqueta de filtro en el encabezado.
+- En R10, las 30 celdas de fechas que antes eran cadenas ahora son valores datetime de Excel con formato `dd/mm/yyyy hh:mm:ss`. El XLSX corregido contiene 60 valores numéricos y 30 fechas reales; la cantidad de lotes, conteos y métricas no cambió. El PDF sigue en dos páginas, ambas revisadas visualmente.
+
+Abrí los XLSX corregidos de R01 y R09 multestado en Excel. También comprobé el tipo OOXML y formato numérico/de fecha de los cuatro libros con `openpyxl`; se excluyeron datos de pedidos individuales.
+
+### Hashes de los RDL publicados
+
+| Informe | SHA-256 RDL |
+|---|---|
+| R01 | `CFEEBE238B8251B990FB2F1537A9D38336031E86650E34E8AD8EDE52C0FE880C` |
+| R07 | `FB42D0DE0F088A5B4A31E93110365B5FB80B8C544E43CA1461683611A54B7360` |
+| R09 | `77A35FB71BB3FF6F50F10D1C1A05A2DA926D44DA5C6A2F99966D1BE4A6DF7F8C` |
+| R10 | `A428350628BB2D57FC6D16EEAC187420805D396A5FB73020E31C8BC4DA75C49E` |
+
+### Exportaciones corregidas
+
+Los binarios quedan en la carpeta local ignorada `validacion/salidas/correcciones-2026-11-27/`; solo las imágenes de páginas agregadas a `evidencias/renderizados-2026-11-27/` se versionan.
+
+| Informe / filtro | Archivo | Bytes | SHA-256 |
+|---|---|---:|---|
+| R01, 2017, todos los estados | `R01_ResumenGerencial_2017.pdf` | 195671 | `A695ABFDC6C0FBCD5262D83D95F7D56CC219DCE9703222E96F78641A44C6DCAB` |
+| R01, 2017, todos los estados | `R01_ResumenGerencial_2017.xlsx` | 8530 | `6DFB417EAE7B32CC48FCDC31676C220319137A130BBFC7675D708B63B7F9AC9B` |
+| R07, histórico, todos los estados | `R07_ImportesPagados_historico.pdf` | 276611 | `C7FBD921DC7F8572F1C4C48E1991E57623DC50AE507A489F5E1C7BF0C894535B` |
+| R07, histórico, todos los estados | `R07_ImportesPagados_historico.xlsx` | 21718 | `A73EF76989F3E4C7FBB39505B4F6355608DC3F7B81ACADED94E372DA212B81D9` |
+| R09, 2017, SP, sao paulo | `R09_DesempenoRegional_2017_SP_sao_paulo.pdf` | 194828 | `554910F077AEE89507092DE8D8770F321D2A7CC6CD3D20791EB542E12C5932E5` |
+| R09, 2017, SP, sao paulo | `R09_DesempenoRegional_2017_SP_sao_paulo.xlsx` | 8252 | `8CFFCFA0CDAC2BFF2250138A267ECBD6311C8C01E2167DE01E053FD2B116AFB4` |
+| R09, 2017, todos los estados/ciudades | `R09_DesempenoRegional_2017_TodosEstados.pdf` | 971204 | `4BF506D0E88B915EF9D3CF9A0E8702DB13246B58456B43ED1343B15A4436C361` |
+| R09, 2017, todos los estados/ciudades | `R09_DesempenoRegional_2017_TodosEstados.xlsx` | 292734 | `96D3E89C52476046B0C5FE32EFEF056DE1154723824DB88E0E9F5C63BF77BCC5` |
+| R10, auditoría histórica, todas las fuentes/estados | `R10_AuditoriaETL_auditoria_historica.pdf` | 200291 | `11688A2EDD43CB1A5E671FCF7B0F0D9A680C15023291725E37C0EBB5DEEA04CF` |
+| R10, auditoría histórica, todas las fuentes/estados | `R10_AuditoriaETL_auditoria_historica.xlsx` | 10395 | `986E70873E698DAC58B953E904FD8A87B638D731A3497474FEC151FBD61E61F0` |
+
+### Vistas corregidas
+
+| Informe | Evidencia |
+|---|---|
+| R01 | ![R01, primera página del PDF corregido](../evidencias/renderizados-2026-11-27/R01-SSRS-1.png) |
+| R07 | ![R07, página 1 del PDF corregido](../evidencias/renderizados-2026-11-27/R07-SSRS-1.png) · [página 6 con el total](../evidencias/renderizados-2026-11-27/R07-SSRS-6.png) |
+| R09 | ![R09, comparación multestado de barras en el PDF corregido](../evidencias/renderizados-2026-11-27/R09-SSRS-1.png) |
+| R10 | ![R10, primera página del PDF corregido](../evidencias/renderizados-2026-11-27/R10-SSRS-1.png) · [segunda página](../evidencias/renderizados-2026-11-27/R10-SSRS-2.png) |
+
+### Comprobaciones y límites
+
+- `python scripts/validar_base.py`: PASS. `pwsh -NoProfile -ExecutionPolicy Bypass -File reporting-services/scripts/Validar-Scripts.ps1`: PASS (ocho scripts PowerShell parseados). `git diff --check`: PASS antes de actualizar este apéndice.
+- Los cuatro RDL parsean como XML y sus 16 consultas embebidas (R01: 4, R07: 3, R09: 4, R10: 5) coinciden exactamente con los SQL versionados.
+- `R02` y `R04` no se modificaron ni exportaron en esta ronda; sus correcciones se revisan primero en el PR #26 de Ángel. No se modificaron ni probaron PBIX, conexión Live, SSAS o medidas DAX.
+- El detalle de pedidos de R08 sigue fuera de Git. No se creó ningún issue ni validador. La apertura visual de las exportaciones de PRE_G0_Humo (`PRE-G0-07`) y la certificación cruzada de Nivel 2 siguen fuera de esta ronda.
