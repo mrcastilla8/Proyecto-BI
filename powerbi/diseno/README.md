@@ -2,7 +2,10 @@
 
 Responsable Ángel (`@luisdem01`). La aprobación visual de G1 corresponde a Castilla (`C02`). Implementa [02_SISTEMA_DISENO_VISUAL.md](../../docs/nivel-2/02_SISTEMA_DISENO_VISUAL.md) y la configuración de base de [03_ESPECIFICACION_POWER_BI.md](../../docs/nivel-2/03_ESPECIFICACION_POWER_BI.md).
 
-**Estado:** generada, pendiente de importación en Power BI Desktop, capturas y aprobación `C02`. No se declara implementada hasta tener esa evidencia.
+**Estado:** implementada y comprobada en Power BI Desktop el 26-11-2026 con conexión Live y datos reales. Está pendiente de la aprobación final `C02`.
+- El tema **OLIST 360** está importado.
+- La plantilla se abrió en Desktop.
+- Las capturas están en [`powerbi/evidencias/nivel-2/A01.md`](../evidencias/nivel-2/A01.md).
 
 ## Contenido
 
@@ -52,7 +55,7 @@ Tipografía Segoe UI: valores KPI de 32 pt, títulos de visual de 14 pt y etique
 
 ## Componentes
 
-- **Navegación:** ocho botones nativos P01–P08 de 224×44 px con acción *Navegación de página*, el mismo patrón que las entregas de Cueva. El botón de la página actual usa Blue `#2563EB` y los demás `#33466A`. Este tono intermedio entre Navy y Muted no es un token y requiere aprobación C02. En la plantilla los botones no tienen destino, porque las páginas P01–P08 aún no existen. El destino se asigna en el PBIX maestro (A07).
+- **Navegación:** ocho botones nativos P01–P08 de 224×44 px con nombres cortos que se leen completos: *P01 Resumen ejecutivo*, *P02 Inteligencia comercial*, *P03 Productos*, *P04 Vendedores*, *P05 Logística*, *P06 Experiencia*, *P07 Geografía* y *P08 Centro de informes*. Usan la acción *Navegación de página*, el mismo patrón que las entregas de Cueva. El botón de la página actual usa Blue `#2563EB` y los demás `#33466A`. Este tono intermedio entre Navy y Muted no es un token y requiere aprobación C02. En la plantilla los botones no tienen destino, porque las páginas P01–P08 aún no existen. El destino se asigna en el PBIX maestro (A07).
 - **Panel de filtros:** dos segmentadores en el menú. *Fecha de compra* usa `DimFecha[fecha]` en modo entre y *Estado del cliente* usa `customer_state` como lista desplegable. Debajo va el botón **Restablecer filtros**, con la acción nativa *Borrar todas las segmentaciones*, sin marcadores.
 - **Grupos de sincronización:** son un contrato para P01–P07. Cada autor debe conservar estos nombres para que la integración del maestro no pierda la sincronización:
 
@@ -71,9 +74,7 @@ Tipografía Segoe UI: valores KPI de 32 pt, títulos de visual de 14 pt y etique
 3. Cambia el código, el título y la pregunta de la cabecera, y el código del pie. Reemplaza los visuales de ejemplo respetando la retícula.
 4. No pulses *Realizar cambios en este modelo* ni agregues medidas.
 
-## Pendiente de verificar en Desktop
+## Pendiente
 
-- Que el tema quede registrado. Si no, hay que importar `olist360.json` a mano.
-- Que el botón borre los segmentadores.
-- Que el pie y la cabecera no se recorten a 1366×768.
-- Que el panel siga visible permanentemente, en lugar de abrirse y cerrarse con un marcador como sugiere 02. Lo elegí para evitar marcadores con estado de datos que se pierden al integrar páginas. Hay que confirmarlo con C02.
+- **Restablecer filtros con un estado seleccionado.** Comprobado con un rango de fechas: las fechas vuelven al rango completo y los KPI al total. Falta la captura con un estado del cliente seleccionado antes de pulsar el botón.
+- **Legibilidad en una pantalla real de 1366×768 o en el proyector.** La captura disponible es de una ventana de Desktop reducida.

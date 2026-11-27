@@ -32,7 +32,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'P04  Desempeño de vendedores'"
+                  "Value": "'P04  Vendedores'"
                 }
               }
             },
