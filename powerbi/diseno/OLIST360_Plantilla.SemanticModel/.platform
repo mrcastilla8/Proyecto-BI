@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "OLIST360_Plantilla"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "dca8d12f-bf1a-4aef-85c8-4345fbc1c2af"
+  }
+}
