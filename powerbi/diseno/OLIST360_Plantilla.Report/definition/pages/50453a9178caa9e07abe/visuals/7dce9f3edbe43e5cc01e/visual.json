@@ -1,0 +1,38 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "7dce9f3edbe43e5cc01e",
+  "position": {
+    "x": 280,
+    "y": 1020,
+    "z": 70,
+    "height": 40,
+    "width": 1616,
+    "tabOrder": 70
+  },
+  "visual": {
+    "visualType": "textbox",
+    "objects": {
+      "general": [
+        {
+          "properties": {
+            "paragraphs": [
+              {
+                "textRuns": [
+                  {
+                    "value": "Fuente: Olist (Kaggle, CC BY-NC-SA 4.0) · Modelo SSAS BI_OLIST_Tabular (Live) · Importes en BRL nominales · Fecha = fecha de compra · GUIA",
+                    "textStyle": {
+                      "fontSize": "10pt",
+                      "color": "#475569",
+                      "fontFamily": "Segoe UI"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

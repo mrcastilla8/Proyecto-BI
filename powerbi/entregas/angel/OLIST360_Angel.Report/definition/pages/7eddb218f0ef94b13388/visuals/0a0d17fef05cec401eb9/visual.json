@@ -1,0 +1,126 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "0a0d17fef05cec401eb9",
+  "position": {
+    "x": 1096,
+    "y": 606,
+    "z": 2003,
+    "height": 394,
+    "width": 800,
+    "tabOrder": 2003
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DimProducto"
+                    }
+                  },
+                  "Property": "product_category_name_english"
+                }
+              },
+              "queryRef": "DimProducto.product_category_name_english",
+              "nativeQueryRef": "product_category_name_english",
+              "displayName": "Categoría"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DimProducto"
+                    }
+                  },
+                  "Property": "product_id"
+                }
+              },
+              "queryRef": "DimProducto.product_id",
+              "nativeQueryRef": "product_id",
+              "displayName": "Producto (ID)"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FactDetallePedido"
+                    }
+                  },
+                  "Property": "ventas_productos_entregados"
+                }
+              },
+              "queryRef": "FactDetallePedido.ventas_productos_entregados",
+              "nativeQueryRef": "ventas_productos_entregados",
+              "displayName": "Ventas de productos entregados"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FactDetallePedido"
+                    }
+                  },
+                  "Property": "ticket_promedio_productos_entregados"
+                }
+              },
+              "queryRef": "FactDetallePedido.ticket_promedio_productos_entregados",
+              "nativeQueryRef": "ticket_promedio_productos_entregados",
+              "displayName": "Ticket promedio"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Identificación del producto'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "subTitle": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Medida: ventas_productos_entregados, ticket_promedio_productos_entregados'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

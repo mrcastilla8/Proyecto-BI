@@ -1,0 +1,125 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "11f10783841a2fe92026",
+  "position": {
+    "x": 280,
+    "y": 272,
+    "z": 2000,
+    "height": 340,
+    "width": 1068,
+    "tabOrder": 2000
+  },
+  "visual": {
+    "visualType": "lineChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "HierarchyLevel": {
+                  "Expression": {
+                    "Hierarchy": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "DimFecha"
+                        }
+                      },
+                      "Hierarchy": "Calendario"
+                    }
+                  },
+                  "Level": "Año"
+                }
+              },
+              "queryRef": "DimFecha.Calendario.Año",
+              "nativeQueryRef": "Calendario Año",
+              "active": true
+            },
+            {
+              "field": {
+                "HierarchyLevel": {
+                  "Expression": {
+                    "Hierarchy": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "DimFecha"
+                        }
+                      },
+                      "Hierarchy": "Calendario"
+                    }
+                  },
+                  "Level": "Mes"
+                }
+              },
+              "queryRef": "DimFecha.Calendario.Mes",
+              "nativeQueryRef": "Calendario Mes",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FactDetallePedido"
+                    }
+                  },
+                  "Property": "ventas_productos_entregados"
+                }
+              },
+              "queryRef": "FactDetallePedido.ventas_productos_entregados",
+              "nativeQueryRef": "ventas_productos_entregados",
+              "displayName": "Ventas de productos entregados"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Ventas de productos entregados por mes de compra (BRL)'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "subTitle": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Medida: ventas_productos_entregados'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

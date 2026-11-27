@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "OLIST360_Angel"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "36e33a1e-1c2a-4465-8c0a-56e1c221d346"
+  }
+}

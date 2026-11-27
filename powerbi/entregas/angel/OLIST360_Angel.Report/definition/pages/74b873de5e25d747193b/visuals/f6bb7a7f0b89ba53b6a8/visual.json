@@ -1,0 +1,177 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "f6bb7a7f0b89ba53b6a8",
+  "position": {
+    "x": 280,
+    "y": 606,
+    "z": 2003,
+    "height": 394,
+    "width": 1068,
+    "tabOrder": 2003
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "query": {
+      "queryState": {
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DimProducto"
+                    }
+                  },
+                  "Property": "product_category_name_english"
+                }
+              },
+              "queryRef": "DimProducto.product_category_name_english",
+              "nativeQueryRef": "product_category_name_english",
+              "displayName": "Categoría"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DimProducto"
+                    }
+                  },
+                  "Property": "product_id"
+                }
+              },
+              "queryRef": "DimProducto.product_id",
+              "nativeQueryRef": "product_id",
+              "displayName": "Producto (ID)"
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FactDetallePedido"
+                    }
+                  },
+                  "Property": "ventas_productos_entregados"
+                }
+              },
+              "queryRef": "FactDetallePedido.ventas_productos_entregados",
+              "nativeQueryRef": "ventas_productos_entregados",
+              "displayName": "Ventas de productos entregados"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FactDetallePedido"
+                    }
+                  },
+                  "Property": "pedidos_entregados_con_items"
+                }
+              },
+              "queryRef": "FactDetallePedido.pedidos_entregados_con_items",
+              "nativeQueryRef": "pedidos_entregados_con_items",
+              "displayName": "Pedidos entregados con ítems"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FactDetallePedido"
+                    }
+                  },
+                  "Property": "ticket_promedio_productos_entregados"
+                }
+              },
+              "queryRef": "FactDetallePedido.ticket_promedio_productos_entregados",
+              "nativeQueryRef": "ticket_promedio_productos_entregados",
+              "displayName": "Ticket promedio"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FactDetallePedido"
+                    }
+                  },
+                  "Property": "flete_pedidos_entregados"
+                }
+              },
+              "queryRef": "FactDetallePedido.flete_pedidos_entregados",
+              "nativeQueryRef": "flete_pedidos_entregados",
+              "displayName": "Flete de pedidos entregados"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "FactDetallePedido"
+                  }
+                },
+                "Property": "ventas_productos_entregados"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Categoría › producto: ventas, pedidos, ticket y flete de entregados'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "subTitle": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Medidas: V, E, T, F · clic derecho en un producto → Obtener detalles → D01'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

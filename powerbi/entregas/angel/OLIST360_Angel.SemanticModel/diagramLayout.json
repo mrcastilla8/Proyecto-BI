@@ -1,0 +1,118 @@
+{
+  "version": "1.1.0",
+  "diagrams": [
+    {
+      "ordinal": 0,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 334.30952647309664,
+            "y": 656.41718123796818
+          },
+          "nodeIndex": "DimCliente",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 270.13178386287285,
+            "y": -50
+          },
+          "nodeIndex": "DimFecha",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 546.87260289531218,
+            "y": 303.22979264682652
+          },
+          "nodeIndex": "DimGeografiaCliente",
+          "size": {
+            "height": 224,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 934.30883557850416,
+            "y": 139.40234215354189
+          },
+          "nodeIndex": "DimGeografiaVendedor",
+          "size": {
+            "height": 224,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1197.791629216314,
+            "y": 416.7286338897211
+          },
+          "nodeIndex": "DimProducto",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1063.4125711077081,
+            "y": 769.62159916228029
+          },
+          "nodeIndex": "DimVendedor",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 831.58605145346144,
+            "y": 416.78714324233454
+          },
+          "nodeIndex": "FactDetallePedido",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 50,
+            "y": 303.62652471324157
+          },
+          "nodeIndex": "FactPedidos",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        }
+      ],
+      "name": "Todas las tablas",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    }
+  ],
+  "selectedDiagram": "Todas las tablas",
+  "defaultDiagram": "Todas las tablas"
+}

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "OLIST360_Angel"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "66f92359-898a-4414-896b-d964c9186816"
+  }
+}

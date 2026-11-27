@@ -1,0 +1,125 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "8b5ee581ccbcb5151ed1",
+  "position": {
+    "x": 1504,
+    "y": 606,
+    "z": 2005,
+    "height": 394,
+    "width": 392,
+    "tabOrder": 2005
+  },
+  "visual": {
+    "visualType": "clusteredColumnChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "HierarchyLevel": {
+                  "Expression": {
+                    "Hierarchy": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "DimFecha"
+                        }
+                      },
+                      "Hierarchy": "Calendario"
+                    }
+                  },
+                  "Level": "Año"
+                }
+              },
+              "queryRef": "DimFecha.Calendario.Año",
+              "nativeQueryRef": "Calendario Año",
+              "active": true
+            },
+            {
+              "field": {
+                "HierarchyLevel": {
+                  "Expression": {
+                    "Hierarchy": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "DimFecha"
+                        }
+                      },
+                      "Hierarchy": "Calendario"
+                    }
+                  },
+                  "Level": "Trimestre"
+                }
+              },
+              "queryRef": "DimFecha.Calendario.Trimestre",
+              "nativeQueryRef": "Calendario Trimestre",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FactDetallePedido"
+                    }
+                  },
+                  "Property": "flete_pedidos_entregados"
+                }
+              },
+              "queryRef": "FactDetallePedido.flete_pedidos_entregados",
+              "nativeQueryRef": "flete_pedidos_entregados",
+              "displayName": "Flete de pedidos entregados"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Flete de entregados por trimestre de compra (BRL)'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "subTitle": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Medida: flete_pedidos_entregados'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}
