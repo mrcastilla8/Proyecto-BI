@@ -76,5 +76,4 @@ Tipografía Segoe UI: valores KPI de 32 pt, títulos de visual de 14 pt y etique
 
 ## Pendiente
 
-- **Restablecer filtros con un estado seleccionado.** Comprobado con un rango de fechas: las fechas vuelven al rango completo y los KPI al total. Falta la captura con un estado del cliente seleccionado antes de pulsar el botón.
 - **Legibilidad en una pantalla real de 1366×768 o en el proyector.** La captura disponible es de una ventana de Desktop reducida.
