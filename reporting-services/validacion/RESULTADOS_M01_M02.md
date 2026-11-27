@@ -79,3 +79,17 @@ Hashes SHA-256 de los RDL versionados:
 - Roles avanzados, cuenta dedicada, SSAS y PBIX Live quedan fuera de la prioridad simplificada vigente.
 
 No se modificaron database/, contracts/, SSIS, SSAS, DAX ni el PBIX maestro.
+
+## Addendum de verificación actual — 2026-11-27
+
+Este addendum conserva el resultado histórico anterior y registra la última comprobación local. HEAD de los informes probados: `97fca9aaa073958b9ffb31101a7862133271cd01` (`97fca9a`).
+
+- M01: servicio `SQLServerReportingServices` en estado `Running` e inicio automático; `ReportServer` y `ReportServerTempDB` ONLINE; portal `http://localhost/Reports`, servicio `http://localhost/ReportServer` y SOAP `ReportService2010` respondieron HTTP 200.
+- El inventario actual encontró SQL Server Developer `17.0.1000.7`, `BI_OLIST` ONLINE, Report Builder `15.1.30001.02` y Power BI Desktop `2.160.1151.0`. La entrada instalada de SSRS reportó versión `16.0.9819.33617`; el estado del servicio/catálogo se comprobó aparte. `WIN-02` quedó `BLOCKED` porque la consola no estaba elevada; no se requirió instalar ni cambiar la configuración del servidor.
+- Consultas `SELECT` locales confirmaron `dw.FactPedidos` **99.441** filas, `dw.FactDetallePedido` **112.650**, `audit.Batch` **10** y `audit.Reject` **0**. El rango real de lotes fue 20/11/2026–26/11/2026, con 10 `COMPLETE`. También existen `DimCliente`, `DimFecha`, `DimGeografiaCliente`, `DimGeografiaVendedor`, `DimProducto` y `DimVendedor`. No se ejecutó DDL, DML ni SSIS.
+- M02: `/OLIST360/DataSources/BI_OLIST_DW` respondió durante la ejecución real de los diez informes. Esto prueba conectividad de la fuente con los datos, no permisos mínimos de una identidad dedicada.
+- No se probaron el rol `Browser`, el rechazo de un usuario no autorizado ni la identidad dedicada con solo `SELECT`. Esos controles quedan `NOT_RUN`; no se interpretan como PASS por usar autenticación integrada local.
+- La prueba temporal PRE_G0_Humo mostró 99.441 pedidos y 112.650 líneas; su PDF final de una página se revisó y el XLSX se abrió en Excel. Después se retiró únicamente `/OLIST360/Pruebas/PRE_G0_Humo` usando la API oficial `ReportService2010.DeleteItem`. El catálogo, el origen compartido y los diez RDL definitivos permanecieron.
+- La primera comprobación SQL local sin `-TrustServerCertificate` falló porque el cliente no confió en el certificado local. La repetición con el parámetro de confianza del verificador local pasó; no se cambió la configuración TLS del motor.
+
+La matriz conserva las filas históricas y añade un corte con fecha/HEAD actual. El detalle de las exportaciones y del cierre está en [`RESULTADOS_M06_M07.md`](RESULTADOS_M06_M07.md) y [`CIERRE_POMA.md`](CIERRE_POMA.md).

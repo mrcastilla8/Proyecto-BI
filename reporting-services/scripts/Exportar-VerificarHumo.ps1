@@ -12,7 +12,14 @@ function Get-RenderedFile {
 
     $escapedPath = [uri]::EscapeDataString($Path)
     $url = $BaseUrl.AbsoluteUri.TrimEnd('/') + '?' + $escapedPath + '&rs:Command=Render&rs:Format=' + [uri]::EscapeDataString($Format)
-    $response = Invoke-WebRequest -Uri $url -UseDefaultCredentials -UseBasicParsing -TimeoutSec 90
+    $request = @{ Uri = $url; UseDefaultCredentials = $true; TimeoutSec = 90 }
+    if ($PSVersionTable.PSVersion.Major -le 5) {
+        $request['UseBasicParsing'] = $true
+    } else {
+        # Allow unencrypted Windows authentication only after the caller's loopback guard passes.
+        $request['AllowUnencryptedAuthentication'] = $true
+    }
+    $response = Invoke-WebRequest @request
     if ($response.StatusCode -ne 200) { throw "Render $Format devolvió HTTP $($response.StatusCode)." }
     $contentType = [string]$response.Headers['Content-Type']
     $response.RawContentStream.Position = 0
