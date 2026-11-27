@@ -1,0 +1,2875 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition">
+  <Description>Indicadores de Olist por estado y ciudad del cliente con totales recalculados.</Description>
+  <DataSources>
+    <DataSource Name="BI_OLIST_DW">
+      <DataSourceReference>/OLIST360/DataSources/BI_OLIST_DW</DataSourceReference>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="R06_Fechas">
+      <Query>
+        <DataSourceName>BI_OLIST_DW</DataSourceName>
+        <CommandText><![CDATA[SELECT MIN(f.fecha) AS desde, MAX(f.fecha) AS hasta
+FROM dw.FactPedidos AS p
+JOIN dw.DimFecha AS f ON f.fecha_key = p.fecha_compra_key
+WHERE f.fecha_key <> -1;
+]]></CommandText>
+        <Timeout>60</Timeout>
+      </Query>
+      <Fields>
+        <Field Name="desde">
+          <DataField>desde</DataField>
+        </Field>
+        <Field Name="hasta">
+          <DataField>hasta</DataField>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="R06_Estados">
+      <Query>
+        <DataSourceName>BI_OLIST_DW</DataSourceName>
+        <CommandText><![CDATA[SELECT estados.valor, estados.etiqueta
+FROM (
+    SELECT '__TODOS__' AS valor, N'Todos' AS etiqueta, 0 AS prioridad
+    UNION ALL
+    SELECT DISTINCT customer_state, customer_state, 1
+    FROM dw.DimGeografiaCliente
+    WHERE customer_state IS NOT NULL
+    UNION ALL
+    SELECT '__DESCONOCIDO__', N'Desconocido', 2
+    WHERE EXISTS (
+        SELECT 1 FROM dw.DimGeografiaCliente WHERE customer_state IS NULL
+    )
+) AS estados
+ORDER BY estados.prioridad, estados.etiqueta;
+]]></CommandText>
+        <Timeout>60</Timeout>
+      </Query>
+      <Fields>
+        <Field Name="valor">
+          <DataField>valor</DataField>
+        </Field>
+        <Field Name="etiqueta">
+          <DataField>etiqueta</DataField>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="R09_Ciudades">
+      <Query>
+        <DataSourceName>BI_OLIST_DW</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@EstadoCliente">
+            <Value>=Parameters!EstadoCliente.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText><![CDATA[SELECT ciudades.valor, ciudades.etiqueta
+FROM (
+    SELECT CONVERT(nvarchar(200), '__TODOS__') AS valor, N'Todas' AS etiqueta, 0 AS prioridad
+    UNION ALL
+    SELECT DISTINCT g.customer_city, g.customer_city, 1
+    FROM dw.DimGeografiaCliente AS g
+    WHERE g.customer_city IS NOT NULL
+      AND (@EstadoCliente = '__TODOS__'
+           OR g.customer_state = @EstadoCliente
+           OR (@EstadoCliente = '__DESCONOCIDO__' AND g.customer_state IS NULL))
+    UNION ALL
+    SELECT '__DESCONOCIDO__', N'Desconocida', 2
+    WHERE EXISTS (
+        SELECT 1 FROM dw.DimGeografiaCliente AS g
+        WHERE g.customer_city IS NULL
+          AND (@EstadoCliente = '__TODOS__'
+               OR g.customer_state = @EstadoCliente
+               OR (@EstadoCliente = '__DESCONOCIDO__' AND g.customer_state IS NULL))
+    )
+) AS ciudades
+ORDER BY ciudades.prioridad, ciudades.etiqueta;
+]]></CommandText>
+        <Timeout>60</Timeout>
+      </Query>
+      <Fields>
+        <Field Name="valor">
+          <DataField>valor</DataField>
+        </Field>
+        <Field Name="etiqueta">
+          <DataField>etiqueta</DataField>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="R09_DesempenoRegional">
+      <Query>
+        <DataSourceName>BI_OLIST_DW</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@Desde">
+            <Value>=Parameters!Desde.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Hasta">
+            <Value>=Parameters!Hasta.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@EstadoCliente">
+            <Value>=Parameters!EstadoCliente.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Ciudad">
+            <Value>=Parameters!Ciudad.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText><![CDATA[WITH Limites AS (
+    SELECT MIN(f.fecha) AS desde, MAX(f.fecha) AS hasta
+    FROM dw.FactPedidos AS p
+    JOIN dw.DimFecha AS f ON f.fecha_key = p.fecha_compra_key
+    WHERE f.fecha_key <> -1
+),
+Fechas AS (
+    SELECT f.fecha_key
+    FROM dw.DimFecha AS f
+    CROSS JOIN Limites AS l
+    WHERE f.fecha_key <> -1
+      AND CAST(@Desde AS date) >= l.desde
+      AND CAST(@Hasta AS date) <= l.hasta
+      AND CAST(@Desde AS date) <= CAST(@Hasta AS date)
+      AND f.fecha BETWEEN CAST(@Desde AS date) AND CAST(@Hasta AS date)
+),
+Geografia AS (
+    SELECT g.geografia_cliente_key, g.customer_state AS estado, g.customer_city AS ciudad
+    FROM dw.DimGeografiaCliente AS g
+    WHERE (@EstadoCliente = '__TODOS__'
+           OR (@EstadoCliente = '__DESCONOCIDO__' AND g.customer_state IS NULL)
+           OR g.customer_state = @EstadoCliente)
+      AND (@Ciudad = '__TODOS__'
+           OR (@Ciudad = '__DESCONOCIDO__' AND g.customer_city IS NULL)
+           OR g.customer_city = @Ciudad)
+),
+Detalle AS (
+    SELECT GROUPING_ID(g.estado, g.ciudad) AS nivel, g.estado, g.ciudad,
+           SUM(d.price) AS ventas,
+           COUNT_BIG(DISTINCT d.order_id) AS entregados,
+           CONVERT(float, SUM(d.price)) / NULLIF(COUNT_BIG(DISTINCT d.order_id), 0) AS ticket,
+           SUM(d.freight_value) AS flete
+    FROM dw.FactDetallePedido AS d
+    JOIN Fechas AS f ON f.fecha_key = d.fecha_compra_key
+    JOIN Geografia AS g ON g.geografia_cliente_key = d.geografia_cliente_key
+    WHERE d.order_status = 'delivered'
+    GROUP BY GROUPING SETS ((g.estado, g.ciudad), (g.estado), ())
+    HAVING COUNT_BIG(*) > 0
+),
+Pedidos AS (
+    SELECT GROUPING_ID(g.estado, g.ciudad) AS nivel, g.estado, g.ciudad,
+           COUNT_BIG(*) AS pedidos,
+           AVG(CASE
+               WHEN p.order_status = 'delivered'
+                AND p.fecha_entrega_real_key <> -1 AND p.fecha_entrega_estimada_key <> -1
+               THEN CONVERT(float, CASE
+                   WHEN p.fecha_entrega_real_key <= p.fecha_entrega_estimada_key THEN 1
+                   ELSE 0
+               END)
+           END) AS puntualidad,
+           AVG(CASE
+               WHEN p.order_status = 'delivered' AND p.fecha_entrega_real_key <> -1
+               THEN CONVERT(float, DATEDIFF_BIG(SECOND, p.order_purchase_timestamp,
+                                               p.order_delivered_customer_date)) / 86400.0
+           END) AS dias,
+           AVG(CONVERT(float, p.review_score)) AS nota
+    FROM dw.FactPedidos AS p
+    JOIN Fechas AS f ON f.fecha_key = p.fecha_compra_key
+    JOIN Geografia AS g ON g.geografia_cliente_key = p.geografia_cliente_key
+    GROUP BY GROUPING SETS ((g.estado, g.ciudad), (g.estado), ())
+    HAVING COUNT_BIG(*) > 0
+),
+Resultados AS (
+    SELECT COALESCE(d.nivel, p.nivel) AS nivel,
+           COALESCE(d.estado, p.estado) AS estado,
+           COALESCE(d.ciudad, p.ciudad) AS ciudad,
+           d.ventas, d.entregados, d.ticket, d.flete, p.pedidos, p.puntualidad, p.dias, p.nota
+    FROM Detalle AS d
+    FULL OUTER JOIN Pedidos AS p ON d.nivel = p.nivel
+      AND (d.estado = p.estado OR (d.estado IS NULL AND p.estado IS NULL))
+      AND (d.ciudad = p.ciudad OR (d.ciudad IS NULL AND p.ciudad IS NULL))
+)
+SELECT nivel, estado, ciudad, ventas, entregados, ticket, flete, pedidos, puntualidad, dias, nota,
+       CASE WHEN nivel = 1 THEN CONVERT(float, ventas) /
+           NULLIF(MAX(CASE WHEN nivel = 1 THEN CONVERT(float, ventas) END) OVER (), 0)
+       END AS ventas_relativas,
+       MAX(CASE WHEN nivel = 3 THEN puntualidad END) OVER () AS puntualidad_total,
+       MAX(CASE WHEN nivel = 3 THEN nota END) OVER () AS nota_total
+FROM Resultados
+ORDER BY nivel DESC, estado, ciudad;
+]]></CommandText>
+        <Timeout>60</Timeout>
+      </Query>
+      <Fields>
+        <Field Name="nivel">
+          <DataField>nivel</DataField>
+        </Field>
+        <Field Name="estado">
+          <DataField>estado</DataField>
+        </Field>
+        <Field Name="ciudad">
+          <DataField>ciudad</DataField>
+        </Field>
+        <Field Name="ventas">
+          <DataField>ventas</DataField>
+        </Field>
+        <Field Name="entregados">
+          <DataField>entregados</DataField>
+        </Field>
+        <Field Name="ticket">
+          <DataField>ticket</DataField>
+        </Field>
+        <Field Name="flete">
+          <DataField>flete</DataField>
+        </Field>
+        <Field Name="pedidos">
+          <DataField>pedidos</DataField>
+        </Field>
+        <Field Name="puntualidad">
+          <DataField>puntualidad</DataField>
+        </Field>
+        <Field Name="dias">
+          <DataField>dias</DataField>
+        </Field>
+        <Field Name="nota">
+          <DataField>nota</DataField>
+        </Field>
+        <Field Name="ventas_relativas">
+          <DataField>ventas_relativas</DataField>
+        </Field>
+        <Field Name="puntualidad_total">
+          <DataField>puntualidad_total</DataField>
+        </Field>
+        <Field Name="nota_total">
+          <DataField>nota_total</DataField>
+        </Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportParameters>
+    <ReportParameter Name="Desde">
+      <DataType>DateTime</DataType>
+      <Nullable>true</Nullable>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>R06_Fechas</DataSetName>
+          <ValueField>desde</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>Desde</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="Hasta">
+      <DataType>DateTime</DataType>
+      <Nullable>true</Nullable>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>R06_Fechas</DataSetName>
+          <ValueField>hasta</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>Hasta</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="EstadoCliente">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>__TODOS__</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Estado del cliente</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>R06_Estados</DataSetName>
+          <ValueField>valor</ValueField>
+          <LabelField>etiqueta</LabelField>
+        </DataSetReference>
+      </ValidValues>
+    </ReportParameter>
+    <ReportParameter Name="Ciudad">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>__TODOS__</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Ciudad del cliente</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>R09_Ciudades</DataSetName>
+          <ValueField>valor</ValueField>
+          <LabelField>etiqueta</LabelField>
+        </DataSetReference>
+      </ValidValues>
+    </ReportParameter>
+  </ReportParameters>
+  <ReportParametersLayout>
+    <GridLayoutDefinition>
+      <NumberOfColumns>2</NumberOfColumns>
+      <NumberOfRows>2</NumberOfRows>
+      <CellDefinitions>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>Desde</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>Hasta</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>EstadoCliente</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>Ciudad</ParameterName>
+        </CellDefinition>
+      </CellDefinitions>
+    </GridLayoutDefinition>
+  </ReportParametersLayout>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Textbox Name="EstadoConsulta">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>=If(IsNothing(Parameters!Desde.Value) OrElse IsNothing(Parameters!Hasta.Value), "Sin datos para el período seleccionado.", If(Parameters!Desde.Value &gt; Parameters!Hasta.Value OrElse Parameters!Desde.Value &lt; First(Fields!desde.Value, "R06_Fechas") OrElse Parameters!Hasta.Value &gt; First(Fields!hasta.Value, "R06_Fechas"), "Revisa el rango de fechas de compra.", "Sin actividad con los filtros seleccionados."))</Value>
+                    <Style>
+                      <FontFamily>Segoe UI</FontFamily>
+                      <FontSize>9pt</FontSize>
+                      <Color>#14233B</Color>
+                      <FontWeight>Bold</FontWeight>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+                <Style>
+                  <TextAlign>Left</TextAlign>
+                </Style>
+              </Paragraph>
+            </Paragraphs>
+            <Top>0cm</Top>
+            <Left>0cm</Left>
+            <Height>0.65cm</Height>
+            <Width>25.2cm</Width>
+            <Visibility>
+              <Hidden>=Not (CountRows("R09_DesempenoRegional") = 0)</Hidden>
+            </Visibility>
+            <Style>
+              <PaddingLeft>1.5mm</PaddingLeft>
+              <PaddingRight>1.5mm</PaddingRight>
+              <PaddingTop>1mm</PaddingTop>
+              <PaddingBottom>1mm</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="VerR05">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>Ver entregas retrasadas (R05)</Value>
+                    <Style>
+                      <FontFamily>Segoe UI</FontFamily>
+                      <FontSize>9pt</FontSize>
+                      <Color>#2563EB</Color>
+                      <FontWeight>Bold</FontWeight>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+                <Style>
+                  <TextAlign>Left</TextAlign>
+                </Style>
+              </Paragraph>
+            </Paragraphs>
+            <Top>0.7cm</Top>
+            <Left>0cm</Left>
+            <Height>0.62cm</Height>
+            <Width>7cm</Width>
+            <ActionInfo>
+              <Actions>
+                <Action>
+                  <Drillthrough>
+                    <ReportName>/OLIST360/03_Operaciones/R05_EntregasRetrasadas</ReportName>
+                    <Parameters>
+                      <Parameter Name="Desde">
+                        <Value>=Parameters!Desde.Value</Value>
+                      </Parameter>
+                      <Parameter Name="Hasta">
+                        <Value>=Parameters!Hasta.Value</Value>
+                      </Parameter>
+                      <Parameter Name="EstadoCliente">
+                        <Value>=Parameters!EstadoCliente.Value</Value>
+                      </Parameter>
+                    </Parameters>
+                  </Drillthrough>
+                </Action>
+              </Actions>
+            </ActionInfo>
+            <Style>
+              <PaddingLeft>1.5mm</PaddingLeft>
+              <PaddingRight>1.5mm</PaddingRight>
+              <PaddingTop>1mm</PaddingTop>
+              <PaddingBottom>1mm</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="VerR06">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>Ver satisfacción (R06)</Value>
+                    <Style>
+                      <FontFamily>Segoe UI</FontFamily>
+                      <FontSize>9pt</FontSize>
+                      <Color>#2563EB</Color>
+                      <FontWeight>Bold</FontWeight>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+                <Style>
+                  <TextAlign>Left</TextAlign>
+                </Style>
+              </Paragraph>
+            </Paragraphs>
+            <Top>0.7cm</Top>
+            <Left>7.1cm</Left>
+            <Height>0.62cm</Height>
+            <Width>6cm</Width>
+            <ActionInfo>
+              <Actions>
+                <Action>
+                  <Drillthrough>
+                    <ReportName>/OLIST360/03_Operaciones/R06_Satisfaccion</ReportName>
+                    <Parameters>
+                      <Parameter Name="Desde">
+                        <Value>=Parameters!Desde.Value</Value>
+                      </Parameter>
+                      <Parameter Name="Hasta">
+                        <Value>=Parameters!Hasta.Value</Value>
+                      </Parameter>
+                      <Parameter Name="EstadoCliente">
+                        <Value>=Parameters!EstadoCliente.Value</Value>
+                      </Parameter>
+                    </Parameters>
+                  </Drillthrough>
+                </Action>
+              </Actions>
+            </ActionInfo>
+            <Style>
+              <PaddingLeft>1.5mm</PaddingLeft>
+              <PaddingRight>1.5mm</PaddingRight>
+              <PaddingTop>1mm</PaddingTop>
+              <PaddingBottom>1mm</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="AlcanceEnlaces">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>=If(Parameters!Ciudad.Value = "__TODOS__", "", "Los enlaces consultan todo el estado seleccionado.")</Value>
+                    <Style>
+                      <FontFamily>Segoe UI</FontFamily>
+                      <FontSize>9pt</FontSize>
+                      <Color>#475569</Color>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+                <Style>
+                  <TextAlign>Left</TextAlign>
+                </Style>
+              </Paragraph>
+            </Paragraphs>
+            <Top>0.7cm</Top>
+            <Left>13.2cm</Left>
+            <Height>0.62cm</Height>
+            <Width>11.65cm</Width>
+            <Style>
+              <PaddingLeft>1.5mm</PaddingLeft>
+              <PaddingRight>1.5mm</PaddingRight>
+              <PaddingTop>1mm</PaddingTop>
+              <PaddingBottom>1mm</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Textbox Name="Leyenda">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>A tiempo y nota: verde por encima del total filtrado, ámbar por debajo. — Sin valor calculable para el indicador.</Value>
+                    <Style>
+                      <FontFamily>Segoe UI</FontFamily>
+                      <FontSize>9pt</FontSize>
+                      <Color>#475569</Color>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+                <Style>
+                  <TextAlign>Left</TextAlign>
+                </Style>
+              </Paragraph>
+            </Paragraphs>
+            <Top>1.4cm</Top>
+            <Left>0cm</Left>
+            <Height>0.64cm</Height>
+            <Width>25.2cm</Width>
+            <Style>
+              <PaddingLeft>1.5mm</PaddingLeft>
+              <PaddingRight>1.5mm</PaddingRight>
+              <PaddingTop>1mm</PaddingTop>
+              <PaddingBottom>1mm</PaddingBottom>
+            </Style>
+          </Textbox>
+          <Tablix Name="Resumen">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>9.3cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>2.75cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.7cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.85cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>2.3cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>2.5cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.85cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.45cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.5cm</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.64cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ResumenCab0">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Total</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ResumenCab1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Ventas</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ResumenCab2">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Pedidos</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ResumenCab3">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Entreg.</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ResumenCab4">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Ticket</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ResumenCab5">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Flete</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ResumenCab6">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>A tiempo</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ResumenCab7">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Días</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ResumenCab8">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Nota</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.64cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ResumenDato0">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>="Todos los grupos del filtro"</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ResumenDato1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!ventas.Value), CObj("—"), CObj(Fields!ventas.Value))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Format>'R$' #,##0.00</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ResumenDato2">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!pedidos.Value), CObj("—"), CObj(Fields!pedidos.Value))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Format>N0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ResumenDato3">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!entregados.Value), CObj("—"), CObj(Fields!entregados.Value))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Format>N0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ResumenDato4">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!ticket.Value), CObj("—"), CObj(Fields!ticket.Value))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Format>'R$' #,##0.00</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ResumenDato5">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!flete.Value), CObj("—"), CObj(Fields!flete.Value))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Format>'R$' #,##0.00</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ResumenDato6">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!puntualidad.Value), CObj("—"), CObj(Fields!puntualidad.Value))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Format>P2</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=If(IsNothing(Fields!puntualidad.Value) OrElse IsNothing(Fields!puntualidad_total.Value), IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF"), If(Fields!puntualidad.Value &lt; Fields!puntualidad_total.Value, "#FEF3C7", If(Fields!puntualidad.Value &gt; Fields!puntualidad_total.Value, "#D1FAE5", IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF"))))</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ResumenDato7">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!dias.Value), CObj("—"), CObj(Fields!dias.Value))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Format>N2</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ResumenDato8">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!nota.Value), CObj("—"), CObj(Fields!nota.Value))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Format>N2</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=If(IsNothing(Fields!nota.Value) OrElse IsNothing(Fields!nota_total.Value), IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF"), If(Fields!nota.Value &lt; Fields!nota_total.Value, "#FEF3C7", If(Fields!nota.Value &gt; Fields!nota_total.Value, "#D1FAE5", IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF"))))</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                  <RepeatOnNewPage>true</RepeatOnNewPage>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="ResumenDetalle" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <DataSetName>R09_DesempenoRegional</DataSetName>
+            <Filters>
+              <Filter>
+                <FilterExpression>=Fields!nivel.Value</FilterExpression>
+                <Operator>Equal</Operator>
+                <FilterValues>
+                  <FilterValue>=CInt(3)</FilterValue>
+                </FilterValues>
+              </Filter>
+            </Filters>
+            <Top>2.1cm</Top>
+            <Left>0cm</Left>
+            <Height>1.28cm</Height>
+            <Width>25.2cm</Width>
+            <Visibility>
+              <Hidden>=CountRows("R09_DesempenoRegional") = 0</Hidden>
+            </Visibility>
+          </Tablix>
+          <Tablix Name="Estados">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>3.7cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>5.6cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>2.75cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.7cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.85cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>2.3cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>2.5cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.85cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.45cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.5cm</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.64cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="EstadosCab0">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Estado</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="EstadosCab1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Ventas vs. máximo</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="EstadosCab2">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Ventas</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="EstadosCab3">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Pedidos</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="EstadosCab4">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Entreg.</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="EstadosCab5">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Ticket</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="EstadosCab6">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Flete</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="EstadosCab7">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>A tiempo</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="EstadosCab8">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Días</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="EstadosCab9">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Nota</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.64cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="EstadosDato0">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!estado.Value), "Desconocido", Fields!estado.Value)</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="EstadosDato1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!ventas_relativas.Value), "—", StrDup(CInt(Math.Ceiling(12 * CDbl(Fields!ventas_relativas.Value))), "|"))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#2563EB</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="EstadosDato2">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!ventas.Value), CObj("—"), CObj(Fields!ventas.Value))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <Format>'R$' #,##0.00</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="EstadosDato3">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!pedidos.Value), CObj("—"), CObj(Fields!pedidos.Value))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <Format>N0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="EstadosDato4">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!entregados.Value), CObj("—"), CObj(Fields!entregados.Value))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <Format>N0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="EstadosDato5">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!ticket.Value), CObj("—"), CObj(Fields!ticket.Value))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <Format>'R$' #,##0.00</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="EstadosDato6">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!flete.Value), CObj("—"), CObj(Fields!flete.Value))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <Format>'R$' #,##0.00</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="EstadosDato7">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!puntualidad.Value), CObj("—"), CObj(Fields!puntualidad.Value))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <Format>P2</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=If(IsNothing(Fields!puntualidad.Value) OrElse IsNothing(Fields!puntualidad_total.Value), IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF"), If(Fields!puntualidad.Value &lt; Fields!puntualidad_total.Value, "#FEF3C7", If(Fields!puntualidad.Value &gt; Fields!puntualidad_total.Value, "#D1FAE5", IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF"))))</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="EstadosDato8">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!dias.Value), CObj("—"), CObj(Fields!dias.Value))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <Format>N2</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="EstadosDato9">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!nota.Value), CObj("—"), CObj(Fields!nota.Value))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <Format>N2</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=If(IsNothing(Fields!nota.Value) OrElse IsNothing(Fields!nota_total.Value), IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF"), If(Fields!nota.Value &lt; Fields!nota_total.Value, "#FEF3C7", If(Fields!nota.Value &gt; Fields!nota_total.Value, "#D1FAE5", IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF"))))</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                  <RepeatOnNewPage>true</RepeatOnNewPage>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="EstadosDetalle" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <DataSetName>R09_DesempenoRegional</DataSetName>
+            <Filters>
+              <Filter>
+                <FilterExpression>=Fields!nivel.Value</FilterExpression>
+                <Operator>Equal</Operator>
+                <FilterValues>
+                  <FilterValue>=CInt(1)</FilterValue>
+                </FilterValues>
+              </Filter>
+            </Filters>
+            <Top>3.65cm</Top>
+            <Left>0cm</Left>
+            <Height>1.28cm</Height>
+            <Width>25.2cm</Width>
+            <Visibility>
+              <Hidden>=CountRows("R09_DesempenoRegional") = 0</Hidden>
+            </Visibility>
+          </Tablix>
+          <Tablix Name="Ciudades">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>3.7cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>5.6cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>2.75cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.7cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.85cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>2.3cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>2.5cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.85cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.45cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.5cm</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.64cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="CiudadesCab0">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Estado</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="CiudadesCab1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Ciudad</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="CiudadesCab2">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Ventas</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="CiudadesCab3">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Pedidos</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="CiudadesCab4">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Entreg.</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="CiudadesCab5">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Ticket</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="CiudadesCab6">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Flete</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="CiudadesCab7">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>A tiempo</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="CiudadesCab8">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Días</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="CiudadesCab9">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Nota</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.64cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="CiudadesDato0">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!estado.Value), "Desconocido", Fields!estado.Value)</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="CiudadesDato1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!ciudad.Value), "Desconocida", Fields!ciudad.Value)</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="CiudadesDato2">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!ventas.Value), CObj("—"), CObj(Fields!ventas.Value))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <Format>'R$' #,##0.00</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="CiudadesDato3">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!pedidos.Value), CObj("—"), CObj(Fields!pedidos.Value))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <Format>N0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="CiudadesDato4">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!entregados.Value), CObj("—"), CObj(Fields!entregados.Value))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <Format>N0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="CiudadesDato5">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!ticket.Value), CObj("—"), CObj(Fields!ticket.Value))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <Format>'R$' #,##0.00</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="CiudadesDato6">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!flete.Value), CObj("—"), CObj(Fields!flete.Value))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <Format>'R$' #,##0.00</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="CiudadesDato7">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!puntualidad.Value), CObj("—"), CObj(Fields!puntualidad.Value))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <Format>P2</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=If(IsNothing(Fields!puntualidad.Value) OrElse IsNothing(Fields!puntualidad_total.Value), IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF"), If(Fields!puntualidad.Value &lt; Fields!puntualidad_total.Value, "#FEF3C7", If(Fields!puntualidad.Value &gt; Fields!puntualidad_total.Value, "#D1FAE5", IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF"))))</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="CiudadesDato8">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!dias.Value), CObj("—"), CObj(Fields!dias.Value))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <Format>N2</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="CiudadesDato9">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!nota.Value), CObj("—"), CObj(Fields!nota.Value))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <Format>N2</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>=If(IsNothing(Fields!nota.Value) OrElse IsNothing(Fields!nota_total.Value), IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF"), If(Fields!nota.Value &lt; Fields!nota_total.Value, "#FEF3C7", If(Fields!nota.Value &gt; Fields!nota_total.Value, "#D1FAE5", IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF"))))</BackgroundColor>
+                            <PaddingLeft>1.5mm</PaddingLeft>
+                            <PaddingRight>1.5mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                  <RepeatOnNewPage>true</RepeatOnNewPage>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="CiudadesDetalle" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <DataSetName>R09_DesempenoRegional</DataSetName>
+            <Filters>
+              <Filter>
+                <FilterExpression>=Fields!nivel.Value</FilterExpression>
+                <Operator>Equal</Operator>
+                <FilterValues>
+                  <FilterValue>=CInt(0)</FilterValue>
+                </FilterValues>
+              </Filter>
+            </Filters>
+            <Top>5.25cm</Top>
+            <Left>0cm</Left>
+            <Height>1.28cm</Height>
+            <Width>25.2cm</Width>
+            <Visibility>
+              <Hidden>=CountRows("R09_DesempenoRegional") = 0</Hidden>
+            </Visibility>
+          </Tablix>
+        </ReportItems>
+        <Height>6.7cm</Height>
+      </Body>
+      <Width>25.2cm</Width>
+      <Page>
+        <PageHeader>
+          <Height>1.7cm</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage>
+          <PrintOnLastPage>true</PrintOnLastPage>
+          <ReportItems>
+            <Textbox Name="Titulo">
+              <CanGrow>true</CanGrow>
+              <KeepTogether>true</KeepTogether>
+              <Paragraphs>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>OLIST 360°  |  R09 · Desempeño regional</Value>
+                      <Style>
+                        <FontFamily>Segoe UI</FontFamily>
+                        <FontSize>17pt</FontSize>
+                        <Color>#FFFFFF</Color>
+                        <FontWeight>Bold</FontWeight>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style>
+                    <TextAlign>Left</TextAlign>
+                  </Style>
+                </Paragraph>
+              </Paragraphs>
+              <Top>0cm</Top>
+              <Left>0cm</Left>
+              <Height>0.9cm</Height>
+              <Width>25.2cm</Width>
+              <Style>
+                <BackgroundColor>#101C32</BackgroundColor>
+                <PaddingLeft>1.5mm</PaddingLeft>
+                <PaddingRight>1.5mm</PaddingRight>
+                <PaddingTop>1mm</PaddingTop>
+                <PaddingBottom>1mm</PaddingBottom>
+              </Style>
+            </Textbox>
+            <Textbox Name="Filtros">
+              <CanGrow>true</CanGrow>
+              <KeepTogether>true</KeepTogether>
+              <Paragraphs>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>="Compra: " &amp; If(IsNothing(Parameters!Desde.Value), "—", Format(Parameters!Desde.Value, "dd/MM/yyyy")) &amp; " a " &amp; If(IsNothing(Parameters!Hasta.Value), "—", Format(Parameters!Hasta.Value, "dd/MM/yyyy")) &amp; "  |  Estado: " &amp; Parameters!EstadoCliente.Label &amp; "  |  Ciudad: " &amp; Parameters!Ciudad.Label</Value>
+                      <Style>
+                        <FontFamily>Segoe UI</FontFamily>
+                        <FontSize>9pt</FontSize>
+                        <Color>#FFFFFF</Color>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style>
+                    <TextAlign>Left</TextAlign>
+                  </Style>
+                </Paragraph>
+              </Paragraphs>
+              <Top>0.9cm</Top>
+              <Left>0cm</Left>
+              <Height>0.6cm</Height>
+              <Width>25.2cm</Width>
+              <Style>
+                <BackgroundColor>#101C32</BackgroundColor>
+                <PaddingLeft>1.5mm</PaddingLeft>
+                <PaddingRight>1.5mm</PaddingRight>
+                <PaddingTop>1mm</PaddingTop>
+                <PaddingBottom>1mm</PaddingBottom>
+              </Style>
+            </Textbox>
+          </ReportItems>
+        </PageHeader>
+        <PageFooter>
+          <Height>0.8cm</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage>
+          <PrintOnLastPage>true</PrintOnLastPage>
+          <ReportItems>
+            <Textbox Name="Fuente">
+              <CanGrow>true</CanGrow>
+              <KeepTogether>true</KeepTogether>
+              <Paragraphs>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>Fuente: Olist · BI_OLIST.dw  |  Importes en BRL nominales</Value>
+                      <Style>
+                        <FontFamily>Segoe UI</FontFamily>
+                        <FontSize>9pt</FontSize>
+                        <Color>#475569</Color>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style>
+                    <TextAlign>Left</TextAlign>
+                  </Style>
+                </Paragraph>
+              </Paragraphs>
+              <Top>0cm</Top>
+              <Left>0cm</Left>
+              <Height>0.6cm</Height>
+              <Width>19.85cm</Width>
+              <Style>
+                <PaddingLeft>1.5mm</PaddingLeft>
+                <PaddingRight>1.5mm</PaddingRight>
+                <PaddingTop>1mm</PaddingTop>
+                <PaddingBottom>1mm</PaddingBottom>
+              </Style>
+            </Textbox>
+            <Textbox Name="Paginacion">
+              <CanGrow>true</CanGrow>
+              <KeepTogether>true</KeepTogether>
+              <Paragraphs>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>="Página " &amp; Globals!PageNumber &amp; " de " &amp; Globals!TotalPages</Value>
+                      <Style>
+                        <FontFamily>Segoe UI</FontFamily>
+                        <FontSize>9pt</FontSize>
+                        <Color>#475569</Color>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style>
+                    <TextAlign>Right</TextAlign>
+                  </Style>
+                </Paragraph>
+              </Paragraphs>
+              <Top>0cm</Top>
+              <Left>19.85cm</Left>
+              <Height>0.6cm</Height>
+              <Width>5cm</Width>
+              <Style>
+                <PaddingLeft>1.5mm</PaddingLeft>
+                <PaddingRight>1.5mm</PaddingRight>
+                <PaddingTop>1mm</PaddingTop>
+                <PaddingBottom>1mm</PaddingBottom>
+              </Style>
+            </Textbox>
+          </ReportItems>
+        </PageFooter>
+        <PageHeight>21cm</PageHeight>
+        <PageWidth>29.7cm</PageWidth>
+        <LeftMargin>1.2cm</LeftMargin>
+        <RightMargin>1.2cm</RightMargin>
+        <TopMargin>1.2cm</TopMargin>
+        <BottomMargin>1.2cm</BottomMargin>
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <Language>es-PE</Language>
+  <ConsumeContainerWhitespace>true</ConsumeContainerWhitespace>
+</Report>
