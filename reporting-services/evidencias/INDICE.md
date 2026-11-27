@@ -9,9 +9,9 @@ Estado real observado el 2026-11-26 en Windows. El SHA probado para los cuatro R
 | EVD-SSRS-03 | Portal y Web Service | HTTP 200 en `http://localhost/Reports` y `http://localhost/ReportServer`; WSDL HTTP 200, sin redirecciones | PASS |
 | EVD-SSRS-04 | Roles avanzados y cuenta de prueba no autorizada | No requeridos por la corrección de alcance académico simplificado | NOT_IN_SCOPE |
 | EVD-SSRS-05 | Origen compartido BI_OLIST_DW | Origen SQL publicado en `/OLIST360/DataSources/BI_OLIST_DW`; autenticación integrada y render real contra `BI_OLIST` | PASS |
-| EVD-SSRS-06 | Ejecución PRE_G0_Humo | Informe publicado y renderizado con 99.441 pedidos y 112.650 líneas | PASS |
-| EVD-SSRS-07 | Exportaciones del humo | PDF y XLSX HTTP 200; firmas/estructura y SHA-256 registrados. Apertura en aplicaciones de escritorio pendiente | PARCIAL |
-| EVD-SSRS-08 | Publicación conjunta de diez informes | R07 y R08 publicados; los otros ocho RDL aún no fueron entregados | PENDIENTE |
+| EVD-SSRS-06 | Árbol de informes publicados | R07 y R08 publicados; faltan los otros ocho para completar el árbol de `/OLIST360` | PENDIENTE |
+| EVD-SSRS-07 | Matriz de ejecución de informes | Matriz versionada; R07/R08 ejecutados y los demás informes siguen pendientes de entrega | PARCIAL |
+| EVD-SSRS-08 | Exportaciones verificables | Humo, R07 y R08 PDF/XLSX con HTTP 200, formato y SHA-256 validados; apertura visual de los seis archivos pendiente | PARCIAL |
 | M03-01 | Plantilla | XSD SSRS 2016 validado; plantilla publicada | PASS |
 | M04-01 | R07 Importes Pagados | Consulta ejecutada y render real; 162 agregados y totales en resultados | PASS |
 | M04-02 | Exportaciones R07 | PDF y XLSX HTTP 200, estructuras y hashes registrados; apertura visual pendiente | PARCIAL |
