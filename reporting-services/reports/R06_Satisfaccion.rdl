@@ -1,0 +1,1526 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition">
+  <Description>Satisfacción de clientes por mes de compra, estado y rango de nota consolidada.</Description>
+  <DataSources>
+    <DataSource Name="BI_OLIST_DW">
+      <DataSourceReference>/OLIST360/DataSources/BI_OLIST_DW</DataSourceReference>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="R06_Fechas">
+      <Query>
+        <DataSourceName>BI_OLIST_DW</DataSourceName>
+        <CommandText><![CDATA[SELECT MIN(f.fecha) AS desde, MAX(f.fecha) AS hasta
+FROM dw.FactPedidos AS p
+JOIN dw.DimFecha AS f ON f.fecha_key = p.fecha_compra_key
+WHERE f.fecha_key <> -1;
+]]></CommandText>
+        <Timeout>60</Timeout>
+      </Query>
+      <Fields>
+        <Field Name="desde">
+          <DataField>desde</DataField>
+        </Field>
+        <Field Name="hasta">
+          <DataField>hasta</DataField>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="R06_Estados">
+      <Query>
+        <DataSourceName>BI_OLIST_DW</DataSourceName>
+        <CommandText><![CDATA[SELECT estados.valor, estados.etiqueta
+FROM (
+    SELECT '__TODOS__' AS valor, N'Todos' AS etiqueta, 0 AS prioridad
+    UNION ALL
+    SELECT DISTINCT customer_state, customer_state, 1
+    FROM dw.DimGeografiaCliente
+    WHERE customer_state IS NOT NULL
+    UNION ALL
+    SELECT '__DESCONOCIDO__', N'Desconocido', 2
+    WHERE EXISTS (
+        SELECT 1 FROM dw.DimGeografiaCliente WHERE customer_state IS NULL
+    )
+) AS estados
+ORDER BY estados.prioridad, estados.etiqueta;
+]]></CommandText>
+        <Timeout>60</Timeout>
+      </Query>
+      <Fields>
+        <Field Name="valor">
+          <DataField>valor</DataField>
+        </Field>
+        <Field Name="etiqueta">
+          <DataField>etiqueta</DataField>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="R06_Satisfaccion">
+      <Query>
+        <DataSourceName>BI_OLIST_DW</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@Desde">
+            <Value>=Parameters!Desde.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Hasta">
+            <Value>=Parameters!Hasta.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@EstadoCliente">
+            <Value>=Parameters!EstadoCliente.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@NotaMin">
+            <Value>=Parameters!NotaMin.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@NotaMax">
+            <Value>=Parameters!NotaMax.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText><![CDATA[WITH Limites AS (
+    SELECT MIN(f.fecha) AS fecha_minima, MAX(f.fecha) AS fecha_maxima
+    FROM dw.FactPedidos AS p
+    JOIN dw.DimFecha AS f ON f.fecha_key = p.fecha_compra_key
+    WHERE f.fecha_key <> -1
+),
+Notas AS (
+    SELECT f.anio, f.mes, g.customer_state,
+           CONVERT(float, p.review_score) AS nota,
+           CONVERT(int, FLOOR(p.review_score)) AS rango
+    FROM dw.FactPedidos AS p
+    JOIN dw.DimFecha AS f ON f.fecha_key = p.fecha_compra_key
+    JOIN dw.DimGeografiaCliente AS g ON g.geografia_cliente_key = p.geografia_cliente_key
+    CROSS JOIN Limites AS l
+    WHERE f.fecha_key <> -1
+      AND CAST(@Desde AS date) >= l.fecha_minima
+      AND CAST(@Hasta AS date) <= l.fecha_maxima
+      AND CAST(@Desde AS date) <= CAST(@Hasta AS date)
+      AND f.fecha BETWEEN CAST(@Desde AS date) AND CAST(@Hasta AS date)
+      AND (
+          @EstadoCliente = '__TODOS__'
+          OR (@EstadoCliente = '__DESCONOCIDO__' AND g.customer_state IS NULL)
+          OR g.customer_state = @EstadoCliente
+      )
+      AND @NotaMin >= 1 AND @NotaMax <= 5 AND @NotaMin <= @NotaMax
+      AND CONVERT(float, p.review_score) BETWEEN @NotaMin AND @NotaMax
+)
+SELECT GROUPING_ID(anio, mes, customer_state, rango) AS nivel,
+       anio, mes, customer_state, rango,
+       COUNT_BIG(*) AS notas_validas, AVG(nota) AS nota
+FROM Notas
+GROUP BY GROUPING SETS ((anio, mes), (customer_state), (rango), ())
+HAVING COUNT_BIG(*) > 0
+ORDER BY nivel, anio, mes, customer_state, rango;
+]]></CommandText>
+        <Timeout>60</Timeout>
+      </Query>
+      <Fields>
+        <Field Name="nivel">
+          <DataField>nivel</DataField>
+        </Field>
+        <Field Name="anio">
+          <DataField>anio</DataField>
+        </Field>
+        <Field Name="mes">
+          <DataField>mes</DataField>
+        </Field>
+        <Field Name="customer_state">
+          <DataField>customer_state</DataField>
+        </Field>
+        <Field Name="rango">
+          <DataField>rango</DataField>
+        </Field>
+        <Field Name="notas_validas">
+          <DataField>notas_validas</DataField>
+        </Field>
+        <Field Name="nota">
+          <DataField>nota</DataField>
+        </Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportParameters>
+    <ReportParameter Name="Desde">
+      <DataType>DateTime</DataType>
+      <Nullable>true</Nullable>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>R06_Fechas</DataSetName>
+          <ValueField>desde</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>Desde</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="Hasta">
+      <DataType>DateTime</DataType>
+      <Nullable>true</Nullable>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>R06_Fechas</DataSetName>
+          <ValueField>hasta</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>Hasta</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="EstadoCliente">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>__TODOS__</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Estado del cliente</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>R06_Estados</DataSetName>
+          <ValueField>valor</ValueField>
+          <LabelField>etiqueta</LabelField>
+        </DataSetReference>
+      </ValidValues>
+    </ReportParameter>
+    <ReportParameter Name="NotaMin">
+      <DataType>Float</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>1</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Nota mínima</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="NotaMax">
+      <DataType>Float</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>5</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Nota máxima</Prompt>
+    </ReportParameter>
+  </ReportParameters>
+  <ReportParametersLayout>
+    <GridLayoutDefinition>
+      <NumberOfColumns>3</NumberOfColumns>
+      <NumberOfRows>2</NumberOfRows>
+      <CellDefinitions>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>Desde</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>Hasta</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>2</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>EstadoCliente</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>NotaMin</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>NotaMax</ParameterName>
+        </CellDefinition>
+      </CellDefinitions>
+    </GridLayoutDefinition>
+  </ReportParametersLayout>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Textbox Name="SinDatos">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>=If(IsNothing(Parameters!Desde.Value) OrElse IsNothing(Parameters!Hasta.Value), "Sin datos para el período seleccionado.", If((Parameters!Desde.Value &gt; Parameters!Hasta.Value OrElse Parameters!Desde.Value &lt; First(Fields!desde.Value, "R06_Fechas") OrElse Parameters!Hasta.Value &gt; First(Fields!hasta.Value, "R06_Fechas") OrElse Parameters!NotaMin.Value &lt; 1 OrElse Parameters!NotaMax.Value &gt; 5 OrElse Parameters!NotaMin.Value &gt; Parameters!NotaMax.Value), "Revisa las fechas de compra y el rango de notas de 1 a 5.", If(CountRows("R06_Satisfaccion") = 0, "Sin datos para los filtros seleccionados.", "")))</Value>
+                    <Style>
+                      <FontFamily>Segoe UI</FontFamily>
+                      <FontSize>10pt</FontSize>
+                      <FontWeight>Bold</FontWeight>
+                      <Color>#475569</Color>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+                <Style>
+                  <TextAlign>Left</TextAlign>
+                </Style>
+              </Paragraph>
+            </Paragraphs>
+            <Top>0.05cm</Top>
+            <Left>0cm</Left>
+            <Height>0.65cm</Height>
+            <Width>26.4cm</Width>
+            <Style>
+              <PaddingLeft>3mm</PaddingLeft>
+              <PaddingRight>3mm</PaddingRight>
+              <PaddingTop>1mm</PaddingTop>
+              <PaddingBottom>1mm</PaddingBottom>
+            </Style>
+            <Visibility>
+              <Hidden>=CountRows("R06_Satisfaccion") &gt; 0</Hidden>
+            </Visibility>
+          </Textbox>
+          <Tablix Name="Resumen">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>6cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>3.5cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>3.5cm</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ResumenCab0">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Total</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>#FFFFFF</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>3mm</PaddingLeft>
+                            <PaddingRight>3mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ResumenCab1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Notas válidas</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>#FFFFFF</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>3mm</PaddingLeft>
+                            <PaddingRight>3mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ResumenCab2">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Promedio (1–5)</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>#FFFFFF</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>3mm</PaddingLeft>
+                            <PaddingRight>3mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ResumenDato0">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>="Período seleccionado"</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <FontWeight>Normal</FontWeight>
+                                    <Color>#14233B</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>3mm</PaddingLeft>
+                            <PaddingRight>3mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <BottomBorder>
+                              <Color>#CBD5E1</Color>
+                              <Style>Solid</Style>
+                            </BottomBorder>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ResumenDato1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!notas_validas.Value</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <FontWeight>Normal</FontWeight>
+                                    <Color>#14233B</Color>
+                                    <Format>N0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>3mm</PaddingLeft>
+                            <PaddingRight>3mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <BottomBorder>
+                              <Color>#CBD5E1</Color>
+                              <Style>Solid</Style>
+                            </BottomBorder>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ResumenDato2">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!nota.Value</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <FontWeight>Normal</FontWeight>
+                                    <Color>#14233B</Color>
+                                    <Format>N2</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>3mm</PaddingLeft>
+                            <PaddingRight>3mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <BottomBorder>
+                              <Color>#CBD5E1</Color>
+                              <Style>Solid</Style>
+                            </BottomBorder>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                  <RepeatOnNewPage>true</RepeatOnNewPage>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="ResumenDetalle" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <DataSetName>R06_Satisfaccion</DataSetName>
+            <Filters>
+              <Filter>
+                <FilterExpression>=Fields!nivel.Value</FilterExpression>
+                <Operator>Equal</Operator>
+                <FilterValues>
+                  <FilterValue>=CInt(15)</FilterValue>
+                </FilterValues>
+              </Filter>
+            </Filters>
+            <Top>0.8cm</Top>
+            <Left>0cm</Left>
+            <Height>1.2cm</Height>
+            <Width>13cm</Width>
+            <Visibility>
+              <Hidden>=CountRows("R06_Satisfaccion") = 0</Hidden>
+            </Visibility>
+          </Tablix>
+          <Tablix Name="Distribucion">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>6cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>3.5cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>3.5cm</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="DistribucionCab0">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Rango de calificación</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>#FFFFFF</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>3mm</PaddingLeft>
+                            <PaddingRight>3mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="DistribucionCab1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Notas válidas</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>#FFFFFF</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>3mm</PaddingLeft>
+                            <PaddingRight>3mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="DistribucionCab2">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Promedio (1–5)</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>#FFFFFF</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>3mm</PaddingLeft>
+                            <PaddingRight>3mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="DistribucionDato0">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(Fields!rango.Value = 5, "5", "[" &amp; Fields!rango.Value &amp; "," &amp; (Fields!rango.Value + 1) &amp; ")")</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <FontWeight>Normal</FontWeight>
+                                    <Color>#14233B</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>3mm</PaddingLeft>
+                            <PaddingRight>3mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <BottomBorder>
+                              <Color>#CBD5E1</Color>
+                              <Style>Solid</Style>
+                            </BottomBorder>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="DistribucionDato1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!notas_validas.Value</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <FontWeight>Normal</FontWeight>
+                                    <Color>#14233B</Color>
+                                    <Format>N0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>3mm</PaddingLeft>
+                            <PaddingRight>3mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <BottomBorder>
+                              <Color>#CBD5E1</Color>
+                              <Style>Solid</Style>
+                            </BottomBorder>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="DistribucionDato2">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!nota.Value</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <FontWeight>Normal</FontWeight>
+                                    <Color>#14233B</Color>
+                                    <Format>N2</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>3mm</PaddingLeft>
+                            <PaddingRight>3mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <BottomBorder>
+                              <Color>#CBD5E1</Color>
+                              <Style>Solid</Style>
+                            </BottomBorder>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                  <RepeatOnNewPage>true</RepeatOnNewPage>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="DistribucionDetalle" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <DataSetName>R06_Satisfaccion</DataSetName>
+            <Filters>
+              <Filter>
+                <FilterExpression>=Fields!nivel.Value</FilterExpression>
+                <Operator>Equal</Operator>
+                <FilterValues>
+                  <FilterValue>=CInt(14)</FilterValue>
+                </FilterValues>
+              </Filter>
+            </Filters>
+            <Top>0.8cm</Top>
+            <Left>13.4cm</Left>
+            <Height>1.2cm</Height>
+            <Width>13cm</Width>
+            <Visibility>
+              <Hidden>=CountRows("R06_Satisfaccion") = 0</Hidden>
+            </Visibility>
+          </Tablix>
+          <Tablix Name="Mensual">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>6cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>3.5cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>3.5cm</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="MensualCab0">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Mes de compra</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>#FFFFFF</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>3mm</PaddingLeft>
+                            <PaddingRight>3mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="MensualCab1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Notas válidas</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>#FFFFFF</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>3mm</PaddingLeft>
+                            <PaddingRight>3mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="MensualCab2">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Promedio (1–5)</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>#FFFFFF</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>3mm</PaddingLeft>
+                            <PaddingRight>3mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="MensualDato0">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Format(DateSerial(Fields!anio.Value, Fields!mes.Value, 1), "MM/yyyy")</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <FontWeight>Normal</FontWeight>
+                                    <Color>#14233B</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>3mm</PaddingLeft>
+                            <PaddingRight>3mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <BottomBorder>
+                              <Color>#CBD5E1</Color>
+                              <Style>Solid</Style>
+                            </BottomBorder>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="MensualDato1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!notas_validas.Value</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <FontWeight>Normal</FontWeight>
+                                    <Color>#14233B</Color>
+                                    <Format>N0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>3mm</PaddingLeft>
+                            <PaddingRight>3mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <BottomBorder>
+                              <Color>#CBD5E1</Color>
+                              <Style>Solid</Style>
+                            </BottomBorder>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="MensualDato2">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!nota.Value</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <FontWeight>Normal</FontWeight>
+                                    <Color>#14233B</Color>
+                                    <Format>N2</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>3mm</PaddingLeft>
+                            <PaddingRight>3mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <BottomBorder>
+                              <Color>#CBD5E1</Color>
+                              <Style>Solid</Style>
+                            </BottomBorder>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                  <RepeatOnNewPage>true</RepeatOnNewPage>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="MensualDetalle" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <DataSetName>R06_Satisfaccion</DataSetName>
+            <Filters>
+              <Filter>
+                <FilterExpression>=Fields!nivel.Value</FilterExpression>
+                <Operator>Equal</Operator>
+                <FilterValues>
+                  <FilterValue>=CInt(3)</FilterValue>
+                </FilterValues>
+              </Filter>
+            </Filters>
+            <Top>4.5cm</Top>
+            <Left>0cm</Left>
+            <Height>1.2cm</Height>
+            <Width>13cm</Width>
+            <Visibility>
+              <Hidden>=CountRows("R06_Satisfaccion") = 0</Hidden>
+            </Visibility>
+          </Tablix>
+          <Tablix Name="Regional">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>6cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>3.5cm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>3.5cm</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="RegionalCab0">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Estado del cliente</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>#FFFFFF</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>3mm</PaddingLeft>
+                            <PaddingRight>3mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="RegionalCab1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Notas válidas</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>#FFFFFF</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>3mm</PaddingLeft>
+                            <PaddingRight>3mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="RegionalCab2">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Promedio (1–5)</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>#FFFFFF</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>3mm</PaddingLeft>
+                            <PaddingRight>3mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="RegionalDato0">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=If(IsNothing(Fields!customer_state.Value), "Desconocido", Fields!customer_state.Value)</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <FontWeight>Normal</FontWeight>
+                                    <Color>#14233B</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>3mm</PaddingLeft>
+                            <PaddingRight>3mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <BottomBorder>
+                              <Color>#CBD5E1</Color>
+                              <Style>Solid</Style>
+                            </BottomBorder>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="RegionalDato1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!notas_validas.Value</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <FontWeight>Normal</FontWeight>
+                                    <Color>#14233B</Color>
+                                    <Format>N0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>3mm</PaddingLeft>
+                            <PaddingRight>3mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <BottomBorder>
+                              <Color>#CBD5E1</Color>
+                              <Style>Solid</Style>
+                            </BottomBorder>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="RegionalDato2">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!nota.Value</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <FontWeight>Normal</FontWeight>
+                                    <Color>#14233B</Color>
+                                    <Format>N2</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>3mm</PaddingLeft>
+                            <PaddingRight>3mm</PaddingRight>
+                            <PaddingTop>1mm</PaddingTop>
+                            <PaddingBottom>1mm</PaddingBottom>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <BottomBorder>
+                              <Color>#CBD5E1</Color>
+                              <Style>Solid</Style>
+                            </BottomBorder>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                  <RepeatOnNewPage>true</RepeatOnNewPage>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="RegionalDetalle" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <DataSetName>R06_Satisfaccion</DataSetName>
+            <Filters>
+              <Filter>
+                <FilterExpression>=Fields!nivel.Value</FilterExpression>
+                <Operator>Equal</Operator>
+                <FilterValues>
+                  <FilterValue>=CInt(13)</FilterValue>
+                </FilterValues>
+              </Filter>
+            </Filters>
+            <Top>4.5cm</Top>
+            <Left>13.4cm</Left>
+            <Height>1.2cm</Height>
+            <Width>13cm</Width>
+            <Visibility>
+              <Hidden>=CountRows("R06_Satisfaccion") = 0</Hidden>
+            </Visibility>
+          </Tablix>
+        </ReportItems>
+        <Height>5.9cm</Height>
+      </Body>
+      <Width>26.4cm</Width>
+      <Page>
+        <PageHeader>
+          <Height>1.7cm</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage>
+          <PrintOnLastPage>true</PrintOnLastPage>
+          <ReportItems>
+            <Textbox Name="Titulo">
+              <CanGrow>true</CanGrow>
+              <KeepTogether>true</KeepTogether>
+              <Paragraphs>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>OLIST 360°  |  R06 · Satisfacción</Value>
+                      <Style>
+                        <FontFamily>Segoe UI</FontFamily>
+                        <FontSize>17pt</FontSize>
+                        <FontWeight>Bold</FontWeight>
+                        <Color>#FFFFFF</Color>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style>
+                    <TextAlign>Left</TextAlign>
+                  </Style>
+                </Paragraph>
+              </Paragraphs>
+              <Top>0cm</Top>
+              <Left>0cm</Left>
+              <Height>0.9cm</Height>
+              <Width>26.4cm</Width>
+              <Style>
+                <PaddingLeft>3mm</PaddingLeft>
+                <PaddingRight>3mm</PaddingRight>
+                <PaddingTop>1mm</PaddingTop>
+                <PaddingBottom>1mm</PaddingBottom>
+                <BackgroundColor>#101C32</BackgroundColor>
+              </Style>
+            </Textbox>
+            <Textbox Name="Filtros">
+              <CanGrow>true</CanGrow>
+              <KeepTogether>true</KeepTogether>
+              <Paragraphs>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>="Compra: " &amp; If(IsNothing(Parameters!Desde.Value), "—", Format(Parameters!Desde.Value, "dd/MM/yyyy")) &amp; " a " &amp; If(IsNothing(Parameters!Hasta.Value), "—", Format(Parameters!Hasta.Value, "dd/MM/yyyy")) &amp; "  |  Estado: " &amp; Parameters!EstadoCliente.Label &amp; "  |  Nota: " &amp; Parameters!NotaMin.Value &amp; " a " &amp; Parameters!NotaMax.Value</Value>
+                      <Style>
+                        <FontFamily>Segoe UI</FontFamily>
+                        <FontSize>10pt</FontSize>
+                        <FontWeight>Normal</FontWeight>
+                        <Color>#FFFFFF</Color>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style>
+                    <TextAlign>Left</TextAlign>
+                  </Style>
+                </Paragraph>
+              </Paragraphs>
+              <Top>0.9cm</Top>
+              <Left>0cm</Left>
+              <Height>0.6cm</Height>
+              <Width>26.4cm</Width>
+              <Style>
+                <PaddingLeft>3mm</PaddingLeft>
+                <PaddingRight>3mm</PaddingRight>
+                <PaddingTop>1mm</PaddingTop>
+                <PaddingBottom>1mm</PaddingBottom>
+                <BackgroundColor>#101C32</BackgroundColor>
+              </Style>
+            </Textbox>
+          </ReportItems>
+        </PageHeader>
+        <PageFooter>
+          <Height>0.85cm</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage>
+          <PrintOnLastPage>true</PrintOnLastPage>
+          <ReportItems>
+            <Textbox Name="Fuente">
+              <CanGrow>true</CanGrow>
+              <KeepTogether>true</KeepTogether>
+              <Paragraphs>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>Fuente: Olist · BI_OLIST.dw  |  Una nota consolidada por pedido</Value>
+                      <Style>
+                        <FontFamily>Segoe UI</FontFamily>
+                        <FontSize>9pt</FontSize>
+                        <FontWeight>Normal</FontWeight>
+                        <Color>#475569</Color>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style>
+                    <TextAlign>Left</TextAlign>
+                  </Style>
+                </Paragraph>
+              </Paragraphs>
+              <Top>0cm</Top>
+              <Left>0cm</Left>
+              <Height>0.6cm</Height>
+              <Width>21.4cm</Width>
+              <Style>
+                <PaddingLeft>3mm</PaddingLeft>
+                <PaddingRight>3mm</PaddingRight>
+                <PaddingTop>1mm</PaddingTop>
+                <PaddingBottom>1mm</PaddingBottom>
+              </Style>
+            </Textbox>
+            <Textbox Name="Pagina">
+              <CanGrow>true</CanGrow>
+              <KeepTogether>true</KeepTogether>
+              <Paragraphs>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>="Página " &amp; Globals!PageNumber &amp; " de " &amp; Globals!TotalPages</Value>
+                      <Style>
+                        <FontFamily>Segoe UI</FontFamily>
+                        <FontSize>9pt</FontSize>
+                        <FontWeight>Normal</FontWeight>
+                        <Color>#475569</Color>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style>
+                    <TextAlign>Right</TextAlign>
+                  </Style>
+                </Paragraph>
+              </Paragraphs>
+              <Top>0cm</Top>
+              <Left>21.4cm</Left>
+              <Height>0.6cm</Height>
+              <Width>5cm</Width>
+              <Style>
+                <PaddingLeft>3mm</PaddingLeft>
+                <PaddingRight>3mm</PaddingRight>
+                <PaddingTop>1mm</PaddingTop>
+                <PaddingBottom>1mm</PaddingBottom>
+              </Style>
+            </Textbox>
+          </ReportItems>
+        </PageFooter>
+        <PageHeight>21cm</PageHeight>
+        <PageWidth>29.7cm</PageWidth>
+        <LeftMargin>1.2cm</LeftMargin>
+        <RightMargin>1.2cm</RightMargin>
+        <TopMargin>1.2cm</TopMargin>
+        <BottomMargin>1.2cm</BottomMargin>
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <Language>es-PE</Language>
+  <ConsumeContainerWhitespace>true</ConsumeContainerWhitespace>
+</Report>
