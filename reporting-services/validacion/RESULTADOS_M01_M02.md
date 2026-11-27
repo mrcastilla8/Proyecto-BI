@@ -1,4 +1,6 @@
-# Resultados M01–M05 — ejecución local SSRS
+# Resultados M01–M05 — corte histórico 2026-11-26
+
+> Este informe conserva la evidencia obtenida el 2026-11-26. La revisión posterior de publicación, ejecuciones y exportaciones de seis informes está en [`RESULTADOS_M06_M07.md`](RESULTADOS_M06_M07.md), y reemplaza los estados visuales pendientes de R02/R04/R06/R07/R08/R09. No cambia los resultados históricos de M01–M05 ni declara completos los objetivos M06/M07 de diez informes.
 
 - Fecha: 2026-11-26
 - Rama: poma/nivel-2-reporting

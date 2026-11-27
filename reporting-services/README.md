@@ -1,10 +1,10 @@
-# SSRS 2022 Native Mode — OLIST 360° (M01–M05)
+# SSRS 2022 Native Mode — OLIST 360° (M01–M07, 6/10 informes)
 
-Esta entrega instala y configura SSRS 2022 Developer Native Mode, el catálogo local, el portal y un origen compartido a `BI_OLIST`; ejecuta el humo con exportaciones reales; y entrega la plantilla RDL, R07 y R08. Usa autenticación Windows local para esta máquina. No configura SSAS ni modifica Power BI, SSIS, `database/`, contratos o `Model.bim`.
+Esta entrega configura SSRS 2022 Developer Native Mode, el catálogo local, el portal y un origen compartido a `BI_OLIST`; ejecuta el humo y entrega la plantilla RDL. R07/R08 más R02/R04/R06/R09 están publicados y probados en el portal local. Usa autenticación Windows local para esta máquina. No configura SSAS ni modifica Power BI, SSIS, `database/`, contratos o `Model.bim`.
 
 ## Resultado de esta máquina
 
-Los resultados observados y evidencias reales se registran en [`validacion/RESULTADOS_M01_M02.md`](validacion/RESULTADOS_M01_M02.md), [`validacion/matriz.csv`](validacion/matriz.csv) y [`evidencias/INDICE.md`](evidencias/INDICE.md). Ningún caso se marca `PASS` sin ejecución local.
+Los resultados de infraestructura del corte inicial y de los seis informes están en [`validacion/RESULTADOS_M01_M02.md`](validacion/RESULTADOS_M01_M02.md) y [`validacion/RESULTADOS_M06_M07.md`](validacion/RESULTADOS_M06_M07.md). La matriz actualizada es [`validacion/matriz.csv`](validacion/matriz.csv), y el índice oficial de evidencias está en [`evidencias/INDICE.md`](evidencias/INDICE.md). Ningún caso se marca `PASS` sin ejecución local.
 
 ## Requisitos y límites
 
@@ -73,6 +73,6 @@ Los scripts devuelven filas `PASS`, `FAIL` o `BLOCKED`; los checks no ejecutados
 
 ## Evidencias y pendientes
 
-El estado ejecutado está en [`validacion/RESULTADOS_M01_M02.md`](validacion/RESULTADOS_M01_M02.md); el índice de evidencias es [`evidencias/INDICE.md`](evidencias/INDICE.md). La captura visual sanitizada del portal está en [`evidencias/ssrs-humo-portal.png`](evidencias/ssrs-humo-portal.png). Las exportaciones locales se guardan en `validacion/salidas/`, ignorado por Git; su apertura en las aplicaciones de escritorio sigue pendiente. La publicación conjunta de los diez informes espera los ocho RDL restantes.
+El corte actual de M06/M07 registra seis de diez informes y seis pares PDF/XLSX generados y revisados. Cinco vistas agregadas de las exportaciones están versionadas en `evidencias/renderizados-2026-11-27/`. Los pares completos se guardan en `validacion/salidas/`, ignorado por Git; los de R08 y su captura contienen detalle de pedido y permanecen locales. Excel muestra una advertencia de activación aunque abre los libros. El indicador gráfico de R09 requiere un ajuste visual. Faltan R01, R03, R05 y R10 para alcanzar la publicación de diez informes. La evidencia detallada está en [`validacion/RESULTADOS_M06_M07.md`](validacion/RESULTADOS_M06_M07.md).
 
 Referencias oficiales: [instalar SSRS](https://learn.microsoft.com/en-us/sql/reporting-services/install-windows/install-reporting-services?view=sql-server-ver17), [crear catálogo](https://learn.microsoft.com/en-us/sql/reporting-services/install-windows/ssrs-report-server-create-a-report-server-database?view=sql-server-ver17), [probar credenciales del origen](https://learn.microsoft.com/en-us/sql/reporting-services/report-data/specify-credential-and-connection-information-for-report-data-sources?view=sql-server-ver15), [exportar mediante URL](https://learn.microsoft.com/en-us/sql/reporting-services/export-a-report-using-url-access?view=sql-server-ver17).
