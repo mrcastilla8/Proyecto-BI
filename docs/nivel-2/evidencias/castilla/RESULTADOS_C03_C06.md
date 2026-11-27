@@ -36,7 +36,12 @@
 | Vacío (`2015`) | `NULL` / `BLANK` | `0` / `BLANK` | `0` / `BLANK` | `NULL` / `BLANK` | `NULL` / `BLANK` | `NULL` / `BLANK` | `NULL` / `BLANK` | `NULL` / `BLANK` | **PASS** |
 | Rango inválido (`2018-01-01`..`2017-01-01`) | `NULL` | `0` | `0` | `NULL` | `NULL` | `NULL` | `NULL` | `NULL` | **PASS** |
 
-- **Bloqueo local:** Report Builder y SSRS no están instalados localmente; renderizado visual y exportación PDF/XLSX pendientes en entorno SSRS de Poma/demo.
+- **Publicación y exportaciones reales en SSRS 2022 local (`SQLServerReportingServices`, `ExecutionLog3` = `rsSuccess`):**
+  - `R01_Historico.pdf` (`197.682` bytes, `%PDF`, SHA-256 `7447F73A8B69FAC1460B9F48FEB8B62129BA58EC467FD9F958097E8F8FACB080`)
+  - `R01_Historico.xlsx` (`8.344` bytes, `PK`, SHA-256 `51F4E6A545197E0CFBF20F522654635E05EA60B07B97BDC6C86F8D841241F12E`, 59 textos verificados: `R$ 13,221,498.11`, `96,478`, `99,441`, `R$ 137.04`, `R$ 2,198,275.64`, `93.23 %`, `12.56 días`)
+  - `R01_2017_SP.pdf` (`195.682` bytes, `%PDF`, SHA-256 `444F024A601C4576ED056C916EC86BEC48DE15A640D873C3044DCFD9BC32C263`)
+  - `R01_2017_SP.xlsx` (`8.332` bytes, `PK`, SHA-256 `5C9E10398DA46189CE15AED6D7E580DE4BDF4DEE87EDD18D2C6D7ABF271BA6A0`, 59 textos verificados: `R$ 2,136,258.96`, `17,071`, `17,760`, `R$ 125.14`, `R$ 291,743.66`, `96.19 %`, `9.34 días`)
+  - `R01_Vacio_2015.pdf` (`192.349` bytes, `%PDF`, SHA-256 `FE6AF1E87AD29E1E6A4D0E01112690A18FF72BDF37909ED62031C5E0B3ECBD82`)
 
 ## 4. C06 — R10 Auditoría ETL (`reporting-services/reports/R10_AuditoriaETL.rdl`)
 
@@ -48,4 +53,8 @@
   - Privacidad: Sin proyección de `source_file`, `error_message`, `execution_context` ni filas individuales de `audit.Reject`.
   - Intervalo sin resultados (`2025-01-01`..`2025-01-02`): `0` filas.
   - Rango inválido (`2026-12-31`..`2026-01-01`): `0` filas.
-- **Bloqueo local:** Renderizado en Report Builder y exportación PDF/XLSX pendientes en entorno SSRS de Poma/demo; prueba de lote `FAILED` en fixture aislada pendiente de entorno SSRS/LocalDB dedicado si se requiere captura visual.
+- **Publicación y exportaciones reales en SSRS 2022 local (`ExecutionLog3` = `rsSuccess`):**
+  - `R10_AuditoriaETL.pdf` (`200.300` bytes, `%PDF`, SHA-256 `B705B86262874CD54E2E6C10DDF48DF38B476E3BE1D053A5D93BB3C751F714F0`)
+  - `R10_AuditoriaETL.xlsx` (`10.031` bytes, `PK`, SHA-256 `B406C7FFA570553845DC9CF33FDE3683064B8D3B659C5A4DE4918A16843013F4`, `60` celdas verificadas con lotes `60`–`69`)
+  - `R10_Vacio_2025.pdf` (`180.381` bytes, `%PDF`, SHA-256 `B2DBF264D93D898E48EAE65446974704F07497120E4265C08E78E1506CF1455A`)
+  - Prueba de lote `FAILED` en fixture aislada queda pendiente si se requiere evidencia visual adicional sobre LocalDB aislada.

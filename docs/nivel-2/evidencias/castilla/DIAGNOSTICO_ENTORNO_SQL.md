@@ -16,8 +16,8 @@
 | `sqlcmd` | Disponible | `18.x` (Client SDK ODBC 180) |
 | SSMS | Instalado | SQL Server Management Studio 22 (`22.10.2`) |
 | Power BI Desktop | Instalado | `2.159.1231.0` (x64) |
-| Microsoft Report Builder | **No instalado** | No se detectó `MSReportBuilder.exe` en el equipo |
-| SSRS (Reporting Services) | **No instalado localmente** | Sin servicio ni portal SSRS local; infraestructura alojada en entorno de Poma |
+| Microsoft Report Builder | **Instalado** | `15.1.30001.02` (`C:\Program Files\Microsoft Report Builder\MSReportBuilder.exe`) |
+| SSRS (Reporting Services) | **Instalado y en ejecución** | SSRS 2022 Developer (`SQLServerReportingServices` `Running / Automatic`), catálogo `ReportServer` / `ReportServerTempDB` `ONLINE` en `.\SQLEXPRESS`, portal `http://localhost/Reports` (`HTTP 200`) y servicio SOAP `http://<equipo>/ReportServer` (`HTTP 200`) |
 | CSV auténticos Olist | Encontrados localmente | 9 archivos en carpeta local externa (`olist_*.csv` y `product_category_name_translation.csv`) |
 
 ## 2. Auditoría inicial de `BI_OLIST` en `.\SQLEXPRESS` (Caso C)
@@ -42,4 +42,5 @@ Al inicio de la sesión, `BI_OLIST` existía `ONLINE` en `.\SQLEXPRESS` únicame
 
 ## 4. Bloqueos objetivos restantes
 
-- **SSRS y Report Builder no instalados localmente:** No es posible renderizar ni exportar R01/R10 a PDF/XLSX en servidor SSRS desde este equipo; la publicación y exportación final corresponden al entorno SSRS de Poma o al equipo de demostración.
+- **Power BI Desktop (sesión gráfica interactiva):** Al lanzar `PBIDesktop.exe` (`2.159.1231.0`) desde consola automatizada no mantuvo ventana interactiva activa; la apertura visual manual y captura de `P01`/`P08` quedan pendientes del usuario.
+- **Publicación y enlaces en entorno demo final:** SSRS 2022 y Report Builder ya están operativos y probados localmente en este equipo (incluyendo las 8 exportaciones PDF/XLSX de `R01` y `R10`); en `OLIST360_Castilla.pbip` se conservan los placeholders `{{SSRS_WEB_SERVICE_URL}}` y `{{SSRS_WEB_PORTAL_URL}}` para no fijar el nombre del equipo local en Git.
