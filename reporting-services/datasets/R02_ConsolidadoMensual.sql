@@ -37,4 +37,5 @@ WHERE d.order_status = 'delivered'
       OR c.product_category_name_english = @Categoria
   )
 GROUP BY GROUPING SETS ((f.anio, f.mes), (f.anio), ())
+HAVING COUNT_BIG(*) > 0
 ORDER BY nivel DESC, f.anio, f.mes;
