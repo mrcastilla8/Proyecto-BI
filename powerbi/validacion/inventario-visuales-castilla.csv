@@ -1,0 +1,16 @@
+id,pagina,tipo,posicion,campos,interacciones,tooltip,prueba
+P01-01,P01,card,x280 y112 w392 h64,ventas_productos_entregados,"Fecha/EC sincronizados; sin filtro de categoría",,Concilia con SSAS y R01
+P01-02,P01,card,x688 y112 w392 h64,pedidos_entregados_con_items,"Fecha/EC sincronizados; sin filtro de categoría",,Concilia con SSAS y R01
+P01-03,P01,card,x1096 y112 w392 h64,pedidos_totales,"Fecha/EC sincronizados; sin filtro de categoría",,Concilia con SSAS y R01
+P01-04,P01,card,x1504 y112 w392 h64,ticket_promedio_productos_entregados,"Fecha/EC sincronizados; sin filtro de categoría",,Concilia con SSAS y R01
+P01-05,P01,card,x280 y184 w392 h64,flete_pedidos_entregados,"Fecha/EC sincronizados; sin filtro de categoría",,Concilia con SSAS y R01
+P01-06,P01,card,x688 y184 w392 h64,porcentaje_entregas_a_tiempo,"Fecha/EC sincronizados; sin filtro de categoría",,Concilia con SSAS y R01
+P01-07,P01,card,x1096 y184 w392 h64,dias_promedio_entrega,"Fecha/EC sincronizados; sin filtro de categoría",,Concilia con SSAS y R01
+P01-08,P01,card,x1504 y184 w392 h64,calificacion_promedio,"Fecha/EC sincronizados; sin filtro de categoría",,Concilia con SSAS y R01
+P01-09,P01,lineChart,x280 y272 w1068 h340,"DimFecha[anio,mes]; ventas_productos_entregados",Fecha/EC sincronizados,T01,Orden cronológico
+P01-10,P01,clusteredBarChart,x1364 y272 w532 h340,"DimProducto[product_category_name_english]; V (Top 5)","NoFilter hacia P01-01..08 y P01-11",T02,Selección de categoría no altera KPI generales
+P01-11,P01,clusteredColumnChart,x280 y628 w800 h372,"DimFecha[anio,mes]; pedidos_totales, pedidos_entregados_con_items",Fecha/EC sincronizados,,Poblaciones distintas aclaradas en título
+P01-12,P01,textbox+actionButton,x1096 y628 w800 h372,"Botones R01, R02 y P08",URL fija SSRS / Navegación P08,,Nota explícita de filtros independientes
+P08-01,P08,textbox,x280 y108 w1300 h64,Aviso filtros independientes SSRS y OrderId en R08,,,Texto visible obligatorio
+P08-02,P08,actionButton,x1596 y108 w300 h64,Portal SSRS /OLIST360,WebUrl,,Pendiente URL real de entorno demo
+P08-R01..R10,P08,textbox+actionButton,x280..1896 y224..992,"10 tarjetas agrupadas: Gerencia, Comercial, Operaciones, Auditoría",WebUrl fija a cada RDL,,Pendiente URL real de entorno demo

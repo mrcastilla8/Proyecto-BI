@@ -1,0 +1,438 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <Description>Resumen gerencial de los ocho indicadores oficiales de BI-OLIST mediante dos datasets independientes (detalle y cabecera).</Description>
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="BI_OLIST_DW">
+      <DataSourceReference>/OLIST360/DataSources/BI_OLIST_DW</DataSourceReference>
+      <rd:DataSourceID>3a8d0eab-78c4-40a2-b985-4d2d12649b24</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="R01_Fechas">
+      <Query>
+        <DataSourceName>BI_OLIST_DW</DataSourceName>
+        <CommandText><![CDATA[SELECT MIN(f.fecha) AS desde, MAX(f.fecha) AS hasta
+FROM dw.FactPedidos AS p
+JOIN dw.DimFecha AS f ON f.fecha_key = p.fecha_compra_key
+WHERE f.fecha_key <> -1;]]></CommandText>
+        <Timeout>60</Timeout>
+      </Query>
+      <Fields>
+        <Field Name="desde"><DataField>desde</DataField></Field>
+        <Field Name="hasta"><DataField>hasta</DataField></Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="R01_Estados">
+      <Query>
+        <DataSourceName>BI_OLIST_DW</DataSourceName>
+        <CommandText><![CDATA[SELECT estados.valor, estados.etiqueta
+FROM (
+    SELECT '__TODOS__' AS valor, N'Todos' AS etiqueta, 0 AS prioridad
+    UNION ALL
+    SELECT DISTINCT customer_state, customer_state, 1
+    FROM dw.DimGeografiaCliente
+    WHERE customer_state IS NOT NULL
+    UNION ALL
+    SELECT '__DESCONOCIDO__', N'Desconocido', 2
+    WHERE EXISTS (
+        SELECT 1 FROM dw.DimGeografiaCliente WHERE customer_state IS NULL
+    )
+) AS estados
+ORDER BY estados.prioridad, estados.etiqueta;]]></CommandText>
+        <Timeout>60</Timeout>
+      </Query>
+      <Fields>
+        <Field Name="valor"><DataField>valor</DataField></Field>
+        <Field Name="etiqueta"><DataField>etiqueta</DataField></Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="R01_ResumenDetalle">
+      <Query>
+        <DataSourceName>BI_OLIST_DW</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@Desde"><Value>=Parameters!Desde.Value</Value></QueryParameter>
+          <QueryParameter Name="@Hasta"><Value>=Parameters!Hasta.Value</Value></QueryParameter>
+          <QueryParameter Name="@EstadoCliente"><Value>=Parameters!EstadoCliente.Value</Value></QueryParameter>
+        </QueryParameters>
+        <CommandText><![CDATA[SELECT SUM(d.price) AS ventas,
+       COUNT_BIG(DISTINCT d.order_id) AS entregados,
+       CONVERT(float, SUM(d.price)) / NULLIF(COUNT_BIG(DISTINCT d.order_id), 0) AS ticket,
+       SUM(d.freight_value) AS flete
+FROM dw.FactDetallePedido AS d
+JOIN dw.DimFecha AS f ON f.fecha_key = d.fecha_compra_key
+JOIN dw.DimGeografiaCliente AS g ON g.geografia_cliente_key = d.geografia_cliente_key
+WHERE d.order_status = 'delivered'
+  AND d.fecha_compra_key <> -1
+  AND f.fecha >= CAST(@Desde AS date)
+  AND f.fecha <= CAST(@Hasta AS date)
+  AND CAST(@Desde AS date) <= CAST(@Hasta AS date)
+  AND (
+      @EstadoCliente = '__TODOS__'
+      OR (@EstadoCliente = '__DESCONOCIDO__' AND g.customer_state IS NULL)
+      OR g.customer_state = @EstadoCliente
+  );]]></CommandText>
+        <Timeout>60</Timeout>
+      </Query>
+      <Fields>
+        <Field Name="ventas"><DataField>ventas</DataField></Field>
+        <Field Name="entregados"><DataField>entregados</DataField></Field>
+        <Field Name="ticket"><DataField>ticket</DataField></Field>
+        <Field Name="flete"><DataField>flete</DataField></Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="R01_ResumenCabecera">
+      <Query>
+        <DataSourceName>BI_OLIST_DW</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@Desde"><Value>=Parameters!Desde.Value</Value></QueryParameter>
+          <QueryParameter Name="@Hasta"><Value>=Parameters!Hasta.Value</Value></QueryParameter>
+          <QueryParameter Name="@EstadoCliente"><Value>=Parameters!EstadoCliente.Value</Value></QueryParameter>
+        </QueryParameters>
+        <CommandText><![CDATA[SELECT COUNT_BIG(*) AS pedidos,
+       1.0 * SUM(CASE WHEN p.order_status = 'delivered' AND p.fecha_entrega_real_key <> -1 AND p.fecha_entrega_estimada_key <> -1 AND p.fecha_entrega_real_key <= p.fecha_entrega_estimada_key THEN CONVERT(bigint, 1) ELSE 0 END)
+       / NULLIF(SUM(CASE WHEN p.order_status = 'delivered' AND p.fecha_entrega_real_key <> -1 AND p.fecha_entrega_estimada_key <> -1 THEN CONVERT(bigint, 1) ELSE 0 END), 0) AS puntualidad,
+       AVG(CASE WHEN p.order_status = 'delivered' AND p.fecha_compra_key <> -1 AND p.fecha_entrega_real_key <> -1 THEN CONVERT(float, DATEDIFF_BIG(SECOND, p.order_purchase_timestamp, p.order_delivered_customer_date)) / 86400.0 END) AS dias,
+       AVG(CONVERT(float, p.review_score)) AS nota
+FROM dw.FactPedidos AS p
+JOIN dw.DimFecha AS f ON f.fecha_key = p.fecha_compra_key
+JOIN dw.DimGeografiaCliente AS g ON g.geografia_cliente_key = p.geografia_cliente_key
+WHERE p.fecha_compra_key <> -1
+  AND f.fecha >= CAST(@Desde AS date)
+  AND f.fecha <= CAST(@Hasta AS date)
+  AND CAST(@Desde AS date) <= CAST(@Hasta AS date)
+  AND (
+      @EstadoCliente = '__TODOS__'
+      OR (@EstadoCliente = '__DESCONOCIDO__' AND g.customer_state IS NULL)
+      OR g.customer_state = @EstadoCliente
+  );]]></CommandText>
+        <Timeout>60</Timeout>
+      </Query>
+      <Fields>
+        <Field Name="pedidos"><DataField>pedidos</DataField></Field>
+        <Field Name="puntualidad"><DataField>puntualidad</DataField></Field>
+        <Field Name="dias"><DataField>dias</DataField></Field>
+        <Field Name="nota"><DataField>nota</DataField></Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportParameters>
+    <ReportParameter Name="Desde">
+      <DataType>DateTime</DataType>
+      <Nullable>true</Nullable>
+      <DefaultValue><DataSetReference><DataSetName>R01_Fechas</DataSetName><ValueField>desde</ValueField></DataSetReference></DefaultValue>
+      <Prompt>Desde (fecha de compra)</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="Hasta">
+      <DataType>DateTime</DataType>
+      <Nullable>true</Nullable>
+      <DefaultValue><DataSetReference><DataSetName>R01_Fechas</DataSetName><ValueField>hasta</ValueField></DataSetReference></DefaultValue>
+      <Prompt>Hasta (fecha de compra)</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="EstadoCliente">
+      <DataType>String</DataType>
+      <DefaultValue><Values><Value>__TODOS__</Value></Values></DefaultValue>
+      <Prompt>Estado del cliente</Prompt>
+      <ValidValues><DataSetReference><DataSetName>R01_Estados</DataSetName><ValueField>valor</ValueField><LabelField>etiqueta</LabelField></DataSetReference></ValidValues>
+    </ReportParameter>
+  </ReportParameters>
+  <ReportParametersLayout>
+    <GridLayoutDefinition>
+      <NumberOfColumns>3</NumberOfColumns>
+      <NumberOfRows>1</NumberOfRows>
+      <CellDefinitions>
+        <CellDefinition><ColumnIndex>0</ColumnIndex><RowIndex>0</RowIndex><ParameterName>Desde</ParameterName></CellDefinition>
+        <CellDefinition><ColumnIndex>1</ColumnIndex><RowIndex>0</RowIndex><ParameterName>Hasta</ParameterName></CellDefinition>
+        <CellDefinition><ColumnIndex>2</ColumnIndex><RowIndex>0</RowIndex><ParameterName>EstadoCliente</ParameterName></CellDefinition>
+      </CellDefinitions>
+    </GridLayoutDefinition>
+  </ReportParametersLayout>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Textbox Name="AvisoSinDatos">
+            <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+            <Paragraphs><Paragraph><TextRuns><TextRun><Value>=If(IsNothing(Parameters!Desde.Value) OrElse IsNothing(Parameters!Hasta.Value), "Sin datos elegibles en el Data Mart para el período.", If(Parameters!Desde.Value &gt; Parameters!Hasta.Value, "Rango inválido: la fecha Desde debe ser anterior o igual a Hasta.", If(First(Fields!pedidos.Value, "R01_ResumenCabecera") = 0 AndAlso First(Fields!entregados.Value, "R01_ResumenDetalle") = 0, "Sin datos elegibles para el período y estado seleccionados.", "")))</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>10pt</FontSize><FontWeight>Bold</FontWeight><Color>#B91C1C</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs>
+            <Top>0.1cm</Top><Left>0.2cm</Left><Height>0.7cm</Height><Width>18.0cm</Width>
+            <Visibility><Hidden>=Not (IsNothing(Parameters!Desde.Value) OrElse IsNothing(Parameters!Hasta.Value) OrElse Parameters!Desde.Value &gt; Parameters!Hasta.Value OrElse (First(Fields!pedidos.Value, "R01_ResumenCabecera") = 0 AndAlso First(Fields!entregados.Value, "R01_ResumenDetalle") = 0))</Hidden></Visibility>
+            <Style><BackgroundColor>#FEF2F2</BackgroundColor><Border><Style>Solid</Style><Color>#FECACA</Color></Border><PaddingLeft>8pt</PaddingLeft><PaddingTop>4pt</PaddingTop></Style>
+          </Textbox>
+          <Textbox Name="SecDetalle">
+            <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+            <Paragraphs><Paragraph><TextRuns><TextRun><Value>1. Indicadores comerciales (universo de líneas entregadas · FactDetallePedido)</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>11pt</FontSize><FontWeight>Bold</FontWeight><Color>#14233B</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs>
+            <Top>0.95cm</Top><Left>0.2cm</Left><Height>0.6cm</Height><Width>18.0cm</Width>
+            <Style><BottomBorder><Style>Solid</Style><Color>#CBD5E1</Color></BottomBorder><PaddingBottom>2pt</PaddingBottom></Style>
+          </Textbox>
+      <Textbox Name="KpiVentas">
+        <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+        <Paragraphs>
+          <Paragraph><TextRuns><TextRun><Value>Ventas de productos entregados</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+          <Paragraph><TextRuns><TextRun><Value>=IIf(IsNothing(First(Fields!ventas.Value, "R01_ResumenDetalle")) OrElse First(Fields!entregados.Value, "R01_ResumenDetalle") = 0, "Sin datos", "R$ " &amp; Format(First(Fields!ventas.Value, "R01_ResumenDetalle"), "N2"))</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>16pt</FontSize><FontWeight>Bold</FontWeight><Color>#2563EB</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+          <Paragraph><TextRuns><TextRun><Value>Suma de price (BRL nominales)</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+        </Paragraphs>
+        <Top>1.7cm</Top><Left>0.2cm</Left><Height>2.05cm</Height><Width>8.8cm</Width>
+        <Style><BackgroundColor>#FFFFFF</BackgroundColor><Border><Style>Solid</Style><Color>#CBD5E1</Color></Border><PaddingLeft>8pt</PaddingLeft><PaddingRight>6pt</PaddingRight><PaddingTop>5pt</PaddingTop><PaddingBottom>5pt</PaddingBottom></Style>
+      </Textbox>
+      <Textbox Name="KpiEntregados">
+        <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+        <Paragraphs>
+          <Paragraph><TextRuns><TextRun><Value>Pedidos entregados con ítems</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+          <Paragraph><TextRuns><TextRun><Value>=IIf(IsNothing(First(Fields!entregados.Value, "R01_ResumenDetalle")) OrElse First(Fields!entregados.Value, "R01_ResumenDetalle") = 0, "Sin datos", Format(First(Fields!entregados.Value, "R01_ResumenDetalle"), "N0"))</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>16pt</FontSize><FontWeight>Bold</FontWeight><Color>#2563EB</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+          <Paragraph><TextRuns><TextRun><Value>Pedidos distintos con ítem delivered</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+        </Paragraphs>
+        <Top>1.7cm</Top><Left>9.4cm</Left><Height>2.05cm</Height><Width>8.8cm</Width>
+        <Style><BackgroundColor>#FFFFFF</BackgroundColor><Border><Style>Solid</Style><Color>#CBD5E1</Color></Border><PaddingLeft>8pt</PaddingLeft><PaddingRight>6pt</PaddingRight><PaddingTop>5pt</PaddingTop><PaddingBottom>5pt</PaddingBottom></Style>
+      </Textbox>
+      <Textbox Name="KpiTicket">
+        <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+        <Paragraphs>
+          <Paragraph><TextRuns><TextRun><Value>Ticket promedio</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+          <Paragraph><TextRuns><TextRun><Value>=IIf(IsNothing(First(Fields!ticket.Value, "R01_ResumenDetalle")), "Sin datos", "R$ " &amp; Format(First(Fields!ticket.Value, "R01_ResumenDetalle"), "N2"))</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>16pt</FontSize><FontWeight>Bold</FontWeight><Color>#101C32</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+          <Paragraph><TextRuns><TextRun><Value>Ventas / Pedidos entregados con ítems</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+        </Paragraphs>
+        <Top>3.95cm</Top><Left>0.2cm</Left><Height>2.05cm</Height><Width>8.8cm</Width>
+        <Style><BackgroundColor>#FFFFFF</BackgroundColor><Border><Style>Solid</Style><Color>#CBD5E1</Color></Border><PaddingLeft>8pt</PaddingLeft><PaddingRight>6pt</PaddingRight><PaddingTop>5pt</PaddingTop><PaddingBottom>5pt</PaddingBottom></Style>
+      </Textbox>
+      <Textbox Name="KpiFlete">
+        <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+        <Paragraphs>
+          <Paragraph><TextRuns><TextRun><Value>Flete de productos entregados</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+          <Paragraph><TextRuns><TextRun><Value>=IIf(IsNothing(First(Fields!flete.Value, "R01_ResumenDetalle")) OrElse First(Fields!entregados.Value, "R01_ResumenDetalle") = 0, "Sin datos", "R$ " &amp; Format(First(Fields!flete.Value, "R01_ResumenDetalle"), "N2"))</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>16pt</FontSize><FontWeight>Bold</FontWeight><Color>#0D9488</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+          <Paragraph><TextRuns><TextRun><Value>Suma de freight_value (BRL nominales)</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+        </Paragraphs>
+        <Top>3.95cm</Top><Left>9.4cm</Left><Height>2.05cm</Height><Width>8.8cm</Width>
+        <Style><BackgroundColor>#FFFFFF</BackgroundColor><Border><Style>Solid</Style><Color>#CBD5E1</Color></Border><PaddingLeft>8pt</PaddingLeft><PaddingRight>6pt</PaddingRight><PaddingTop>5pt</PaddingTop><PaddingBottom>5pt</PaddingBottom></Style>
+      </Textbox>
+          <Textbox Name="SecCabecera">
+            <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+            <Paragraphs><Paragraph><TextRuns><TextRun><Value>2. Indicadores de pedidos, logística y satisfacción (universo de cabecera · FactPedidos)</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>11pt</FontSize><FontWeight>Bold</FontWeight><Color>#14233B</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs>
+            <Top>6.3cm</Top><Left>0.2cm</Left><Height>0.6cm</Height><Width>18.0cm</Width>
+            <Style><BottomBorder><Style>Solid</Style><Color>#CBD5E1</Color></BottomBorder><PaddingBottom>2pt</PaddingBottom></Style>
+          </Textbox>
+      <Textbox Name="KpiPedidos">
+        <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+        <Paragraphs>
+          <Paragraph><TextRuns><TextRun><Value>Pedidos totales</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+          <Paragraph><TextRuns><TextRun><Value>=IIf(IsNothing(First(Fields!pedidos.Value, "R01_ResumenCabecera")) OrElse First(Fields!pedidos.Value, "R01_ResumenCabecera") = 0, "Sin datos", Format(First(Fields!pedidos.Value, "R01_ResumenCabecera"), "N0"))</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>16pt</FontSize><FontWeight>Bold</FontWeight><Color>#101C32</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+          <Paragraph><TextRuns><TextRun><Value>Total de pedidos en FactPedidos</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+        </Paragraphs>
+        <Top>7.05cm</Top><Left>0.2cm</Left><Height>2.05cm</Height><Width>8.8cm</Width>
+        <Style><BackgroundColor>#FFFFFF</BackgroundColor><Border><Style>Solid</Style><Color>#CBD5E1</Color></Border><PaddingLeft>8pt</PaddingLeft><PaddingRight>6pt</PaddingRight><PaddingTop>5pt</PaddingTop><PaddingBottom>5pt</PaddingBottom></Style>
+      </Textbox>
+      <Textbox Name="KpiPuntualidad">
+        <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+        <Paragraphs>
+          <Paragraph><TextRuns><TextRun><Value>Porcentaje de entregas a tiempo</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+          <Paragraph><TextRuns><TextRun><Value>=IIf(IsNothing(First(Fields!puntualidad.Value, "R01_ResumenCabecera")), "Sin datos", Format(First(Fields!puntualidad.Value, "R01_ResumenCabecera"), "P2"))</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>16pt</FontSize><FontWeight>Bold</FontWeight><Color>#059669</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+          <Paragraph><TextRuns><TextRun><Value>Entrega real &lt;= estimada (delivered)</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+        </Paragraphs>
+        <Top>7.05cm</Top><Left>9.4cm</Left><Height>2.05cm</Height><Width>8.8cm</Width>
+        <Style><BackgroundColor>#FFFFFF</BackgroundColor><Border><Style>Solid</Style><Color>#CBD5E1</Color></Border><PaddingLeft>8pt</PaddingLeft><PaddingRight>6pt</PaddingRight><PaddingTop>5pt</PaddingTop><PaddingBottom>5pt</PaddingBottom></Style>
+      </Textbox>
+      <Textbox Name="KpiDias">
+        <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+        <Paragraphs>
+          <Paragraph><TextRuns><TextRun><Value>Días promedio de entrega</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+          <Paragraph><TextRuns><TextRun><Value>=IIf(IsNothing(First(Fields!dias.Value, "R01_ResumenCabecera")), "Sin datos", Format(First(Fields!dias.Value, "R01_ResumenCabecera"), "N2") &amp; " días")</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>16pt</FontSize><FontWeight>Bold</FontWeight><Color>#0D9488</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+          <Paragraph><TextRuns><TextRun><Value>Compra a entrega real en días</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+        </Paragraphs>
+        <Top>9.3cm</Top><Left>0.2cm</Left><Height>2.05cm</Height><Width>8.8cm</Width>
+        <Style><BackgroundColor>#FFFFFF</BackgroundColor><Border><Style>Solid</Style><Color>#CBD5E1</Color></Border><PaddingLeft>8pt</PaddingLeft><PaddingRight>6pt</PaddingRight><PaddingTop>5pt</PaddingTop><PaddingBottom>5pt</PaddingBottom></Style>
+      </Textbox>
+      <Textbox Name="KpiNota">
+        <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+        <Paragraphs>
+          <Paragraph><TextRuns><TextRun><Value>Calificación promedio</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+          <Paragraph><TextRuns><TextRun><Value>=IIf(IsNothing(First(Fields!nota.Value, "R01_ResumenCabecera")), "Sin datos", Format(First(Fields!nota.Value, "R01_ResumenCabecera"), "N2") &amp; " / 5")</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>16pt</FontSize><FontWeight>Bold</FontWeight><Color>#D97706</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+          <Paragraph><TextRuns><TextRun><Value>Nota consolidada por pedido (1 a 5)</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+        </Paragraphs>
+        <Top>9.3cm</Top><Left>9.4cm</Left><Height>2.05cm</Height><Width>8.8cm</Width>
+        <Style><BackgroundColor>#FFFFFF</BackgroundColor><Border><Style>Solid</Style><Color>#CBD5E1</Color></Border><PaddingLeft>8pt</PaddingLeft><PaddingRight>6pt</PaddingRight><PaddingTop>5pt</PaddingTop><PaddingBottom>5pt</PaddingBottom></Style>
+      </Textbox>
+          <Textbox Name="SecTabla">
+            <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+            <Paragraphs><Paragraph><TextRuns><TextRun><Value>3. Tabla consolidada de indicadores y definiciones</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>11pt</FontSize><FontWeight>Bold</FontWeight><Color>#14233B</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs>
+            <Top>11.65cm</Top><Left>0.2cm</Left><Height>0.6cm</Height><Width>18.0cm</Width>
+            <Style><BottomBorder><Style>Solid</Style><Color>#CBD5E1</Color></BottomBorder><PaddingBottom>2pt</PaddingBottom></Style>
+          </Textbox>
+          <Tablix Name="TablaResumenKPI">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn><Width>6.2cm</Width></TablixColumn>
+                <TablixColumn><Width>7.6cm</Width></TablixColumn>
+                <TablixColumn><Width>4.2cm</Width></TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.65cm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="HdrKpi"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Indicador</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="HdrUni"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Definición / Universo</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="HdrVal"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Valor</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingRight>4pt</PaddingRight><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                  </TablixCells>
+                </TablixRow>
+            <TablixRow>
+              <Height>0.6cm</Height>
+              <TablixCells>
+                <TablixCell><CellContents><Textbox Name="TblKpiNom1"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Ventas de productos entregados</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#14233B</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs><Style><BackgroundColor>#FFFFFF</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TblKpiUni1"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Líneas delivered (FactDetallePedido)</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs><Style><BackgroundColor>#FFFFFF</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TblKpiVal1"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=IIf(IsNothing(First(Fields!ventas.Value, "R01_ResumenDetalle")) OrElse First(Fields!entregados.Value, "R01_ResumenDetalle") = 0, "Sin datos", "R$ " &amp; Format(First(Fields!ventas.Value, "R01_ResumenDetalle"), "N2"))</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#14233B</Color></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#FFFFFF</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingRight>4pt</PaddingRight><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+              </TablixCells>
+            </TablixRow>
+            <TablixRow>
+              <Height>0.6cm</Height>
+              <TablixCells>
+                <TablixCell><CellContents><Textbox Name="TblKpiNom2"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Pedidos entregados con ítems</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#14233B</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs><Style><BackgroundColor>#F8FAFC</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TblKpiUni2"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Pedidos distintos delivered con ítem</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs><Style><BackgroundColor>#F8FAFC</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TblKpiVal2"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=IIf(IsNothing(First(Fields!entregados.Value, "R01_ResumenDetalle")) OrElse First(Fields!entregados.Value, "R01_ResumenDetalle") = 0, "Sin datos", Format(First(Fields!entregados.Value, "R01_ResumenDetalle"), "N0"))</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#14233B</Color></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#F8FAFC</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingRight>4pt</PaddingRight><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+              </TablixCells>
+            </TablixRow>
+            <TablixRow>
+              <Height>0.6cm</Height>
+              <TablixCells>
+                <TablixCell><CellContents><Textbox Name="TblKpiNom3"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Ticket promedio</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#14233B</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs><Style><BackgroundColor>#FFFFFF</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TblKpiUni3"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Ventas / Pedidos entregados con ítems</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs><Style><BackgroundColor>#FFFFFF</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TblKpiVal3"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=IIf(IsNothing(First(Fields!ticket.Value, "R01_ResumenDetalle")), "Sin datos", "R$ " &amp; Format(First(Fields!ticket.Value, "R01_ResumenDetalle"), "N2"))</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#14233B</Color></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#FFFFFF</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingRight>4pt</PaddingRight><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+              </TablixCells>
+            </TablixRow>
+            <TablixRow>
+              <Height>0.6cm</Height>
+              <TablixCells>
+                <TablixCell><CellContents><Textbox Name="TblKpiNom4"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Flete de productos entregados</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#14233B</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs><Style><BackgroundColor>#F8FAFC</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TblKpiUni4"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Suma freight_value en líneas delivered</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs><Style><BackgroundColor>#F8FAFC</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TblKpiVal4"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=IIf(IsNothing(First(Fields!flete.Value, "R01_ResumenDetalle")) OrElse First(Fields!entregados.Value, "R01_ResumenDetalle") = 0, "Sin datos", "R$ " &amp; Format(First(Fields!flete.Value, "R01_ResumenDetalle"), "N2"))</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#14233B</Color></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#F8FAFC</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingRight>4pt</PaddingRight><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+              </TablixCells>
+            </TablixRow>
+            <TablixRow>
+              <Height>0.6cm</Height>
+              <TablixCells>
+                <TablixCell><CellContents><Textbox Name="TblKpiNom5"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Pedidos totales</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#14233B</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs><Style><BackgroundColor>#FFFFFF</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TblKpiUni5"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Cabeceras FactPedidos (todos los estados)</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs><Style><BackgroundColor>#FFFFFF</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TblKpiVal5"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=IIf(IsNothing(First(Fields!pedidos.Value, "R01_ResumenCabecera")) OrElse First(Fields!pedidos.Value, "R01_ResumenCabecera") = 0, "Sin datos", Format(First(Fields!pedidos.Value, "R01_ResumenCabecera"), "N0"))</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#14233B</Color></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#FFFFFF</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingRight>4pt</PaddingRight><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+              </TablixCells>
+            </TablixRow>
+            <TablixRow>
+              <Height>0.6cm</Height>
+              <TablixCells>
+                <TablixCell><CellContents><Textbox Name="TblKpiNom6"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Porcentaje de entregas a tiempo</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#14233B</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs><Style><BackgroundColor>#F8FAFC</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TblKpiUni6"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Entregados real &lt;= estimada / elegibles</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs><Style><BackgroundColor>#F8FAFC</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TblKpiVal6"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=IIf(IsNothing(First(Fields!puntualidad.Value, "R01_ResumenCabecera")), "Sin datos", Format(First(Fields!puntualidad.Value, "R01_ResumenCabecera"), "P2"))</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#14233B</Color></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#F8FAFC</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingRight>4pt</PaddingRight><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+              </TablixCells>
+            </TablixRow>
+            <TablixRow>
+              <Height>0.6cm</Height>
+              <TablixCells>
+                <TablixCell><CellContents><Textbox Name="TblKpiNom7"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Días promedio de entrega</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#14233B</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs><Style><BackgroundColor>#FFFFFF</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TblKpiUni7"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Promedio compra a entrega real (días)</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs><Style><BackgroundColor>#FFFFFF</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TblKpiVal7"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=IIf(IsNothing(First(Fields!dias.Value, "R01_ResumenCabecera")), "Sin datos", Format(First(Fields!dias.Value, "R01_ResumenCabecera"), "N2") &amp; " días")</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#14233B</Color></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#FFFFFF</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingRight>4pt</PaddingRight><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+              </TablixCells>
+            </TablixRow>
+            <TablixRow>
+              <Height>0.6cm</Height>
+              <TablixCells>
+                <TablixCell><CellContents><Textbox Name="TblKpiNom8"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Calificación promedio</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#14233B</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs><Style><BackgroundColor>#F8FAFC</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TblKpiUni8"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Promedio review_score (1 a 5, sin nulos)</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs><Style><BackgroundColor>#F8FAFC</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TblKpiVal8"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=IIf(IsNothing(First(Fields!nota.Value, "R01_ResumenCabecera")), "Sin datos", Format(First(Fields!nota.Value, "R01_ResumenCabecera"), "N2") &amp; " / 5")</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#14233B</Color></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#F8FAFC</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingRight>4pt</PaddingRight><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+              </TablixCells>
+            </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy><TablixMembers><TablixMember /><TablixMember /><TablixMember /></TablixMembers></TablixColumnHierarchy>
+            <TablixRowHierarchy><TablixMembers><TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember /></TablixMembers></TablixRowHierarchy>
+            <DataSetName>R01_ResumenDetalle</DataSetName>
+            <Top>12.4cm</Top><Left>0.2cm</Left><Height>5.45cm</Height><Width>18.0cm</Width>
+            <Style><Border><Style>Solid</Style><Color>#CBD5E1</Color></Border></Style>
+          </Tablix>
+          <Textbox Name="BtnR02">
+            <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+            <Paragraphs><Paragraph><TextRuns><TextRun><Value>Ir a R02 · Consolidado mensual →</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>10pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+            <ActionInfo><Actions><Action><Drillthrough>
+              <ReportName>/OLIST360/01_Gerencia/R02_ConsolidadoMensual</ReportName>
+              <Parameters>
+                <Parameter Name="Desde"><Value>=Parameters!Desde.Value</Value></Parameter>
+                <Parameter Name="Hasta"><Value>=Parameters!Hasta.Value</Value></Parameter>
+                <Parameter Name="EstadoCliente"><Value>=Parameters!EstadoCliente.Value</Value></Parameter>
+                <Parameter Name="Categoria"><Value>__TODOS__</Value></Parameter>
+              </Parameters>
+            </Drillthrough></Action></Actions></ActionInfo>
+            <Top>18.2cm</Top><Left>0.2cm</Left><Height>0.9cm</Height><Width>8.8cm</Width>
+            <Style><BackgroundColor>#2563EB</BackgroundColor><PaddingTop>5pt</PaddingTop><VerticalAlign>Middle</VerticalAlign></Style>
+          </Textbox>
+          <Textbox Name="BtnR09">
+            <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+            <Paragraphs><Paragraph><TextRuns><TextRun><Value>Ir a R09 · Desempeño regional →</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>10pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+            <ActionInfo><Actions><Action><Drillthrough>
+              <ReportName>/OLIST360/03_Operaciones/R09_DesempenoRegional</ReportName>
+              <Parameters>
+                <Parameter Name="Desde"><Value>=Parameters!Desde.Value</Value></Parameter>
+                <Parameter Name="Hasta"><Value>=Parameters!Hasta.Value</Value></Parameter>
+                <Parameter Name="EstadoCliente"><Value>=Parameters!EstadoCliente.Value</Value></Parameter>
+                <Parameter Name="Ciudad"><Value>__TODOS__</Value></Parameter>
+              </Parameters>
+            </Drillthrough></Action></Actions></ActionInfo>
+            <Top>18.2cm</Top><Left>9.4cm</Left><Height>0.9cm</Height><Width>8.8cm</Width>
+            <Style><BackgroundColor>#0D9488</BackgroundColor><PaddingTop>5pt</PaddingTop><VerticalAlign>Middle</VerticalAlign></Style>
+          </Textbox>
+          <Textbox Name="NotaMetodologica">
+            <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+            <Paragraphs><Paragraph><TextRuns><TextRun><Value>Nota: Los indicadores de detalle (FactDetallePedido) y cabecera (FactPedidos) se consultan en datasets independientes sin unir ambos hechos para evitar duplicación de pedidos. Se excluyen fechas de compra desconocidas (fecha_compra_key = -1).</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs>
+            <Top>19.35cm</Top><Left>0.2cm</Left><Height>0.85cm</Height><Width>18.0cm</Width>
+            <Style><BackgroundColor>#EAF0F7</BackgroundColor><PaddingLeft>6pt</PaddingLeft><PaddingTop>4pt</PaddingTop></Style>
+          </Textbox>
+        </ReportItems>
+        <Height>20.4cm</Height>
+        <Style><BackgroundColor>#FFFFFF</BackgroundColor></Style>
+      </Body>
+      <Width>18.4cm</Width>
+      <Page>
+        <PageHeader>
+          <Height>1.75cm</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage><PrintOnLastPage>true</PrintOnLastPage>
+          <ReportItems>
+            <Textbox Name="CabeceraTitulo">
+              <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+              <Paragraphs><Paragraph><TextRuns><TextRun><Value>OLIST 360°  |  R01 · Resumen gerencial</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>16pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs>
+              <Top>0cm</Top><Left>0cm</Left><Height>0.95cm</Height><Width>18.4cm</Width>
+              <Style><BackgroundColor>#101C32</BackgroundColor><PaddingLeft>8pt</PaddingLeft><PaddingTop>4pt</PaddingTop><VerticalAlign>Middle</VerticalAlign></Style>
+            </Textbox>
+            <Textbox Name="CabeceraFiltros">
+              <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+              <Paragraphs><Paragraph><TextRuns><TextRun><Value>="Compra: " &amp; If(IsNothing(Parameters!Desde.Value), "—", Format(Parameters!Desde.Value, "dd/MM/yyyy")) &amp; " a " &amp; If(IsNothing(Parameters!Hasta.Value), "—", Format(Parameters!Hasta.Value, "dd/MM/yyyy")) &amp; "  |  Estado cliente: " &amp; Parameters!EstadoCliente.Label</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9.5pt</FontSize><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs>
+              <Top>0.95cm</Top><Left>0cm</Left><Height>0.65cm</Height><Width>18.4cm</Width>
+              <Style><BackgroundColor>#101C32</BackgroundColor><PaddingLeft>8pt</PaddingLeft><PaddingBottom>4pt</PaddingBottom><VerticalAlign>Middle</VerticalAlign></Style>
+            </Textbox>
+          </ReportItems>
+        </PageHeader>
+        <PageFooter>
+          <Height>0.75cm</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage><PrintOnLastPage>true</PrintOnLastPage>
+          <ReportItems>
+            <Textbox Name="PieFuente">
+              <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+              <Paragraphs><Paragraph><TextRuns><TextRun><Value>Fuente: Olist · BI_OLIST.dw  |  BRL nominales</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs>
+              <Top>0.05cm</Top><Left>0cm</Left><Height>0.6cm</Height><Width>13.4cm</Width>
+              <Style><TopBorder><Style>Solid</Style><Color>#CBD5E1</Color></TopBorder><PaddingTop>3pt</PaddingTop></Style>
+            </Textbox>
+            <Textbox Name="PiePagina">
+              <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+              <Paragraphs><Paragraph><TextRuns><TextRun><Value>="Página " &amp; Globals!PageNumber &amp; " de " &amp; Globals!TotalPages</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><Color>#475569</Color></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs>
+              <Top>0.05cm</Top><Left>13.4cm</Left><Height>0.6cm</Height><Width>5.0cm</Width>
+              <Style><TopBorder><Style>Solid</Style><Color>#CBD5E1</Color></TopBorder><PaddingTop>3pt</PaddingTop></Style>
+            </Textbox>
+          </ReportItems>
+        </PageFooter>
+        <PageHeight>29.7cm</PageHeight>
+        <PageWidth>21cm</PageWidth>
+        <LeftMargin>1.2cm</LeftMargin>
+        <RightMargin>1.2cm</RightMargin>
+        <TopMargin>1.2cm</TopMargin>
+        <BottomMargin>1.2cm</BottomMargin>
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <Language>es-PE</Language>
+  <ConsumeContainerWhitespace>true</ConsumeContainerWhitespace>
+  <rd:ReportUnitType>Cm</rd:ReportUnitType>
+  <rd:ReportID>efb128f7-89e3-47d2-ad22-1cdf12d71a0c</rd:ReportID>
+</Report>
