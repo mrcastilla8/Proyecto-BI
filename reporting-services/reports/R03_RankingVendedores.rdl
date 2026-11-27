@@ -1,0 +1,776 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <Description>OLIST 360° · R03 · Ranking de vendedores</Description>
+  <Language>es-PE</Language>
+  <DataSources>
+    <DataSource Name="BI_OLIST_DW">
+      <DataSourceReference>/OLIST360/DataSources/BI_OLIST_DW</DataSourceReference>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="FechasCompra">
+      <Query>
+        <DataSourceName>BI_OLIST_DW</DataSourceName>
+        <CommandText>SELECT MIN(f.fecha) AS desde, MAX(f.fecha) AS hasta
+FROM dw.FactPedidos AS p
+INNER JOIN dw.DimFecha AS f ON f.fecha_key = p.fecha_compra_key
+WHERE f.fecha_key &lt;&gt; -1;
+</CommandText>
+        <Timeout>60</Timeout>
+      </Query>
+      <Fields>
+        <Field Name="desde">
+          <DataField>desde</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="hasta">
+          <DataField>hasta</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="Estados">
+      <Query>
+        <DataSourceName>BI_OLIST_DW</DataSourceName>
+        <CommandText>WITH estados AS (
+    SELECT '__TODOS__' AS valor, N'Todos' AS etiqueta, 0 AS orden
+    UNION ALL
+    SELECT DISTINCT CONVERT(varchar(2), seller_state), CONVERT(nvarchar(2), seller_state), 1
+    FROM dw.DimGeografiaVendedor
+    WHERE seller_state IS NOT NULL
+    UNION ALL
+    SELECT '__DESCONOCIDO__', N'Desconocido', 2
+    WHERE EXISTS (SELECT 1 FROM dw.DimGeografiaVendedor WHERE seller_state IS NULL)
+)
+SELECT valor, etiqueta
+FROM estados
+ORDER BY orden, etiqueta;
+</CommandText>
+        <Timeout>60</Timeout>
+      </Query>
+      <Fields>
+        <Field Name="valor">
+          <DataField>valor</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="etiqueta">
+          <DataField>etiqueta</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="Resultados">
+      <Query>
+        <DataSourceName>BI_OLIST_DW</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@Desde">
+            <Value>=Parameters!Desde.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Hasta">
+            <Value>=Parameters!Hasta.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@EstadoVendedor">
+            <Value>=Parameters!EstadoVendedor.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@TopN">
+            <Value>=Parameters!TopN.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>SELECT TOP (CASE WHEN @TopN IN (10,20,50) THEN @TopN ELSE 0 END) v.seller_id, v.vendedor_key, SUM(d.price) AS ventas, COUNT_BIG(DISTINCT d.order_id) AS entregados, CONVERT(float,SUM(d.price))/NULLIF(COUNT_BIG(DISTINCT d.order_id),0) AS ticket, SUM(d.freight_value) AS flete
+FROM dw.FactDetallePedido d JOIN dw.DimFecha f ON f.fecha_key=d.fecha_compra_key JOIN dw.DimVendedor v ON v.vendedor_key=d.vendedor_key
+JOIN dw.DimGeografiaVendedor g ON g.geografia_vendedor_key=d.geografia_vendedor_key
+WHERE d.order_status='delivered' AND d.fecha_compra_key &lt;&gt; -1 AND f.fecha &gt;= CAST(@Desde AS date) AND f.fecha &lt;= CAST(@Hasta AS date) AND CAST(@Desde AS date) &lt;= CAST(@Hasta AS date) AND (@EstadoVendedor = '__TODOS__' OR (@EstadoVendedor = '__DESCONOCIDO__' AND g.seller_state IS NULL) OR g.seller_state = @EstadoVendedor)
+GROUP BY v.seller_id,v.vendedor_key
+ORDER BY ventas DESC,v.seller_id,v.vendedor_key;
+</CommandText>
+        <Timeout>60</Timeout>
+      </Query>
+      <Fields>
+        <Field Name="seller_id">
+          <DataField>seller_id</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="vendedor_key">
+          <DataField>vendedor_key</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="ventas">
+          <DataField>ventas</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
+        <Field Name="entregados">
+          <DataField>entregados</DataField>
+          <rd:TypeName>System.Int64</rd:TypeName>
+        </Field>
+        <Field Name="ticket">
+          <DataField>ticket</DataField>
+          <rd:TypeName>System.Double</rd:TypeName>
+        </Field>
+        <Field Name="flete">
+          <DataField>flete</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportParameters>
+    <ReportParameter Name="Desde">
+      <DataType>DateTime</DataType>
+      <Nullable>true</Nullable>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>FechasCompra</DataSetName>
+          <ValueField>desde</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>Compra desde</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="Hasta">
+      <DataType>DateTime</DataType>
+      <Nullable>true</Nullable>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>FechasCompra</DataSetName>
+          <ValueField>hasta</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>Compra hasta</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="EstadoVendedor">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>__TODOS__</Value>
+        </Values>
+      </DefaultValue>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>Estados</DataSetName>
+          <ValueField>valor</ValueField>
+          <LabelField>etiqueta</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <Prompt>Estado del vendedor</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="TopN">
+      <DataType>Integer</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>10</Value>
+        </Values>
+      </DefaultValue>
+      <ValidValues>
+        <ParameterValues>
+          <ParameterValue>
+            <Value>10</Value>
+            <Label>10</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>20</Value>
+            <Label>20</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>50</Value>
+            <Label>50</Label>
+          </ParameterValue>
+        </ParameterValues>
+      </ValidValues>
+      <Prompt>Máximo de vendedores</Prompt>
+    </ReportParameter>
+  </ReportParameters>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Textbox Name="Resumen">
+            <CanGrow>true</CanGrow>
+            <KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>="Hasta " &amp; Parameters!TopN.Value &amp; " vendedores ordenados por ventas de ítems entregados · BRL nominales"</Value>
+                    <Style>
+                      <FontFamily>Segoe UI</FontFamily>
+                      <FontSize>12pt</FontSize>
+                      <Color>#14233B</Color>
+                      <FontWeight>Bold</FontWeight>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+                <Style>
+                  <TextAlign>Left</TextAlign>
+                </Style>
+              </Paragraph>
+            </Paragraphs>
+            <Top>0mm</Top>
+            <Left>0mm</Left>
+            <Width>270mm</Width>
+            <Height>10mm</Height>
+            <Style>
+              <PaddingLeft>2mm</PaddingLeft>
+              <PaddingRight>2mm</PaddingRight>
+              <PaddingTop>1.4mm</PaddingTop>
+              <PaddingBottom>1.4mm</PaddingBottom>
+              <VerticalAlign>Middle</VerticalAlign>
+              <BackgroundColor>#EAF0F7</BackgroundColor>
+            </Style>
+          </Textbox>
+          <Tablix Name="TablaR03">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>82mm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>47mm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>47mm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>47mm</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>47mm</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>9mm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Columna_seller_id">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Vendedor</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>2mm</PaddingLeft>
+                            <PaddingRight>2mm</PaddingRight>
+                            <PaddingTop>1.4mm</PaddingTop>
+                            <PaddingBottom>1.4mm</PaddingBottom>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Columna_ventas">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Ventas</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>2mm</PaddingLeft>
+                            <PaddingRight>2mm</PaddingRight>
+                            <PaddingTop>1.4mm</PaddingTop>
+                            <PaddingBottom>1.4mm</PaddingBottom>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Columna_entregados">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Pedidos con ítems entregados</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>2mm</PaddingLeft>
+                            <PaddingRight>2mm</PaddingRight>
+                            <PaddingTop>1.4mm</PaddingTop>
+                            <PaddingBottom>1.4mm</PaddingBottom>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Columna_ticket">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Ticket</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>2mm</PaddingLeft>
+                            <PaddingRight>2mm</PaddingRight>
+                            <PaddingTop>1.4mm</PaddingTop>
+                            <PaddingBottom>1.4mm</PaddingBottom>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Columna_flete">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Flete</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <Color>#FFFFFF</Color>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>2mm</PaddingLeft>
+                            <PaddingRight>2mm</PaddingRight>
+                            <PaddingTop>1.4mm</PaddingTop>
+                            <PaddingBottom>1.4mm</PaddingBottom>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <BackgroundColor>#101C32</BackgroundColor>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>9mm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Dato_seller_id">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=IIf(IsNothing(Fields!seller_id.Value), "Vendedor desconocido", Fields!seller_id.Value)</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <Color>#14233B</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Left</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>2mm</PaddingLeft>
+                            <PaddingRight>2mm</PaddingRight>
+                            <PaddingTop>1.4mm</PaddingTop>
+                            <PaddingBottom>1.4mm</PaddingBottom>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <BottomBorder>
+                              <Color>#CBD5E1</Color>
+                              <Style>Solid</Style>
+                              <Width>0.4pt</Width>
+                            </BottomBorder>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Dato_ventas">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!ventas.Value</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <Format>'R$ '#,0.00</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>2mm</PaddingLeft>
+                            <PaddingRight>2mm</PaddingRight>
+                            <PaddingTop>1.4mm</PaddingTop>
+                            <PaddingBottom>1.4mm</PaddingBottom>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <BottomBorder>
+                              <Color>#CBD5E1</Color>
+                              <Style>Solid</Style>
+                              <Width>0.4pt</Width>
+                            </BottomBorder>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Dato_entregados">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!entregados.Value</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <Format>#,0</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>2mm</PaddingLeft>
+                            <PaddingRight>2mm</PaddingRight>
+                            <PaddingTop>1.4mm</PaddingTop>
+                            <PaddingBottom>1.4mm</PaddingBottom>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <BottomBorder>
+                              <Color>#CBD5E1</Color>
+                              <Style>Solid</Style>
+                              <Width>0.4pt</Width>
+                            </BottomBorder>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Dato_ticket">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!ticket.Value</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <Format>'R$ '#,0.00</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>2mm</PaddingLeft>
+                            <PaddingRight>2mm</PaddingRight>
+                            <PaddingTop>1.4mm</PaddingTop>
+                            <PaddingBottom>1.4mm</PaddingBottom>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <BottomBorder>
+                              <Color>#CBD5E1</Color>
+                              <Style>Solid</Style>
+                              <Width>0.4pt</Width>
+                            </BottomBorder>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Dato_flete">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!flete.Value</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>10pt</FontSize>
+                                    <Color>#14233B</Color>
+                                    <Format>'R$ '#,0.00</Format>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <PaddingLeft>2mm</PaddingLeft>
+                            <PaddingRight>2mm</PaddingRight>
+                            <PaddingTop>1.4mm</PaddingTop>
+                            <PaddingBottom>1.4mm</PaddingBottom>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
+                            <BottomBorder>
+                              <Color>#CBD5E1</Color>
+                              <Style>Solid</Style>
+                              <Width>0.4pt</Width>
+                            </BottomBorder>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                  <RepeatOnNewPage>true</RepeatOnNewPage>
+                  <FixedData>true</FixedData>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="DetalleR03" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <DataSetName>Resultados</DataSetName>
+            <NoRowsMessage>=IIf((IsNothing(Parameters!Desde.Value) OrElse IsNothing(Parameters!Hasta.Value) OrElse CDate(Parameters!Desde.Value).Date &gt; CDate(Parameters!Hasta.Value).Date) OrElse (Parameters!TopN.Value &lt;&gt; 10 AndAlso Parameters!TopN.Value &lt;&gt; 20 AndAlso Parameters!TopN.Value &lt;&gt; 50), "Revisa las fechas y los filtros antes de ejecutar.", "Sin vendedores para el período y estado seleccionados.")</NoRowsMessage>
+            <Top>11mm</Top>
+            <Left>0mm</Left>
+            <Width>270mm</Width>
+            <Height>18mm</Height>
+            <Style>
+              <FontFamily>Segoe UI</FontFamily>
+              <FontSize>10pt</FontSize>
+              <Color>#14233B</Color>
+            </Style>
+          </Tablix>
+        </ReportItems>
+        <Height>30mm</Height>
+      </Body>
+      <Width>270mm</Width>
+      <Page>
+        <PageHeader>
+          <Height>26mm</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage>
+          <PrintOnLastPage>true</PrintOnLastPage>
+          <ReportItems>
+            <Textbox Name="Titulo">
+              <CanGrow>true</CanGrow>
+              <KeepTogether>true</KeepTogether>
+              <Paragraphs>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>Ranking de vendedores · R03</Value>
+                      <Style>
+                        <FontFamily>Segoe UI</FontFamily>
+                        <FontSize>19pt</FontSize>
+                        <Color>#FFFFFF</Color>
+                        <FontWeight>Bold</FontWeight>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style>
+                    <TextAlign>Left</TextAlign>
+                  </Style>
+                </Paragraph>
+              </Paragraphs>
+              <Top>0mm</Top>
+              <Left>0mm</Left>
+              <Width>270mm</Width>
+              <Height>13mm</Height>
+              <Style>
+                <PaddingLeft>2mm</PaddingLeft>
+                <PaddingRight>2mm</PaddingRight>
+                <PaddingTop>1.4mm</PaddingTop>
+                <PaddingBottom>1.4mm</PaddingBottom>
+                <VerticalAlign>Middle</VerticalAlign>
+                <BackgroundColor>#101C32</BackgroundColor>
+              </Style>
+            </Textbox>
+            <Textbox Name="Filtros">
+              <CanGrow>true</CanGrow>
+              <KeepTogether>true</KeepTogether>
+              <Paragraphs>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>=IIf(IsNothing(Parameters!Desde.Value) OrElse IsNothing(Parameters!Hasta.Value), "Período de compra pendiente", "Compra del " &amp; Format(Parameters!Desde.Value, "dd/MM/yyyy") &amp; " al " &amp; Format(Parameters!Hasta.Value, "dd/MM/yyyy")) &amp; " · Estado del vendedor " &amp; Parameters!EstadoVendedor.Label &amp; " · Top " &amp; Parameters!TopN.Value</Value>
+                      <Style>
+                        <FontFamily>Segoe UI</FontFamily>
+                        <FontSize>10pt</FontSize>
+                        <Color>#FFFFFF</Color>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style>
+                    <TextAlign>Left</TextAlign>
+                  </Style>
+                </Paragraph>
+              </Paragraphs>
+              <Top>13mm</Top>
+              <Left>0mm</Left>
+              <Width>270mm</Width>
+              <Height>10mm</Height>
+              <Style>
+                <PaddingLeft>2mm</PaddingLeft>
+                <PaddingRight>2mm</PaddingRight>
+                <PaddingTop>1.4mm</PaddingTop>
+                <PaddingBottom>1.4mm</PaddingBottom>
+                <VerticalAlign>Middle</VerticalAlign>
+                <BackgroundColor>#101C32</BackgroundColor>
+              </Style>
+            </Textbox>
+          </ReportItems>
+        </PageHeader>
+        <PageFooter>
+          <Height>9mm</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage>
+          <PrintOnLastPage>true</PrintOnLastPage>
+          <ReportItems>
+            <Textbox Name="PiePagina">
+              <CanGrow>true</CanGrow>
+              <KeepTogether>true</KeepTogether>
+              <Paragraphs>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>="OLIST 360° · Fuente: Olist · Página " &amp; Globals!PageNumber &amp; " de " &amp; Globals!TotalPages</Value>
+                      <Style>
+                        <FontFamily>Segoe UI</FontFamily>
+                        <FontSize>9pt</FontSize>
+                        <Color>#475569</Color>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                  <Style>
+                    <TextAlign>Left</TextAlign>
+                  </Style>
+                </Paragraph>
+              </Paragraphs>
+              <Top>0mm</Top>
+              <Left>0mm</Left>
+              <Width>270mm</Width>
+              <Height>8mm</Height>
+              <Style>
+                <PaddingLeft>2mm</PaddingLeft>
+                <PaddingRight>2mm</PaddingRight>
+                <PaddingTop>1.4mm</PaddingTop>
+                <PaddingBottom>1.4mm</PaddingBottom>
+                <VerticalAlign>Middle</VerticalAlign>
+              </Style>
+            </Textbox>
+          </ReportItems>
+        </PageFooter>
+        <PageHeight>210mm</PageHeight>
+        <PageWidth>297mm</PageWidth>
+        <LeftMargin>12mm</LeftMargin>
+        <RightMargin>12mm</RightMargin>
+        <TopMargin>12mm</TopMargin>
+        <BottomMargin>12mm</BottomMargin>
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <ConsumeContainerWhitespace>true</ConsumeContainerWhitespace>
+</Report>
