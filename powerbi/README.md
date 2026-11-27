@@ -44,4 +44,6 @@ La ampliación del Nivel 2 ([03_ESPECIFICACION_POWER_BI.md](../docs/nivel-2/03_E
 - **Restricciones DAX:** conexión **Live** obligatoria a `BI_OLIST_Tabular` conservando exclusivamente las **8 medidas DAX originales** del contrato v1. Queda prohibido agregar medidas DAX (incluso locales), visual calculations, columnas calculadas, tablas locales, modelos compuestos o modo Import.
 - **Integración prevista con SSRS:** enlaces URL fijos desde `P01`–`P08` hacia el portal `/OLIST360` de SSRS 2022 (`R01`–`R10`), con selección explícita de parámetros dentro del propio portal SSRS (sin transferencia automática de filtros desde Power BI).
 
-Esta planificación **no está implementada ni certificada** todavía; `powerbi/BI_OLIST.pbix` conserva intacta su línea base de Nivel 1 hasta la ejecución de las puertas `G1`–`G3`.
+**Estado (27/11/2026):** `powerbi/BI_OLIST.pbix` es el PBIX maestro del Nivel 2. Contiene las 15 páginas integradas con conexión Live y reemplaza la línea base de cuatro páginas del Nivel 1, que se conserva en el historial de Git y en las evidencias de esta carpeta.
+- **Integración y evidencias:** se registran en [A07](evidencias/nivel-2/A07.md).
+- **Pendiente para la certificación G4:** la prueba de los accesos a SSRS (`INT-01`) en el equipo de demostración.
