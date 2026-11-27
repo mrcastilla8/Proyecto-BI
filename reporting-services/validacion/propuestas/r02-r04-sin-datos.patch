@@ -1,0 +1,28 @@
+diff --git a/reporting-services/datasets/R02_ConsolidadoMensual.sql b/reporting-services/datasets/R02_ConsolidadoMensual.sql
+--- a/reporting-services/datasets/R02_ConsolidadoMensual.sql
++++ b/reporting-services/datasets/R02_ConsolidadoMensual.sql
+@@ -39,2 +39,3 @@
+ GROUP BY GROUPING SETS ((f.anio, f.mes), (f.anio), ())
++HAVING COUNT_BIG(*) > 0
+ ORDER BY nivel DESC, f.anio, f.mes;
+diff --git a/reporting-services/reports/R02_ConsolidadoMensual.rdl b/reporting-services/reports/R02_ConsolidadoMensual.rdl
+--- a/reporting-services/reports/R02_ConsolidadoMensual.rdl
++++ b/reporting-services/reports/R02_ConsolidadoMensual.rdl
+@@ -72,2 +72,3 @@
+ GROUP BY GROUPING SETS ((f.anio, f.mes), (f.anio), ())
++HAVING COUNT_BIG(*) > 0
+ ORDER BY nivel DESC, f.anio, f.mes;
+diff --git a/reporting-services/datasets/R04_RendimientoCategorias.sql b/reporting-services/datasets/R04_RendimientoCategorias.sql
+--- a/reporting-services/datasets/R04_RendimientoCategorias.sql
++++ b/reporting-services/datasets/R04_RendimientoCategorias.sql
+@@ -21,2 +21,3 @@
+ GROUP BY GROUPING SETS ((c.product_category_name_english, c.product_id), (c.product_category_name_english), ())
++HAVING COUNT_BIG(*) > 0
+ ORDER BY nivel DESC, categoria, c.product_id;
+diff --git a/reporting-services/reports/R04_RendimientoCategorias.rdl b/reporting-services/reports/R04_RendimientoCategorias.rdl
+--- a/reporting-services/reports/R04_RendimientoCategorias.rdl
++++ b/reporting-services/reports/R04_RendimientoCategorias.rdl
+@@ -40,2 +40,3 @@
+ GROUP BY GROUPING SETS ((c.product_category_name_english, c.product_id), (c.product_category_name_english), ())
++HAVING COUNT_BIG(*) > 0
+ ORDER BY nivel DESC, categoria, c.product_id;
