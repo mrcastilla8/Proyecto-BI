@@ -49,12 +49,12 @@
 - **Datasets versionados:** `R10_FechasEjecucion.sql`, `R10_Fuentes.sql`, `R10_EstadosLote.sql`, `R10_AuditoriaETL.sql`, `R10_ResumenAuditoria.sql`. Todos coinciden byte a byte con el `CommandText` del RDL.
 - **Pruebas SQL reales en `.\SQLEXPRESS` (`BI_OLIST`):**
   - Lotes `COMPLETE` auténticos: `10` lotes (`batch_id` `60`–`68` de `Ingesta` y `69` de `DW.Transformacion`), `1.550.922` filas aceptadas, `0` rechazadas, `0` registros en `audit.Reject`, todos con estado `CONCILIADO`.
-  - Resumen por fuente y estado: `10` filas, distinguiendo `Ingesta` vs `Transformacion` y orden de recencia (`Último` vs `Reintento`) sin sumar reintentos históricos como carga vigente.
+  - Resumen por fuente y estado: `10` filas, distinguiendo `Ingesta` vs `Transformacion` y orden de recencia (`Más reciente en el rango` / `Registro anterior`, sin etiquetar lotes históricos como reintentos ni sumarlos como carga vigente).
   - Privacidad: Sin proyección de `source_file`, `error_message`, `execution_context` ni filas individuales de `audit.Reject`.
   - Intervalo sin resultados (`2025-01-01`..`2025-01-02`): `0` filas.
   - Rango inválido (`2026-12-31`..`2026-01-01`): `0` filas.
 - **Publicación y exportaciones reales en SSRS 2022 local (`ExecutionLog3` = `rsSuccess`):**
-  - `R10_AuditoriaETL.pdf` (`200.300` bytes, `%PDF`, SHA-256 `B705B86262874CD54E2E6C10DDF48DF38B476E3BE1D053A5D93BB3C751F714F0`)
-  - `R10_AuditoriaETL.xlsx` (`10.031` bytes, `PK`, SHA-256 `B406C7FFA570553845DC9CF33FDE3683064B8D3B659C5A4DE4918A16843013F4`, `60` celdas verificadas con lotes `60`–`69`)
+  - `R10_AuditoriaETL.pdf` (`200.311` bytes, `%PDF`, SHA-256 `2AE3899C982D7566101914DAE6BE79D3406D67CBB92431B49763C3A67EABE008`)
+  - `R10_AuditoriaETL.xlsx` (`10.321` bytes, `PK`, SHA-256 `CEFEDC89340929D66D7AF9CF23396FAFCD4548F472349EBD75A5990DA0E951B5`, `160` textos verificados con lotes `60`–`69` y `Más reciente en el rango`)
   - `R10_Vacio_2025.pdf` (`180.381` bytes, `%PDF`, SHA-256 `B2DBF264D93D898E48EAE65446974704F07497120E4265C08E78E1506CF1455A`)
   - Prueba de lote `FAILED` en fixture aislada queda pendiente si se requiere evidencia visual adicional sobre LocalDB aislada.

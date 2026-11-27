@@ -26,7 +26,11 @@ SELECT b.batch_id,
            WHEN b.source_name = 'DW.Transformacion' THEN 'Transformacion'
            ELSE 'Ingesta'
        END AS tipo_proceso,
-       ROW_NUMBER() OVER (PARTITION BY b.source_name ORDER BY b.started_at DESC, b.batch_id DESC) AS orden_recencia
+       CASE
+           WHEN ROW_NUMBER() OVER (PARTITION BY b.source_name ORDER BY b.started_at DESC, b.batch_id DESC) = 1
+               THEN N'Más reciente en el rango'
+           ELSE N'Registro anterior'
+       END AS recencia
 FROM audit.Batch AS b
 LEFT JOIN rechazos AS r ON r.batch_id = b.batch_id
 WHERE CAST(b.started_at AS date) BETWEEN CAST(@DesdeEjecucion AS date) AND CAST(@HastaEjecucion AS date)

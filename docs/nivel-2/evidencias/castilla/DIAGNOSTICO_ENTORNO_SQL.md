@@ -40,7 +40,7 @@ Al inicio de la sesión, `BI_OLIST` existía `ONLINE` en `.\SQLEXPRESS` únicame
    - `dw.FactDetallePedido`: `112.650` filas, precio `13.591.643,7000`, flete `2.251.909,5400`.
 4. **Despliegue y validación SSAS Tabular:** Se otorgó `db_datareader` a la cuenta de servicio local de `SSASBI` en `BI_OLIST` y se ejecutaron `ssas/validacion/Publicar-Modelo.ps1` y `ssas/validacion/Comparar-Metricas.ps1` contra `.\SSASBI`, logrando `PASS` en los 7 escenarios (`38` valores no vacíos y coincidencia de vacíos).
 
-## 4. Bloqueos objetivos restantes
+## 4. Estado actual de entorno y bloqueos objetivos restantes
 
-- **Power BI Desktop (sesión gráfica interactiva):** Al lanzar `PBIDesktop.exe` (`2.159.1231.0`) desde consola automatizada no mantuvo ventana interactiva activa; la apertura visual manual y captura de `P01`/`P08` quedan pendientes del usuario.
-- **Publicación y enlaces en entorno demo final:** SSRS 2022 y Report Builder ya están operativos y probados localmente en este equipo (incluyendo las 8 exportaciones PDF/XLSX de `R01` y `R10`); en `OLIST360_Castilla.pbip` se conservan los placeholders `{{SSRS_WEB_SERVICE_URL}}` y `{{SSRS_WEB_PORTAL_URL}}` para no fijar el nombre del equipo local en Git.
+- **Power BI Desktop (`2.159.1231.0`):** `P01` y `P08` fueron abiertos y verificados en vivo (`Conexión dinámica: conectada` a `BI_OLIST_Tabular` en `.\SSASBI`), guardando `powerbi/entregas/castilla/OLIST360_Castilla.pbix` y las capturas auténticas en `docs/nivel-2/evidencias/castilla/capturas/`.
+- **Publicación y enlaces en entorno demo final:** SSRS 2022 y Report Builder ya están operativos y probados localmente en este equipo (incluyendo las exportaciones PDF/XLSX de `R01` y `R10`); en `OLIST360_Castilla.pbip` se conservan los placeholders `{{SSRS_WEB_SERVICE_URL}}` y `{{SSRS_WEB_PORTAL_URL}}` para no fijar el nombre del equipo local en Git, quedando pendiente su sustitución por la URL real del entorno de demostración.

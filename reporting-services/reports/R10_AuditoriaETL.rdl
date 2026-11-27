@@ -108,7 +108,11 @@ SELECT b.batch_id,
            WHEN b.source_name = 'DW.Transformacion' THEN 'Transformacion'
            ELSE 'Ingesta'
        END AS tipo_proceso,
-       ROW_NUMBER() OVER (PARTITION BY b.source_name ORDER BY b.started_at DESC, b.batch_id DESC) AS orden_recencia
+       CASE
+           WHEN ROW_NUMBER() OVER (PARTITION BY b.source_name ORDER BY b.started_at DESC, b.batch_id DESC) = 1
+               THEN N'Más reciente en el rango'
+           ELSE N'Registro anterior'
+       END AS recencia
 FROM audit.Batch AS b
 LEFT JOIN rechazos AS r ON r.batch_id = b.batch_id
 WHERE CAST(b.started_at AS date) BETWEEN CAST(@DesdeEjecucion AS date) AND CAST(@HastaEjecucion AS date)
@@ -139,7 +143,7 @@ ORDER BY b.started_at DESC, b.batch_id DESC;]]></CommandText>
         <Field Name="rechazos_registrados"><DataField>rechazos_registrados</DataField></Field>
         <Field Name="control"><DataField>control</DataField></Field>
         <Field Name="tipo_proceso"><DataField>tipo_proceso</DataField></Field>
-        <Field Name="orden_recencia"><DataField>orden_recencia</DataField></Field>
+        <Field Name="recencia"><DataField>recencia</DataField></Field>
       </Fields>
     </DataSet>
     <DataSet Name="R10_ResumenAuditoria">
@@ -329,17 +333,17 @@ ORDER BY tipo_proceso, b.source_name, b.status;]]></CommandText>
               <TablixColumns>
                 <TablixColumn><Width>1.2cm</Width></TablixColumn>
                 <TablixColumn><Width>2.1cm</Width></TablixColumn>
-                <TablixColumn><Width>3.6cm</Width></TablixColumn>
+                <TablixColumn><Width>3.2cm</Width></TablixColumn>
                 <TablixColumn><Width>1.3cm</Width></TablixColumn>
                 <TablixColumn><Width>2.0cm</Width></TablixColumn>
-                <TablixColumn><Width>2.9cm</Width></TablixColumn>
-                <TablixColumn><Width>2.9cm</Width></TablixColumn>
+                <TablixColumn><Width>2.6cm</Width></TablixColumn>
+                <TablixColumn><Width>2.6cm</Width></TablixColumn>
                 <TablixColumn><Width>1.9cm</Width></TablixColumn>
                 <TablixColumn><Width>1.9cm</Width></TablixColumn>
                 <TablixColumn><Width>1.7cm</Width></TablixColumn>
                 <TablixColumn><Width>1.7cm</Width></TablixColumn>
                 <TablixColumn><Width>1.7cm</Width></TablixColumn>
-                <TablixColumn><Width>1.5cm</Width></TablixColumn>
+                <TablixColumn><Width>2.5cm</Width></TablixColumn>
               </TablixColumns>
               <TablixRows>
                 <TablixRow>
@@ -357,7 +361,7 @@ ORDER BY tipo_proceso, b.source_name, b.status;]]></CommandText>
                     <TablixCell><CellContents><Textbox Name="DetH9"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Rechaz.</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingRight>4pt</PaddingRight><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
                     <TablixCell><CellContents><Textbox Name="DetH10"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Reg.Rej.</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingRight>4pt</PaddingRight><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
                     <TablixCell><CellContents><Textbox Name="DetH11"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Control</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
-                    <TablixCell><CellContents><Textbox Name="DetH12"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Intento</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetH12"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Recencia</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
                   </TablixCells>
                 </TablixRow>
                 <TablixRow>
@@ -375,7 +379,7 @@ ORDER BY tipo_proceso, b.source_name, b.status;]]></CommandText>
                     <TablixCell><CellContents><Textbox Name="DetD9"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!rows_rejected.Value</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#14233B</Color><Format>N0</Format></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#F8FAFC", "#FFFFFF")</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingRight>4pt</PaddingRight><PaddingTop>2.5pt</PaddingTop><PaddingBottom>2.5pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
                     <TablixCell><CellContents><Textbox Name="DetD10"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!rechazos_registrados.Value</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#14233B</Color><Format>N0</Format></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#F8FAFC", "#FFFFFF")</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingRight>4pt</PaddingRight><PaddingTop>2.5pt</PaddingTop><PaddingBottom>2.5pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
                     <TablixCell><CellContents><Textbox Name="DetD11"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!control.Value</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#14233B</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#F8FAFC", "#FFFFFF")</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>2.5pt</PaddingTop><PaddingBottom>2.5pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
-                    <TablixCell><CellContents><Textbox Name="DetD12"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=IIf(Fields!orden_recencia.Value = 1, "Último", "Reintento")</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#14233B</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#F8FAFC", "#FFFFFF")</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>2.5pt</PaddingTop><PaddingBottom>2.5pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetD12"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!recencia.Value</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#14233B</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#F8FAFC", "#FFFFFF")</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>2.5pt</PaddingTop><PaddingBottom>2.5pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
                   </TablixCells>
                 </TablixRow>
               </TablixRows>
