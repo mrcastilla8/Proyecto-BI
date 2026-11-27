@@ -1,0 +1,140 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "6dc6bc70db1fd36b5fcf",
+  "position": {
+    "x": 280,
+    "y": 606,
+    "z": 2002,
+    "height": 394,
+    "width": 800,
+    "tabOrder": 2002
+  },
+  "visual": {
+    "visualType": "clusteredColumnChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "HierarchyLevel": {
+                  "Expression": {
+                    "Hierarchy": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "DimFecha"
+                        }
+                      },
+                      "Hierarchy": "Calendario"
+                    }
+                  },
+                  "Level": "Año"
+                }
+              },
+              "queryRef": "DimFecha.Calendario.Año",
+              "nativeQueryRef": "Calendario Año",
+              "active": true
+            },
+            {
+              "field": {
+                "HierarchyLevel": {
+                  "Expression": {
+                    "Hierarchy": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "DimFecha"
+                        }
+                      },
+                      "Hierarchy": "Calendario"
+                    }
+                  },
+                  "Level": "Mes"
+                }
+              },
+              "queryRef": "DimFecha.Calendario.Mes",
+              "nativeQueryRef": "Calendario Mes",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FactDetallePedido"
+                    }
+                  },
+                  "Property": "pedidos_entregados_con_items"
+                }
+              },
+              "queryRef": "FactDetallePedido.pedidos_entregados_con_items",
+              "nativeQueryRef": "pedidos_entregados_con_items",
+              "displayName": "Pedidos entregados con ítems"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FactDetallePedido"
+                    }
+                  },
+                  "Property": "flete_pedidos_entregados"
+                }
+              },
+              "queryRef": "FactDetallePedido.flete_pedidos_entregados",
+              "nativeQueryRef": "flete_pedidos_entregados",
+              "displayName": "Flete de pedidos entregados"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Pedidos entregados y flete del producto por mes de compra'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "subTitle": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Medida: pedidos_entregados_con_items, flete_pedidos_entregados'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}
