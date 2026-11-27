@@ -12,7 +12,7 @@
   - **Visuales analíticos:** `P01-09` línea mensual de ventas (tooltip `T01`), `P01-10` Top 5 categorías por ventas (tooltip `T02`, con interacción `NoFilter` hacia los 8 KPI y `P01-11`), `P01-11` columnas agrupadas `pedidos_totales` vs. `pedidos_entregados_con_items` (aclarando poblaciones distintas), y `P01-12` panel de accesos a `R01`, `R02` y `P08`.
   - **Inmutabilidad semántica:** Conexión Live a `BI_OLIST_Tabular`; cero medidas DAX locales, cero columnas calculadas, cero tablas locales.
 - **Validación DAX contra `.\SSASBI`:** Todos los valores de las 8 medidas en `BI_OLIST_Tabular` coinciden exactamente con SQL Server en histórico, 2017, SP, 2017+SP y vacío (`BLANK`).
-- **Apertura gráfica en Power BI Desktop (`2.159.1231.0`):** Se lanzó `PBIDesktop.exe` con una copia local apuntando a `.\SSASBI`, pero el proceso no mantuvo ventana activa en la sesión automatizada sin interfaz interactiva de escritorio; la verificación visual interactiva en Power BI Desktop (incluyendo capturas y generación del `.pbix` individual) queda registrada como `BLOCKED` / pendiente de apertura manual por el usuario.
+- **Apertura gráfica en Power BI Desktop (`2.159.1231.0`):** Verificado en vivo con `Conexión dinámica: conectada` a `BI_OLIST_Tabular` (`.\SSASBI`). Se guardó el entregable individual `powerbi/entregas/castilla/OLIST360_Castilla.pbix` (`76.130` bytes) y se archivaron capturas auténticas de `P01` (`P01_ResumenEjecutivo.jpg`, `P01_Desktop_Live.jpg`) y `P08` (`P08_CentroInformes.jpg`, `P08_Desktop_Live.jpg`) en `docs/nivel-2/evidencias/castilla/capturas/`.
 
 ## 2. C04 — P08 Centro de informes (`powerbi/entregas/castilla/OLIST360_Castilla.pbip`)
 

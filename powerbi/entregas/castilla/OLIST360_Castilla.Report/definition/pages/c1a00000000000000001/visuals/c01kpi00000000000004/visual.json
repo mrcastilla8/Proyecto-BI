@@ -3,9 +3,9 @@
   "name": "c01kpi00000000000004",
   "position": {
     "x": 1504,
-    "y": 112,
+    "y": 100,
     "z": 1283,
-    "height": 64,
+    "height": 90,
     "width": 392,
     "tabOrder": 1283
   },
@@ -40,7 +40,7 @@
             "fontSize": {
               "expr": {
                 "Literal": {
-                  "Value": "22D"
+                  "Value": "20D"
                 }
               }
             },
@@ -89,6 +89,13 @@
                   "Value": "'Ticket promedio (R$)'"
                 }
               }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "10D"
+                }
+              }
             }
           }
         }
@@ -99,7 +106,7 @@
             "show": {
               "expr": {
                 "Literal": {
-                  "Value": "true"
+                  "Value": "false"
                 }
               }
             },

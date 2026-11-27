@@ -3,9 +3,9 @@
   "name": "c01kpi00000000000007",
   "position": {
     "x": 1096,
-    "y": 184,
+    "y": 198,
     "z": 1286,
-    "height": 64,
+    "height": 90,
     "width": 392,
     "tabOrder": 1286
   },
@@ -40,7 +40,7 @@
             "fontSize": {
               "expr": {
                 "Literal": {
-                  "Value": "22D"
+                  "Value": "20D"
                 }
               }
             },
@@ -89,6 +89,13 @@
                   "Value": "'Días promedio entrega'"
                 }
               }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "10D"
+                }
+              }
             }
           }
         }
@@ -99,7 +106,7 @@
             "show": {
               "expr": {
                 "Literal": {
-                  "Value": "true"
+                  "Value": "false"
                 }
               }
             },

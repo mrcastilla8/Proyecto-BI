@@ -3,9 +3,9 @@
   "name": "c01kpi00000000000008",
   "position": {
     "x": 1504,
-    "y": 184,
+    "y": 198,
     "z": 1287,
-    "height": 64,
+    "height": 90,
     "width": 392,
     "tabOrder": 1287
   },
@@ -40,7 +40,7 @@
             "fontSize": {
               "expr": {
                 "Literal": {
-                  "Value": "22D"
+                  "Value": "20D"
                 }
               }
             },
@@ -89,6 +89,13 @@
                   "Value": "'Calificación promedio (1-5)'"
                 }
               }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "10D"
+                }
+              }
             }
           }
         }
@@ -99,7 +106,7 @@
             "show": {
               "expr": {
                 "Literal": {
-                  "Value": "true"
+                  "Value": "false"
                 }
               }
             },
