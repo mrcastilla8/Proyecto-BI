@@ -1,0 +1,38 @@
+id,pagina,tipo,posicion,campos,interacciones,tooltip,prueba
+P02-01,P02,card,x280 y112 w392 h132,ventas_productos_entregados,Fecha de compra y estado del cliente (sincronizados),,Sin filtros = total del cotejo SQL/DAX
+P02-02,P02,card,x688 y112 w392 h132,pedidos_entregados_con_items,Fecha de compra y estado del cliente (sincronizados),,Sin filtros = total del cotejo SQL/DAX
+P02-03,P02,card,x1096 y112 w392 h132,ticket_promedio_productos_entregados,Fecha de compra y estado del cliente (sincronizados),,Sin filtros = total del cotejo SQL/DAX
+P02-04,P02,card,x1504 y112 w392 h132,flete_pedidos_entregados,Fecha de compra y estado del cliente (sincronizados),,Sin filtros = total del cotejo SQL/DAX
+P02-05,P02,lineChart,x280 y260 w1068 h330,"Calendario (Año, Trimestre, Mes); V",Drill-down por jerarquía,T01,Orden cronológico en cada nivel
+P02-06,P02,lineChart,x1364 y260 w532 h330,"Calendario (Año, Mes); T",,T01,"Meses parciales 2016 y sep–oct 2018 visibles, no eliminados"
+P02-07,P02,pivotTable,x280 y606 w800 h394,DimFecha[anio] x DimFecha[nombre_mes] (ordenado por mes); V,,,Meses en orden enero–diciembre
+P02-08,P02,clusteredColumnChart,x1096 y606 w392 h394,"DimFecha[dia_semana] (ISO, validado en DW); E",,,1–7 en orden; sin sumar conteos distintos
+P02-09,P02,clusteredColumnChart,x1504 y606 w392 h394,"Calendario (Año, Trimestre); F",,,Orden cronológico
+P02-10,P02,actionButton,x1720 y20 w176 h48,URL fija a R02,Abre SSRS,,Sustituir {{SSRS_WEB_SERVICE_URL}} en la copia local
+P03-01,P03,card,x280 y112 w392 h132,ventas_productos_entregados,Fecha de compra y estado del cliente (sincronizados),,Sin filtros = total del cotejo SQL/DAX
+P03-02,P03,card,x688 y112 w392 h132,pedidos_entregados_con_items,Fecha de compra y estado del cliente (sincronizados),,Sin filtros = total del cotejo SQL/DAX
+P03-03,P03,card,x1096 y112 w392 h132,ticket_promedio_productos_entregados,Fecha de compra y estado del cliente (sincronizados),,Sin filtros = total del cotejo SQL/DAX
+P03-04,P03,card,x1504 y112 w392 h132,flete_pedidos_entregados,Fecha de compra y estado del cliente (sincronizados),,Sin filtros = total del cotejo SQL/DAX
+P03-L1,P03,slicer,x1252 y8 w220 h72,DimProducto[product_category_name_english],Filtro local de P03,,
+P03-L2,P03,slicer,x1484 y8 w220 h72,DimProducto[product_id],Filtro local de P03 con búsqueda,,
+P03-05,P03,clusteredBarChart,x280 y260 w800 h330,Cat; V (Top 10 fijo),Filtra la página,T02,Selección de categoría filtra matriz y treemap
+P03-06,P03,treemap,x1096 y260 w800 h330,Cat; V,Filtra la página,T02,
+P03-07,P03,pivotTable,x280 y606 w1068 h394,"Cat › Prod; V,E,T,F",Drill-through D01 desde Prod,,El total de E no es la suma de filas (conteo distinto)
+P03-08,P03,clusteredBarChart,x1364 y606 w532 h394,"Cat; V,F (Top 5 fijo)",,T02,
+P03-09,P03,actionButton,x1720 y20 w176 h48,URL fija a R04,Abre SSRS,,Sustituir {{SSRS_WEB_SERVICE_URL}} en la copia local
+T01-01,T01,card,x12 y46 w222 h116,ventas_productos_entregados,Hereda el contexto del punto o barra,,Coincide con el visual de origen
+T01-02,T01,card,x246 y46 w222 h116,pedidos_entregados_con_items,Hereda el contexto del punto o barra,,Coincide con el visual de origen
+T01-03,T01,card,x12 y170 w222 h116,ticket_promedio_productos_entregados,Hereda el contexto del punto o barra,,Coincide con el visual de origen
+T01-04,T01,card,x246 y170 w222 h116,flete_pedidos_entregados,Hereda el contexto del punto o barra,,Coincide con el visual de origen
+T02-01,T02,card,x12 y46 w222 h116,ventas_productos_entregados,Hereda el contexto del punto o barra,,Coincide con el visual de origen
+T02-02,T02,card,x246 y46 w222 h116,pedidos_entregados_con_items,Hereda el contexto del punto o barra,,Coincide con el visual de origen
+T02-03,T02,card,x12 y170 w222 h116,ticket_promedio_productos_entregados,Hereda el contexto del punto o barra,,Coincide con el visual de origen
+T02-04,T02,card,x246 y170 w222 h116,flete_pedidos_entregados,Hereda el contexto del punto o barra,,Coincide con el visual de origen
+D01-01,D01,card,x280 y112 w392 h132,ventas_productos_entregados,Fecha de compra y estado del cliente (sincronizados),,Sin filtros = total del cotejo SQL/DAX
+D01-02,D01,card,x688 y112 w392 h132,pedidos_entregados_con_items,Fecha de compra y estado del cliente (sincronizados),,Sin filtros = total del cotejo SQL/DAX
+D01-03,D01,card,x1096 y112 w392 h132,ticket_promedio_productos_entregados,Fecha de compra y estado del cliente (sincronizados),,Sin filtros = total del cotejo SQL/DAX
+D01-04,D01,card,x1504 y112 w392 h132,flete_pedidos_entregados,Fecha de compra y estado del cliente (sincronizados),,Sin filtros = total del cotejo SQL/DAX
+D01-05,D01,lineChart,x280 y260 w1616 h330,"Calendario (Año, Mes); V",,,Solo meses con ventas del producto
+D01-06,D01,clusteredColumnChart,x280 y606 w800 h394,"Calendario (Año, Mes); E,F",,,
+D01-07,D01,tableEx,x1096 y606 w800 h394,"Cat, Prod; V,T",,,ID completo legible
+D01-08,D01,actionButton,x1720 y20 w176 h48,Botón Atrás,Retorno nativo,,Vuelve a P03
