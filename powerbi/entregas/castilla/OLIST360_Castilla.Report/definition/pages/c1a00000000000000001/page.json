@@ -1,0 +1,137 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
+  "name": "c1a00000000000000001",
+  "displayName": "P01 · Resumen ejecutivo",
+  "displayOption": "FitToPage",
+  "height": 1080,
+  "width": 1920,
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "1f33bcf01e075be554c2",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "DimFecha"
+              }
+            },
+            "Property": "anio"
+          }
+        },
+        "type": "Categorical",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "d",
+              "Entity": "DimFecha",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "Not": {
+                  "Expression": {
+                    "In": {
+                      "Expressions": [
+                        {
+                          "Column": {
+                            "Expression": {
+                              "SourceRef": {
+                                "Source": "d"
+                              }
+                            },
+                            "Property": "anio"
+                          }
+                        }
+                      ],
+                      "Values": [
+                        [
+                          {
+                            "Literal": {
+                              "Value": "null"
+                            }
+                          }
+                        ]
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "howCreated": "User",
+        "objects": {
+          "general": [
+            {
+              "properties": {
+                "isInvertedSelectionMode": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "true"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "pageBinding": {
+    "name": "1a0840f0b65ba880c238",
+    "type": "Default",
+    "parameters": []
+  },
+  "visualInteractions": [
+    {
+      "source": "4d3cf1313d8f6b871f49",
+      "target": "c01kpi00000000000001",
+      "type": "NoFilter"
+    },
+    {
+      "source": "4d3cf1313d8f6b871f49",
+      "target": "c01kpi00000000000002",
+      "type": "NoFilter"
+    },
+    {
+      "source": "4d3cf1313d8f6b871f49",
+      "target": "c01kpi00000000000003",
+      "type": "NoFilter"
+    },
+    {
+      "source": "4d3cf1313d8f6b871f49",
+      "target": "c01kpi00000000000004",
+      "type": "NoFilter"
+    },
+    {
+      "source": "4d3cf1313d8f6b871f49",
+      "target": "c01kpi00000000000005",
+      "type": "NoFilter"
+    },
+    {
+      "source": "4d3cf1313d8f6b871f49",
+      "target": "c01kpi00000000000006",
+      "type": "NoFilter"
+    },
+    {
+      "source": "4d3cf1313d8f6b871f49",
+      "target": "c01kpi00000000000007",
+      "type": "NoFilter"
+    },
+    {
+      "source": "4d3cf1313d8f6b871f49",
+      "target": "c01kpi00000000000008",
+      "type": "NoFilter"
+    },
+    {
+      "source": "4d3cf1313d8f6b871f49",
+      "target": "3b494b2acc0282dea165",
+      "type": "NoFilter"
+    }
+  ]
+}

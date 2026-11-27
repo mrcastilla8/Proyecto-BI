@@ -1,0 +1,5 @@
+{
+  "version": "2.0",
+  "connectionString": "Data Source=localhost;Initial Catalog=BI_OLIST_Tabular;Cube=Model",
+  "connectionType": "analysisServicesDatabaseLive"
+}

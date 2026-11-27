@@ -1,0 +1,38 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "1be21b2eb78ac82b8ee1",
+  "position": {
+    "x": 280,
+    "y": 1020,
+    "z": 70,
+    "height": 40,
+    "width": 1616,
+    "tabOrder": 70
+  },
+  "visual": {
+    "visualType": "textbox",
+    "objects": {
+      "general": [
+        {
+          "properties": {
+            "paragraphs": [
+              {
+                "textRuns": [
+                  {
+                    "value": "Fuente: Olist · SSAS Live (BI_OLIST_Tabular) · BRL nominales · Fecha de compra  |  P01",
+                    "textStyle": {
+                      "fontSize": "10pt",
+                      "color": "#475569",
+                      "fontFamily": "Segoe UI"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

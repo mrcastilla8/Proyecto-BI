@@ -1,0 +1,455 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <Description>Auditoría de lotes ETL (ingesta y transformación) sin exposición de datos individuales de rechazo ni rutas locales.</Description>
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="BI_OLIST_DW">
+      <DataSourceReference>/OLIST360/DataSources/BI_OLIST_DW</DataSourceReference>
+      <rd:DataSourceID>66234f5a-2ef7-4072-8edf-935de3ec6552</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="R10_FechasEjecucion">
+      <Query>
+        <DataSourceName>BI_OLIST_DW</DataSourceName>
+        <CommandText><![CDATA[SELECT MIN(CAST(b.started_at AS date)) AS desde,
+       MAX(CAST(b.started_at AS date)) AS hasta
+FROM audit.Batch AS b
+WHERE b.started_at IS NOT NULL;]]></CommandText>
+        <Timeout>60</Timeout>
+      </Query>
+      <Fields>
+        <Field Name="desde"><DataField>desde</DataField></Field>
+        <Field Name="hasta"><DataField>hasta</DataField></Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="R10_Fuentes">
+      <Query>
+        <DataSourceName>BI_OLIST_DW</DataSourceName>
+        <CommandText><![CDATA[SELECT fuentes.valor, fuentes.etiqueta
+FROM (
+    SELECT '__TODOS__' AS valor, N'Todas' AS etiqueta, 0 AS prioridad
+    UNION ALL
+    SELECT DISTINCT source_name, source_name, 1
+    FROM audit.Batch
+    WHERE source_name IS NOT NULL
+    UNION ALL
+    SELECT '__DESCONOCIDO__', N'Desconocida', 2
+    WHERE EXISTS (
+        SELECT 1 FROM audit.Batch WHERE source_name IS NULL
+    )
+) AS fuentes
+ORDER BY fuentes.prioridad, fuentes.etiqueta;]]></CommandText>
+        <Timeout>60</Timeout>
+      </Query>
+      <Fields>
+        <Field Name="valor"><DataField>valor</DataField></Field>
+        <Field Name="etiqueta"><DataField>etiqueta</DataField></Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="R10_EstadosLote">
+      <Query>
+        <DataSourceName>BI_OLIST_DW</DataSourceName>
+        <CommandText><![CDATA[SELECT estados.valor, estados.etiqueta
+FROM (
+    SELECT '__TODOS__' AS valor, N'Todos' AS etiqueta, 0 AS prioridad
+    UNION ALL
+    SELECT DISTINCT status, status, 1
+    FROM audit.Batch
+    WHERE status IS NOT NULL
+    UNION ALL
+    SELECT '__DESCONOCIDO__', N'Desconocido', 2
+    WHERE EXISTS (
+        SELECT 1 FROM audit.Batch WHERE status IS NULL
+    )
+) AS estados
+ORDER BY estados.prioridad, estados.etiqueta;]]></CommandText>
+        <Timeout>60</Timeout>
+      </Query>
+      <Fields>
+        <Field Name="valor"><DataField>valor</DataField></Field>
+        <Field Name="etiqueta"><DataField>etiqueta</DataField></Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="R10_AuditoriaETL">
+      <Query>
+        <DataSourceName>BI_OLIST_DW</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@DesdeEjecucion"><Value>=Parameters!DesdeEjecucion.Value</Value></QueryParameter>
+          <QueryParameter Name="@HastaEjecucion"><Value>=Parameters!HastaEjecucion.Value</Value></QueryParameter>
+          <QueryParameter Name="@Fuente"><Value>=Parameters!Fuente.Value</Value></QueryParameter>
+          <QueryParameter Name="@EstadoLote"><Value>=Parameters!EstadoLote.Value</Value></QueryParameter>
+        </QueryParameters>
+        <CommandText><![CDATA[WITH rechazos AS (
+    SELECT batch_id, COUNT_BIG(*) AS registrados
+    FROM audit.Reject
+    GROUP BY batch_id
+)
+SELECT b.batch_id,
+       b.source_name,
+       b.contract_version,
+       b.status,
+       b.started_at,
+       b.finished_at,
+       b.rows_read,
+       b.rows_accepted,
+       b.rows_rejected,
+       COALESCE(r.registrados, 0) AS rechazos_registrados,
+       CASE
+           WHEN b.status = 'COMPLETE' THEN
+               CASE
+                   WHEN b.rows_read = b.rows_accepted + b.rows_rejected
+                        AND b.rows_rejected = COALESCE(r.registrados, 0) THEN 'CONCILIADO'
+                   ELSE 'REVISAR'
+               END
+           ELSE 'NO_TERMINAL_O_FALLIDO'
+       END AS control,
+       CASE
+           WHEN b.source_name = 'DW.Transformacion' THEN 'Transformacion'
+           ELSE 'Ingesta'
+       END AS tipo_proceso,
+       CASE
+           WHEN ROW_NUMBER() OVER (PARTITION BY b.source_name ORDER BY b.started_at DESC, b.batch_id DESC) = 1
+               THEN N'Más reciente en el rango'
+           ELSE N'Registro anterior'
+       END AS recencia
+FROM audit.Batch AS b
+LEFT JOIN rechazos AS r ON r.batch_id = b.batch_id
+WHERE CAST(b.started_at AS date) BETWEEN CAST(@DesdeEjecucion AS date) AND CAST(@HastaEjecucion AS date)
+  AND CAST(@DesdeEjecucion AS date) <= CAST(@HastaEjecucion AS date)
+  AND (
+      @Fuente = '__TODOS__'
+      OR (@Fuente = '__DESCONOCIDO__' AND b.source_name IS NULL)
+      OR b.source_name = @Fuente
+  )
+  AND (
+      @EstadoLote = '__TODOS__'
+      OR (@EstadoLote = '__DESCONOCIDO__' AND b.status IS NULL)
+      OR b.status = @EstadoLote
+  )
+ORDER BY b.started_at DESC, b.batch_id DESC;]]></CommandText>
+        <Timeout>60</Timeout>
+      </Query>
+      <Fields>
+        <Field Name="batch_id"><DataField>batch_id</DataField></Field>
+        <Field Name="source_name"><DataField>source_name</DataField></Field>
+        <Field Name="contract_version"><DataField>contract_version</DataField></Field>
+        <Field Name="status"><DataField>status</DataField></Field>
+        <Field Name="started_at"><DataField>started_at</DataField></Field>
+        <Field Name="finished_at"><DataField>finished_at</DataField></Field>
+        <Field Name="rows_read"><DataField>rows_read</DataField></Field>
+        <Field Name="rows_accepted"><DataField>rows_accepted</DataField></Field>
+        <Field Name="rows_rejected"><DataField>rows_rejected</DataField></Field>
+        <Field Name="rechazos_registrados"><DataField>rechazos_registrados</DataField></Field>
+        <Field Name="control"><DataField>control</DataField></Field>
+        <Field Name="tipo_proceso"><DataField>tipo_proceso</DataField></Field>
+        <Field Name="recencia"><DataField>recencia</DataField></Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="R10_ResumenAuditoria">
+      <Query>
+        <DataSourceName>BI_OLIST_DW</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@DesdeEjecucion"><Value>=Parameters!DesdeEjecucion.Value</Value></QueryParameter>
+          <QueryParameter Name="@HastaEjecucion"><Value>=Parameters!HastaEjecucion.Value</Value></QueryParameter>
+          <QueryParameter Name="@Fuente"><Value>=Parameters!Fuente.Value</Value></QueryParameter>
+          <QueryParameter Name="@EstadoLote"><Value>=Parameters!EstadoLote.Value</Value></QueryParameter>
+        </QueryParameters>
+        <CommandText><![CDATA[SELECT b.source_name,
+       CASE
+           WHEN b.source_name = 'DW.Transformacion' THEN 'Transformacion'
+           ELSE 'Ingesta'
+       END AS tipo_proceso,
+       b.status,
+       COUNT_BIG(*) AS lotes,
+       MAX(b.started_at) AS ultima_ejecucion,
+       MAX(CASE WHEN b.status = 'COMPLETE' THEN b.batch_id END) AS ultimo_lote_completo
+FROM audit.Batch AS b
+WHERE CAST(b.started_at AS date) BETWEEN CAST(@DesdeEjecucion AS date) AND CAST(@HastaEjecucion AS date)
+  AND CAST(@DesdeEjecucion AS date) <= CAST(@HastaEjecucion AS date)
+  AND (
+      @Fuente = '__TODOS__'
+      OR (@Fuente = '__DESCONOCIDO__' AND b.source_name IS NULL)
+      OR b.source_name = @Fuente
+  )
+  AND (
+      @EstadoLote = '__TODOS__'
+      OR (@EstadoLote = '__DESCONOCIDO__' AND b.status IS NULL)
+      OR b.status = @EstadoLote
+  )
+GROUP BY b.source_name,
+         CASE WHEN b.source_name = 'DW.Transformacion' THEN 'Transformacion' ELSE 'Ingesta' END,
+         b.status
+ORDER BY tipo_proceso, b.source_name, b.status;]]></CommandText>
+        <Timeout>60</Timeout>
+      </Query>
+      <Fields>
+        <Field Name="source_name"><DataField>source_name</DataField></Field>
+        <Field Name="tipo_proceso"><DataField>tipo_proceso</DataField></Field>
+        <Field Name="status"><DataField>status</DataField></Field>
+        <Field Name="lotes"><DataField>lotes</DataField></Field>
+        <Field Name="ultima_ejecucion"><DataField>ultima_ejecucion</DataField></Field>
+        <Field Name="ultimo_lote_completo"><DataField>ultimo_lote_completo</DataField></Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportParameters>
+    <ReportParameter Name="DesdeEjecucion">
+      <DataType>DateTime</DataType>
+      <Nullable>true</Nullable>
+      <DefaultValue><DataSetReference><DataSetName>R10_FechasEjecucion</DataSetName><ValueField>desde</ValueField></DataSetReference></DefaultValue>
+      <Prompt>Desde ejecución</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="HastaEjecucion">
+      <DataType>DateTime</DataType>
+      <Nullable>true</Nullable>
+      <DefaultValue><DataSetReference><DataSetName>R10_FechasEjecucion</DataSetName><ValueField>hasta</ValueField></DataSetReference></DefaultValue>
+      <Prompt>Hasta ejecución</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="Fuente">
+      <DataType>String</DataType>
+      <DefaultValue><Values><Value>__TODOS__</Value></Values></DefaultValue>
+      <Prompt>Fuente</Prompt>
+      <ValidValues><DataSetReference><DataSetName>R10_Fuentes</DataSetName><ValueField>valor</ValueField><LabelField>etiqueta</LabelField></DataSetReference></ValidValues>
+    </ReportParameter>
+    <ReportParameter Name="EstadoLote">
+      <DataType>String</DataType>
+      <DefaultValue><Values><Value>__TODOS__</Value></Values></DefaultValue>
+      <Prompt>Estado del lote</Prompt>
+      <ValidValues><DataSetReference><DataSetName>R10_EstadosLote</DataSetName><ValueField>valor</ValueField><LabelField>etiqueta</LabelField></DataSetReference></ValidValues>
+    </ReportParameter>
+  </ReportParameters>
+  <ReportParametersLayout>
+    <GridLayoutDefinition>
+      <NumberOfColumns>4</NumberOfColumns>
+      <NumberOfRows>1</NumberOfRows>
+      <CellDefinitions>
+        <CellDefinition><ColumnIndex>0</ColumnIndex><RowIndex>0</RowIndex><ParameterName>DesdeEjecucion</ParameterName></CellDefinition>
+        <CellDefinition><ColumnIndex>1</ColumnIndex><RowIndex>0</RowIndex><ParameterName>HastaEjecucion</ParameterName></CellDefinition>
+        <CellDefinition><ColumnIndex>2</ColumnIndex><RowIndex>0</RowIndex><ParameterName>Fuente</ParameterName></CellDefinition>
+        <CellDefinition><ColumnIndex>3</ColumnIndex><RowIndex>0</RowIndex><ParameterName>EstadoLote</ParameterName></CellDefinition>
+      </CellDefinitions>
+    </GridLayoutDefinition>
+  </ReportParametersLayout>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Textbox Name="AvisoSinDatos">
+            <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+            <Paragraphs><Paragraph><TextRuns><TextRun><Value>=If(IsNothing(Parameters!DesdeEjecucion.Value) OrElse IsNothing(Parameters!HastaEjecucion.Value), "Sin datos: no existen lotes registrados en audit.Batch.", If(Parameters!DesdeEjecucion.Value &gt; Parameters!HastaEjecucion.Value, "Rango inválido: DesdeEjecucion debe ser anterior o igual a HastaEjecucion.", If(CountRows("R10_AuditoriaETL") = 0, "Sin datos para los filtros de auditoría seleccionados.", "")))</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>10pt</FontSize><FontWeight>Bold</FontWeight><Color>#B91C1C</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs>
+            <Top>0.1cm</Top><Left>0cm</Left><Height>0.7cm</Height><Width>26.4cm</Width>
+            <Visibility><Hidden>=CountRows("R10_AuditoriaETL") &gt; 0</Hidden></Visibility>
+            <Style><BackgroundColor>#FEF2F2</BackgroundColor><Border><Style>Solid</Style><Color>#FECACA</Color></Border><PaddingLeft>8pt</PaddingLeft><PaddingTop>4pt</PaddingTop></Style>
+          </Textbox>
+          <Textbox Name="KpiLotesTotal">
+            <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph><TextRuns><TextRun><Value>Lotes en el filtro (histórico y reintentos)</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+              <Paragraph><TextRuns><TextRun><Value>=Format(CountRows("R10_AuditoriaETL"), "N0")</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>16pt</FontSize><FontWeight>Bold</FontWeight><Color>#101C32</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+            </Paragraphs>
+            <Top>0.95cm</Top><Left>0cm</Left><Height>1.55cm</Height><Width>8.5cm</Width>
+            <Visibility><Hidden>=CountRows("R10_AuditoriaETL") = 0</Hidden></Visibility>
+            <Style><BackgroundColor>#FFFFFF</BackgroundColor><Border><Style>Solid</Style><Color>#CBD5E1</Color></Border><PaddingLeft>8pt</PaddingLeft><PaddingTop>5pt</PaddingTop></Style>
+          </Textbox>
+          <Textbox Name="KpiLotesConciliados">
+            <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph><TextRuns><TextRun><Value>Lotes COMPLETE conciliados</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+              <Paragraph><TextRuns><TextRun><Value>=Format(Sum(IIf(Fields!control.Value = "CONCILIADO", 1, 0), "R10_AuditoriaETL"), "N0")</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>16pt</FontSize><FontWeight>Bold</FontWeight><Color>#059669</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+            </Paragraphs>
+            <Top>0.95cm</Top><Left>8.95cm</Left><Height>1.55cm</Height><Width>8.5cm</Width>
+            <Visibility><Hidden>=CountRows("R10_AuditoriaETL") = 0</Hidden></Visibility>
+            <Style><BackgroundColor>#FFFFFF</BackgroundColor><Border><Style>Solid</Style><Color>#CBD5E1</Color></Border><PaddingLeft>8pt</PaddingLeft><PaddingTop>5pt</PaddingTop></Style>
+          </Textbox>
+          <Textbox Name="KpiLotesAlerta">
+            <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+            <Paragraphs>
+              <Paragraph><TextRuns><TextRun><Value>Lotes no terminales, fallidos o por revisar</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+              <Paragraph><TextRuns><TextRun><Value>=Format(Sum(IIf(Fields!control.Value &lt;&gt; "CONCILIADO", 1, 0), "R10_AuditoriaETL"), "N0")</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>16pt</FontSize><FontWeight>Bold</FontWeight><Color>#D97706</Color></Style></TextRun></TextRuns><Style /></Paragraph>
+            </Paragraphs>
+            <Top>0.95cm</Top><Left>17.9cm</Left><Height>1.55cm</Height><Width>8.5cm</Width>
+            <Visibility><Hidden>=CountRows("R10_AuditoriaETL") = 0</Hidden></Visibility>
+            <Style><BackgroundColor>#FFFFFF</BackgroundColor><Border><Style>Solid</Style><Color>#CBD5E1</Color></Border><PaddingLeft>8pt</PaddingLeft><PaddingTop>5pt</PaddingTop></Style>
+          </Textbox>
+          <Textbox Name="TitResumen">
+            <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+            <Paragraphs><Paragraph><TextRuns><TextRun><Value>Resumen de ejecuciones por tipo de proceso, fuente y estado (conteo de lotes; no suma reintentos como carga vigente)</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>10.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#14233B</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs>
+            <Top>2.75cm</Top><Left>0cm</Left><Height>0.6cm</Height><Width>26.4cm</Width>
+            <Visibility><Hidden>=CountRows("R10_AuditoriaETL") = 0</Hidden></Visibility>
+            <Style><BottomBorder><Style>Solid</Style><Color>#CBD5E1</Color></BottomBorder><PaddingBottom>2pt</PaddingBottom></Style>
+          </Textbox>
+          <Tablix Name="TablaResumen">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn><Width>3.4cm</Width></TablixColumn>
+                <TablixColumn><Width>6.8cm</Width></TablixColumn>
+                <TablixColumn><Width>3.4cm</Width></TablixColumn>
+                <TablixColumn><Width>3.0cm</Width></TablixColumn>
+                <TablixColumn><Width>5.2cm</Width></TablixColumn>
+                <TablixColumn><Width>4.6cm</Width></TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="ResH0"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Proceso</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="ResH1"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Fuente</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="ResH2"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Estado</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="ResH3"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Lotes</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingRight>4pt</PaddingRight><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="ResH4"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Última ejecución</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="ResH5"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Último COMPLETE</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingRight>4pt</PaddingRight><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.55cm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="ResD0"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!tipo_proceso.Value</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#14233B</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#F8FAFC", "#FFFFFF")</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>2.5pt</PaddingTop><PaddingBottom>2.5pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="ResD1"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!source_name.Value</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#14233B</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#F8FAFC", "#FFFFFF")</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>2.5pt</PaddingTop><PaddingBottom>2.5pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="ResD2"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!status.Value</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#14233B</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#F8FAFC", "#FFFFFF")</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>2.5pt</PaddingTop><PaddingBottom>2.5pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="ResD3"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!lotes.Value</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#14233B</Color><Format>N0</Format></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#F8FAFC", "#FFFFFF")</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingRight>4pt</PaddingRight><PaddingTop>2.5pt</PaddingTop><PaddingBottom>2.5pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="ResD4"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Format(Fields!ultima_ejecucion.Value, "dd/MM/yyyy HH:mm:ss")</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#14233B</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#F8FAFC", "#FFFFFF")</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>2.5pt</PaddingTop><PaddingBottom>2.5pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="ResD5"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=IIf(IsNothing(Fields!ultimo_lote_completo.Value), "—", CStr(Fields!ultimo_lote_completo.Value))</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#14233B</Color></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#F8FAFC", "#FFFFFF")</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingRight>4pt</PaddingRight><PaddingTop>2.5pt</PaddingTop><PaddingBottom>2.5pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy><TablixMembers><TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember /></TablixMembers></TablixColumnHierarchy>
+            <TablixRowHierarchy><TablixMembers><TablixMember><KeepWithGroup>After</KeepWithGroup><RepeatOnNewPage>true</RepeatOnNewPage></TablixMember><TablixMember><Group Name="GrupoResumen" /></TablixMember></TablixMembers></TablixRowHierarchy>
+            <DataSetName>R10_ResumenAuditoria</DataSetName>
+            <Top>3.45cm</Top><Left>0cm</Left><Height>1.15cm</Height><Width>26.4cm</Width>
+            <Visibility><Hidden>=CountRows("R10_AuditoriaETL") = 0</Hidden></Visibility>
+            <Style><Border><Style>Solid</Style><Color>#CBD5E1</Color></Border></Style>
+          </Tablix>
+          <Textbox Name="TitDetalle">
+            <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+            <Paragraphs><Paragraph><TextRuns><TextRun><Value>Detalle por lote (sin datos personales, rutas de archivo ni mensajes de error)</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>10.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#14233B</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs>
+            <Top>4.9cm</Top><Left>0cm</Left><Height>0.6cm</Height><Width>26.4cm</Width>
+            <Visibility><Hidden>=CountRows("R10_AuditoriaETL") = 0</Hidden></Visibility>
+            <Style><BottomBorder><Style>Solid</Style><Color>#CBD5E1</Color></BottomBorder><PaddingBottom>2pt</PaddingBottom></Style>
+          </Textbox>
+          <Tablix Name="TablaDetalleLotes">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn><Width>1.2cm</Width></TablixColumn>
+                <TablixColumn><Width>2.1cm</Width></TablixColumn>
+                <TablixColumn><Width>3.2cm</Width></TablixColumn>
+                <TablixColumn><Width>1.3cm</Width></TablixColumn>
+                <TablixColumn><Width>2.0cm</Width></TablixColumn>
+                <TablixColumn><Width>2.6cm</Width></TablixColumn>
+                <TablixColumn><Width>2.6cm</Width></TablixColumn>
+                <TablixColumn><Width>1.9cm</Width></TablixColumn>
+                <TablixColumn><Width>1.9cm</Width></TablixColumn>
+                <TablixColumn><Width>1.7cm</Width></TablixColumn>
+                <TablixColumn><Width>1.7cm</Width></TablixColumn>
+                <TablixColumn><Width>1.7cm</Width></TablixColumn>
+                <TablixColumn><Width>2.5cm</Width></TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="DetH0"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>ID</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingRight>4pt</PaddingRight><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetH1"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Proceso</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetH2"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Fuente</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetH3"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Ver.</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetH4"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Estado</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetH5"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Inicio</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetH6"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Fin</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetH7"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Leídas</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingRight>4pt</PaddingRight><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetH8"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Aceptadas</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingRight>4pt</PaddingRight><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetH9"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Rechaz.</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingRight>4pt</PaddingRight><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetH10"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Reg.Rej.</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingRight>4pt</PaddingRight><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetH11"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Control</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetH12"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>Recencia</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>#101C32</BackgroundColor><PaddingLeft>4pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.55cm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="DetD0"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!batch_id.Value</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#14233B</Color><Format>N0</Format></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#F8FAFC", "#FFFFFF")</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingRight>4pt</PaddingRight><PaddingTop>2.5pt</PaddingTop><PaddingBottom>2.5pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetD1"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!tipo_proceso.Value</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#14233B</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#F8FAFC", "#FFFFFF")</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>2.5pt</PaddingTop><PaddingBottom>2.5pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetD2"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!source_name.Value</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#14233B</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#F8FAFC", "#FFFFFF")</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>2.5pt</PaddingTop><PaddingBottom>2.5pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetD3"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!contract_version.Value</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#14233B</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#F8FAFC", "#FFFFFF")</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>2.5pt</PaddingTop><PaddingBottom>2.5pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetD4"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!status.Value</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#14233B</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#F8FAFC", "#FFFFFF")</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>2.5pt</PaddingTop><PaddingBottom>2.5pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetD5"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Format(Fields!started_at.Value, "dd/MM/yyyy HH:mm:ss")</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#14233B</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#F8FAFC", "#FFFFFF")</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>2.5pt</PaddingTop><PaddingBottom>2.5pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetD6"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=IIf(IsNothing(Fields!finished_at.Value), "—", Format(Fields!finished_at.Value, "dd/MM/yyyy HH:mm:ss"))</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#14233B</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#F8FAFC", "#FFFFFF")</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>2.5pt</PaddingTop><PaddingBottom>2.5pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetD7"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!rows_read.Value</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#14233B</Color><Format>N0</Format></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#F8FAFC", "#FFFFFF")</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingRight>4pt</PaddingRight><PaddingTop>2.5pt</PaddingTop><PaddingBottom>2.5pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetD8"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!rows_accepted.Value</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#14233B</Color><Format>N0</Format></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#F8FAFC", "#FFFFFF")</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingRight>4pt</PaddingRight><PaddingTop>2.5pt</PaddingTop><PaddingBottom>2.5pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetD9"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!rows_rejected.Value</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#14233B</Color><Format>N0</Format></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#F8FAFC", "#FFFFFF")</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingRight>4pt</PaddingRight><PaddingTop>2.5pt</PaddingTop><PaddingBottom>2.5pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetD10"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!rechazos_registrados.Value</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#14233B</Color><Format>N0</Format></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#F8FAFC", "#FFFFFF")</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingRight>4pt</PaddingRight><PaddingTop>2.5pt</PaddingTop><PaddingBottom>2.5pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetD11"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!control.Value</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#14233B</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#F8FAFC", "#FFFFFF")</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>2.5pt</PaddingTop><PaddingBottom>2.5pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="DetD12"><CanGrow>true</CanGrow><KeepTogether>true</KeepTogether><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!recencia.Value</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#14233B</Color></Style></TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs><Style><BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#F8FAFC", "#FFFFFF")</BackgroundColor><BottomBorder><Color>#CBD5E1</Color><Style>Solid</Style></BottomBorder><PaddingLeft>4pt</PaddingLeft><PaddingTop>2.5pt</PaddingTop><PaddingBottom>2.5pt</PaddingBottom></Style></Textbox></CellContents></TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy><TablixMembers><TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember /></TablixMembers></TablixColumnHierarchy>
+            <TablixRowHierarchy><TablixMembers><TablixMember><KeepWithGroup>After</KeepWithGroup><RepeatOnNewPage>true</RepeatOnNewPage></TablixMember><TablixMember><Group Name="GrupoDetalleLotes" /></TablixMember></TablixMembers></TablixRowHierarchy>
+            <DataSetName>R10_AuditoriaETL</DataSetName>
+            <Top>5.6cm</Top><Left>0cm</Left><Height>1.15cm</Height><Width>26.4cm</Width>
+            <Visibility><Hidden>=CountRows("R10_AuditoriaETL") = 0</Hidden></Visibility>
+            <Style><Border><Style>Solid</Style><Color>#CBD5E1</Color></Border></Style>
+          </Tablix>
+          <Textbox Name="NotaPrivacidad">
+            <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+            <Paragraphs><Paragraph><TextRuns><TextRun><Value>Privacidad y conciliación: Solo se muestran metadatos de audit.Batch y conteos agregados de audit.Reject. No se exponen registros individuales, rutas de archivo ni contexto de ejecución. La etiqueta CONCILIADO aplica únicamente a lotes COMPLETE con rows_read = rows_accepted + rows_rejected y rows_rejected = rechazos registrados.</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs>
+            <Top>6.95cm</Top><Left>0cm</Left><Height>0.85cm</Height><Width>26.4cm</Width>
+            <Style><BackgroundColor>#EAF0F7</BackgroundColor><PaddingLeft>6pt</PaddingLeft><PaddingTop>4pt</PaddingTop></Style>
+          </Textbox>
+        </ReportItems>
+        <Height>7.95cm</Height>
+        <Style><BackgroundColor>#FFFFFF</BackgroundColor></Style>
+      </Body>
+      <Width>26.4cm</Width>
+      <Page>
+        <PageHeader>
+          <Height>1.7cm</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage><PrintOnLastPage>true</PrintOnLastPage>
+          <ReportItems>
+            <Textbox Name="CabeceraTitulo">
+              <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+              <Paragraphs><Paragraph><TextRuns><TextRun><Value>OLIST 360°  |  R10 · Auditoría ETL</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>17pt</FontSize><FontWeight>Bold</FontWeight><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs>
+              <Top>0cm</Top><Left>0cm</Left><Height>0.9cm</Height><Width>26.4cm</Width>
+              <Style><BackgroundColor>#101C32</BackgroundColor><PaddingLeft>8pt</PaddingLeft><PaddingTop>4pt</PaddingTop><VerticalAlign>Middle</VerticalAlign></Style>
+            </Textbox>
+            <Textbox Name="CabeceraFiltros">
+              <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+              <Paragraphs><Paragraph><TextRuns><TextRun><Value>="Ejecución: " &amp; If(IsNothing(Parameters!DesdeEjecucion.Value), "—", Format(Parameters!DesdeEjecucion.Value, "dd/MM/yyyy")) &amp; " a " &amp; If(IsNothing(Parameters!HastaEjecucion.Value), "—", Format(Parameters!HastaEjecucion.Value, "dd/MM/yyyy")) &amp; "  |  Fuente: " &amp; Parameters!Fuente.Label &amp; "  |  Estado: " &amp; Parameters!EstadoLote.Label</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>9.5pt</FontSize><Color>#FFFFFF</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs>
+              <Top>0.9cm</Top><Left>0cm</Left><Height>0.65cm</Height><Width>26.4cm</Width>
+              <Style><BackgroundColor>#101C32</BackgroundColor><PaddingLeft>8pt</PaddingLeft><PaddingBottom>4pt</PaddingBottom><VerticalAlign>Middle</VerticalAlign></Style>
+            </Textbox>
+          </ReportItems>
+        </PageHeader>
+        <PageFooter>
+          <Height>0.75cm</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage><PrintOnLastPage>true</PrintOnLastPage>
+          <ReportItems>
+            <Textbox Name="PieFuente">
+              <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+              <Paragraphs><Paragraph><TextRuns><TextRun><Value>Fuente: Olist · BI_OLIST.audit  |  Solo metadatos agregados</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><Color>#475569</Color></Style></TextRun></TextRuns><Style /></Paragraph></Paragraphs>
+              <Top>0.05cm</Top><Left>0cm</Left><Height>0.6cm</Height><Width>21.4cm</Width>
+              <Style><TopBorder><Style>Solid</Style><Color>#CBD5E1</Color></TopBorder><PaddingTop>3pt</PaddingTop></Style>
+            </Textbox>
+            <Textbox Name="PiePagina">
+              <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+              <Paragraphs><Paragraph><TextRuns><TextRun><Value>="Página " &amp; Globals!PageNumber &amp; " de " &amp; Globals!TotalPages</Value><Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><Color>#475569</Color></Style></TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs>
+              <Top>0.05cm</Top><Left>21.4cm</Left><Height>0.6cm</Height><Width>5.0cm</Width>
+              <Style><TopBorder><Style>Solid</Style><Color>#CBD5E1</Color></TopBorder><PaddingTop>3pt</PaddingTop></Style>
+            </Textbox>
+          </ReportItems>
+        </PageFooter>
+        <PageHeight>21cm</PageHeight>
+        <PageWidth>29.7cm</PageWidth>
+        <LeftMargin>1.2cm</LeftMargin>
+        <RightMargin>1.2cm</RightMargin>
+        <TopMargin>1.2cm</TopMargin>
+        <BottomMargin>1.2cm</BottomMargin>
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <Language>es-PE</Language>
+  <ConsumeContainerWhitespace>true</ConsumeContainerWhitespace>
+  <rd:ReportUnitType>Cm</rd:ReportUnitType>
+  <rd:ReportID>72e86c41-e710-4729-a66d-750f071aafad</rd:ReportID>
+</Report>
