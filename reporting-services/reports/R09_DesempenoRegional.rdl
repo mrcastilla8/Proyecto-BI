@@ -326,6 +326,64 @@ ORDER BY nivel DESC, estado, ciudad;
       </CellDefinitions>
     </GridLayoutDefinition>
   </ReportParametersLayout>
+  <EmbeddedImages>
+    <EmbeddedImage Name="VentasBarra0">
+      <MIMEType>image/png</MIMEType>
+      <ImageData>iVBORw0KGgoAAAANSUhEUgAAAPAAAAAUCAYAAACzgLAGAAAAV0lEQVR4nO3aMQ3AMBAEwedPMbUZuE9Y2FplVhoI192MJEmSJEk/6Vn7BZoMGMIMGMIMGMIMGMIMGMIMGMIMGMIMGMIMGMIMGMIMGMJuX7ElSZIkSZpDfe9goCgOtk14AAAAAElFTkSuQmCC</ImageData>
+    </EmbeddedImage>
+    <EmbeddedImage Name="VentasBarra1">
+      <MIMEType>image/png</MIMEType>
+      <ImageData>iVBORw0KGgoAAAANSUhEUgAAAPAAAAAUCAYAAACzgLAGAAAAXklEQVR4nO3asQ2AMAADwSzDZIxNTUVLH5ZAQS/upRvBnceQJEmSJOknbfs133ScN7CIAUOYAUOYAUOYAUOYAUOYAUOYAUOYAUOYAUOYAUOYAUPY11dsSZIkSZLGoh7cYnMpWV70qwAAAABJRU5ErkJggg==</ImageData>
+    </EmbeddedImage>
+    <EmbeddedImage Name="VentasBarra2">
+      <MIMEType>image/png</MIMEType>
+      <ImageData>iVBORw0KGgoAAAANSUhEUgAAAPAAAAAUCAYAAACzgLAGAAAAXklEQVR4nO3aoQ2AQAAEwW+GyigbjcLinwqwwIbZZEo4d2NIkiRJkvSTlvWYX7btJ3DDgCHMgCHMgCHMgCHMgCHMgCHMgCHMgCHMgCHMgCHMgCHs7Su2JEmSJEnjoS7Z5kYqIeY2SQAAAABJRU5ErkJggg==</ImageData>
+    </EmbeddedImage>
+    <EmbeddedImage Name="VentasBarra3">
+      <MIMEType>image/png</MIMEType>
+      <ImageData>iVBORw0KGgoAAAANSUhEUgAAAPAAAAAUCAYAAACzgLAGAAAAXklEQVR4nO3asQ2AMAADwSzDZIxNTUVLH7YAPbmXbgR3HkOSJEmSpEXa9muu5Dhv+A0DhjADhjADhjADhjADhjADhjADhjADhjADhjADhjADhrCvr9iSJEmSJI2XegDn7BkroR1rhwAAAABJRU5ErkJggg==</ImageData>
+    </EmbeddedImage>
+    <EmbeddedImage Name="VentasBarra4">
+      <MIMEType>image/png</MIMEType>
+      <ImageData>iVBORw0KGgoAAAANSUhEUgAAAPAAAAAUCAYAAACzgLAGAAAAbElEQVR4nO3aoQ2AQAAEwW+GyigbjcLinx4QfDbMJFvCuRsDAAAAfmLbr6n3HectLcuADVjhDNiAFc6ADVjhDNiAFc6ADVjhDNiAFc6ADVjhDNiAFc6ADVjhDNiAFc6ADVjhVl+xAQAAYHzkAQaD7B0F7BoGAAAAAElFTkSuQmCC</ImageData>
+    </EmbeddedImage>
+    <EmbeddedImage Name="VentasBarra5">
+      <MIMEType>image/png</MIMEType>
+      <ImageData>iVBORw0KGgoAAAANSUhEUgAAAPAAAAAUCAYAAACzgLAGAAAAhklEQVR4nO3asQ1CQRBDwWuGyiibmIiU/NMCEbbFPGk6WGd7jiRJkiRJf9Lt/rro8Xi+4WsGXCZ9EGwx4DLpg2CLAZdJHwRbDLhM+iDYYsBl0gfBFgMukz4IthhwmfRBsMWAy6QPgi0GXCZ9EGwx4DLpg2CLAZdJHwRb0q/YkiRJkiSdH/UBNY2/Hi38uVAAAAAASUVORK5CYII=</ImageData>
+    </EmbeddedImage>
+    <EmbeddedImage Name="VentasBarra6">
+      <MIMEType>image/png</MIMEType>
+      <ImageData>iVBORw0KGgoAAAANSUhEUgAAAPAAAAAUCAYAAACzgLAGAAAAa0lEQVR4nO3TsQ2AQBADwW+GyiibmIiU/KkCWTrPSNuBvRYAAACUOM5na27X/WpwDjy89MDkwHJgOXBn6YHJgeXAcuDO0gOTA8uB5cCdpQcmB5YDy4E7Sw9MDiwHlgN3lh6Yfj4wAAAArA4fdRmSH5CEYq8AAAAASUVORK5CYII=</ImageData>
+    </EmbeddedImage>
+    <EmbeddedImage Name="VentasBarra7">
+      <MIMEType>image/png</MIMEType>
+      <ImageData>iVBORw0KGgoAAAANSUhEUgAAAPAAAAAUCAYAAACzgLAGAAAAdklEQVR4nO3ToQ2AQABD0VuGyRgbjcLiwaMgFSW595O3QTuGJEmSJEmTtKzHBW9t+8mPODCftAeLAxNoDxYHJtAeLA5MoD1YHJhAe7A4MIH2YHFgAu3B4sAE2oPFgQm0B4sDE2gPFgcm0B4sjwNLkiRJkjTm6AbFJ2UgudgWOwAAAABJRU5ErkJggg==</ImageData>
+    </EmbeddedImage>
+    <EmbeddedImage Name="VentasBarra8">
+      <MIMEType>image/png</MIMEType>
+      <ImageData>iVBORw0KGgoAAAANSUhEUgAAAPAAAAAUCAYAAACzgLAGAAAAf0lEQVR4nO3asQlCUQAEwdeMlVm2sZGp+bcIweVwFqaEy+4cSZIkSZL+pNv9dUHl8XzzBQMmVQ9gnQGTqgewzoBJ1QNYZ8Ck6gGsM2BS9QDWGTCpegDrDJhUPYB1BkyqHsA6AyZVD2CdAZOqB7DOgEnVA1hXX7ElSZIkSTo/6gMlxjgh6KBM1wAAAABJRU5ErkJggg==</ImageData>
+    </EmbeddedImage>
+    <EmbeddedImage Name="VentasBarra9">
+      <MIMEType>image/png</MIMEType>
+      <ImageData>iVBORw0KGgoAAAANSUhEUgAAAPAAAAAUCAYAAACzgLAGAAAAb0lEQVR4nO3TsQ2AQBADwW+GyiibmIiUHIpwYOlvVpoSdi1JkiRJkoZ0nM8Hu7judxQDs5X2UAaGQHsoA0OgPZSBIdAeysAQaA9lYAi0hzIwBNpDGRgC7aEMDIH2UAaGQHsoA0Ng3MCSJEmSJK0Z/ZbYCyJuJ3VDAAAAAElFTkSuQmCC</ImageData>
+    </EmbeddedImage>
+    <EmbeddedImage Name="VentasBarra10">
+      <MIMEType>image/png</MIMEType>
+      <ImageData>iVBORw0KGgoAAAANSUhEUgAAAPAAAAAUCAYAAACzgLAGAAAAcUlEQVR4nO3ToQ2AQAAEwW+GyigbjcLioQGCOXGf/GwyJewYkiRJkiQt0rZfD/DtOO+pGRh+tAc1MATagxoYAu1BDQyB9qAGhkB7UANDoD2ogSHQHtTAEGgPamAItAc1MATagxoYAtMPLEmSJEnSWKMXGHveFI+rSH4AAAAASUVORK5CYII=</ImageData>
+    </EmbeddedImage>
+    <EmbeddedImage Name="VentasBarra11">
+      <MIMEType>image/png</MIMEType>
+      <ImageData>iVBORw0KGgoAAAANSUhEUgAAAPAAAAAUCAYAAACzgLAGAAAAW0lEQVR4nO3TsQmAMAAAwSzjZI5tbWVrr0uEwJN7uBF+DEmSJEmSNuk4nw9Y47rfqQwMCxkYwgwMYQaGMANDmIEhzMAQZmAIMzCEGRjCDAxh0weWJEmSJGns0Q+qkbEVZp/MwAAAAABJRU5ErkJggg==</ImageData>
+    </EmbeddedImage>
+    <EmbeddedImage Name="VentasBarra12">
+      <MIMEType>image/png</MIMEType>
+      <ImageData>iVBORw0KGgoAAAANSUhEUgAAAPAAAAAUCAYAAACzgLAGAAAAV0lEQVR4nO3aQQ3AMBADwSNTZIEfEC2LRKvOSgPBP89IkiRJkvSTnrVfoMmAIcyAIcyAIcyAIcyAIcyAIcyAIcyAIcyAIcyAIcyAIez2FVuSJEmSpDnUB004hBankkBBAAAAAElFTkSuQmCC</ImageData>
+    </EmbeddedImage>
+    <EmbeddedImage Name="VentasBarraSinDatos">
+      <MIMEType>image/png</MIMEType>
+      <ImageData>iVBORw0KGgoAAAANSUhEUgAAAPAAAAAUCAYAAACzgLAGAAAAQUlEQVR4nO3TQQ0AIBADwYpFAi4QDSoI3GUmqYA+NgEAAAAAAACglTHXvrnX/6A1AUNhAobCBAwAAAAAAAAAkC8cEPXkwYs2l04AAAAASUVORK5CYII=</ImageData>
+    </EmbeddedImage>
+  </EmbeddedImages>
   <ReportSections>
     <ReportSection>
       <Body>
@@ -1626,26 +1684,11 @@ ORDER BY nivel DESC, estado, ciudad;
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="EstadosDato1">
-                          <CanGrow>true</CanGrow>
-                          <KeepTogether>true</KeepTogether>
-                          <Paragraphs>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
-                                  <Value>=If(IsNothing(Fields!ventas_relativas.Value), "—", StrDup(CInt(Math.Ceiling(12 * CDbl(Fields!ventas_relativas.Value))), "|"))</Value>
-                                  <Style>
-                                    <FontFamily>Segoe UI</FontFamily>
-                                    <FontSize>9pt</FontSize>
-                                    <Color>#2563EB</Color>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                              <Style>
-                                <TextAlign>Left</TextAlign>
-                              </Style>
-                            </Paragraph>
-                          </Paragraphs>
+                        <Image Name="EstadosDato1">
+                          <Source>Embedded</Source>
+                          <Value>=If(IsNothing(Fields!ventas_relativas.Value), "VentasBarraSinDatos", "VentasBarra" &amp; CStr(Math.Min(12, Math.Max(0, CInt(Math.Ceiling(12 * CDbl(Fields!ventas_relativas.Value)))))))</Value>
+                          <Sizing>FitProportional</Sizing>
+                          <ToolTip>=If(IsNothing(Fields!ventas_relativas.Value), "Sin ventas elegibles", Format(Fields!ventas_relativas.Value, "P0") &amp; " del máximo")</ToolTip>
                           <Style>
                             <BackgroundColor>=IIf(RowNumber(Nothing) Mod 2 = 0, "#EAF0F7", "#FFFFFF")</BackgroundColor>
                             <PaddingLeft>1.5mm</PaddingLeft>
@@ -1653,7 +1696,7 @@ ORDER BY nivel DESC, estado, ciudad;
                             <PaddingTop>1mm</PaddingTop>
                             <PaddingBottom>1mm</PaddingBottom>
                           </Style>
-                        </Textbox>
+                        </Image>
                       </CellContents>
                     </TablixCell>
                     <TablixCell>
