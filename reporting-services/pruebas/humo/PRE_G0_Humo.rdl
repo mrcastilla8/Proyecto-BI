@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="BI_OLIST_DW">
+      <DataSourceReference>/OLIST360/DataSources/BI_OLIST_DW</DataSourceReference>
+      <rd:DataSourceID>e8b54fa6-25d6-4df0-849e-4e7ce3a56012</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="DatosHumo">
+      <Query>
+        <DataSourceName>BI_OLIST_DW</DataSourceName>
+        <CommandText>SELECT (SELECT COUNT_BIG(*) FROM dw.FactPedidos) AS pedidos, (SELECT COUNT_BIG(*) FROM dw.FactDetallePedido) AS lineas, SYSUTCDATETIME() AS fecha_ejecucion_utc;</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="pedidos">
+          <DataField>pedidos</DataField>
+          <rd:TypeName>System.Int64</rd:TypeName>
+        </Field>
+        <Field Name="lineas">
+          <DataField>lineas</DataField>
+          <rd:TypeName>System.Int64</rd:TypeName>
+        </Field>
+        <Field Name="fecha_ejecucion_utc">
+          <DataField>fecha_ejecucion_utc</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportSections><ReportSection><Body>
+    <ReportItems>
+      <Textbox Name="Titulo">
+        <CanGrow>true</CanGrow>
+        <KeepTogether>true</KeepTogether>
+        <Paragraphs>
+          <Paragraph>
+            <TextRuns>
+              <TextRun>
+                <Value>PRE-G0-06 | Prueba de humo OLIST 360</Value>
+                <Style>
+                  <FontSize>14pt</FontSize>
+                  <FontWeight>Bold</FontWeight>
+                  <Color>White</Color>
+                </Style>
+              </TextRun>
+            </TextRuns>
+            <Style />
+          </Paragraph>
+        </Paragraphs>
+        <rd:DefaultName>Titulo</rd:DefaultName>
+        <Top>0.4cm</Top>
+        <Left>0.4cm</Left>
+        <Height>0.9cm</Height>
+        <Width>18.1cm</Width>
+        <Style>
+          <BackgroundColor>#101C32</BackgroundColor>
+          <PaddingLeft>4pt</PaddingLeft>
+          <PaddingTop>4pt</PaddingTop>
+          <PaddingBottom>4pt</PaddingBottom>
+        </Style>
+      </Textbox>
+      <Textbox Name="Pedidos">
+        <CanGrow>true</CanGrow>
+        <KeepTogether>true</KeepTogether>
+        <Paragraphs>
+          <Paragraph>
+            <TextRuns>
+              <TextRun>
+                <Value>=&quot;Pedidos en BI_OLIST: &quot; &amp; Format(First(Fields!pedidos.Value, &quot;DatosHumo&quot;), &quot;N0&quot;)</Value>
+                <Style>
+                  <FontSize>12pt</FontSize>
+                  <FontWeight>Bold</FontWeight>
+                  <Color>#14233B</Color>
+                </Style>
+              </TextRun>
+            </TextRuns>
+            <Style />
+          </Paragraph>
+        </Paragraphs>
+        <rd:DefaultName>Pedidos</rd:DefaultName>
+        <Top>1.7cm</Top>
+        <Left>0.6cm</Left>
+        <Height>0.8cm</Height>
+        <Width>17.8cm</Width>
+        <Style />
+      </Textbox>
+      <Textbox Name="Lineas">
+        <CanGrow>true</CanGrow>
+        <KeepTogether>true</KeepTogether>
+        <Paragraphs>
+          <Paragraph>
+            <TextRuns>
+              <TextRun>
+                <Value>=&quot;Líneas en BI_OLIST: &quot; &amp; Format(First(Fields!lineas.Value, &quot;DatosHumo&quot;), &quot;N0&quot;)</Value>
+                <Style>
+                  <FontSize>12pt</FontSize>
+                  <FontWeight>Bold</FontWeight>
+                  <Color>#14233B</Color>
+                </Style>
+              </TextRun>
+            </TextRuns>
+            <Style />
+          </Paragraph>
+        </Paragraphs>
+        <rd:DefaultName>Lineas</rd:DefaultName>
+        <Top>2.7cm</Top>
+        <Left>0.6cm</Left>
+        <Height>0.8cm</Height>
+        <Width>17.8cm</Width>
+        <Style />
+      </Textbox>
+      <Textbox Name="FechaEjecucion">
+        <CanGrow>true</CanGrow>
+        <KeepTogether>true</KeepTogether>
+        <Paragraphs>
+          <Paragraph>
+            <TextRuns>
+              <TextRun>
+                <Value>=&quot;Consulta ejecutada (UTC): &quot; &amp; Format(First(Fields!fecha_ejecucion_utc.Value, &quot;DatosHumo&quot;), &quot;yyyy-MM-dd HH:mm:ss&quot;)</Value>
+                <Style>
+                  <FontSize>9pt</FontSize>
+                  <Color>#475569</Color>
+                </Style>
+              </TextRun>
+            </TextRuns>
+            <Style />
+          </Paragraph>
+        </Paragraphs>
+        <rd:DefaultName>FechaEjecucion</rd:DefaultName>
+        <Top>3.8cm</Top>
+        <Left>0.6cm</Left>
+        <Height>0.6cm</Height>
+        <Width>17.8cm</Width>
+        <Style />
+      </Textbox>
+      <Textbox Name="Nota">
+        <CanGrow>true</CanGrow>
+        <KeepTogether>true</KeepTogether>
+        <Paragraphs>
+          <Paragraph>
+            <TextRuns>
+              <TextRun>
+                <Value>Conteos agregados de validación; no muestra registros de pedidos.</Value>
+                <Style>
+                  <FontSize>8pt</FontSize>
+                  <Color>#475569</Color>
+                </Style>
+              </TextRun>
+            </TextRuns>
+            <Style />
+          </Paragraph>
+        </Paragraphs>
+        <rd:DefaultName>Nota</rd:DefaultName>
+        <Top>4.8cm</Top>
+        <Left>0.6cm</Left>
+        <Height>0.6cm</Height>
+        <Width>17.8cm</Width>
+        <Style />
+      </Textbox>
+    </ReportItems>
+    <Height>5.8cm</Height>
+    <Style />
+  </Body>
+  <Width>18.9cm</Width>
+  <Page>
+    <PageHeight>29.7cm</PageHeight>
+    <PageWidth>21cm</PageWidth>
+    <LeftMargin>1.2cm</LeftMargin>
+    <RightMargin>1.2cm</RightMargin>
+    <TopMargin>1.2cm</TopMargin>
+    <BottomMargin>1.2cm</BottomMargin>
+    <Style />
+  </Page></ReportSection></ReportSections>
+  <Language>es-PE</Language>
+  <ConsumeContainerWhitespace>true</ConsumeContainerWhitespace>
+  <rd:ReportUnitType>Cm</rd:ReportUnitType>
+  <rd:ReportID>e26463fe-9b68-4b17-a521-3a332f98d325</rd:ReportID>
+</Report>
